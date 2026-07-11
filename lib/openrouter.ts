@@ -20,8 +20,8 @@ import {
  * DeepSeek V4 Flash = fast text; multimodal needed for plant photos.
  */
 const TEXT_MODEL = 'deepseek/deepseek-v4-flash';
-/** V4 Flash is text-only — vision path uses a fast multimodal model */
-const VISION_MODEL = 'google/gemini-2.5-flash-lite';
+/** V4 Flash is text-only — vision path uses a cheap multimodal model */
+const VISION_MODEL = 'qwen/qwen3.5-flash-02-23';
 
 export type PlantIdResult = {
   commonName: string;
