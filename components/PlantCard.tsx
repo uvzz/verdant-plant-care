@@ -8,11 +8,19 @@ import type { Plant } from '@/lib/types';
 interface Props {
   plant: Plant;
   subtitle?: string;
+  filamentColor?: string;
+  filamentWidth?: `${number}%`;
 }
 
-export function PlantCard({ plant, subtitle }: Props) {
+export function PlantCard({
+  plant,
+  subtitle,
+  filamentColor,
+  filamentWidth = '70%',
+}: Props) {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
+  const track = filamentColor ?? c.tint;
 
   return (
     <Link href={`/plant/${plant.id}`} asChild>
@@ -36,15 +44,24 @@ export function PlantCard({ plant, subtitle }: Props) {
             </View>
           )}
         </View>
-        <View style={styles.meta}>
+        {/* Specimen label strip */}
+        <View style={styles.specimen}>
           <Text style={[styles.name, { color: c.text }]} numberOfLines={1}>
             {plant.name}
           </Text>
           <Text style={[styles.species, { color: c.textMuted }]} numberOfLines={1}>
             {plant.species || plant.category}
           </Text>
+          <View style={[styles.filamentTrack, { backgroundColor: c.surfaceAlt }]}>
+            <View
+              style={[
+                styles.filamentFill,
+                { backgroundColor: track, width: filamentWidth },
+              ]}
+            />
+          </View>
           {subtitle ? (
-            <Text style={[styles.sub, { color: c.tint }]} numberOfLines={1}>
+            <Text style={[styles.sub, { color: track }]} numberOfLines={1}>
               {subtitle}
             </Text>
           ) : (
@@ -64,9 +81,9 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
     flex: 1,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 1,
-    shadowRadius: 12,
+    shadowRadius: 16,
     elevation: 3,
   },
   imageWrap: {
@@ -85,22 +102,35 @@ const styles = StyleSheet.create({
   placeholderEmoji: {
     fontSize: 40,
   },
-  meta: {
+  specimen: {
     paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: 2,
+    paddingTop: 10,
+    paddingBottom: 12,
   },
   name: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
   species: {
-    fontSize: 13,
+    fontSize: 12,
     fontStyle: 'italic',
+    marginTop: 1,
+  },
+  filamentTrack: {
+    height: 2,
+    borderRadius: 2,
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+  filamentFill: {
+    height: '100%',
+    borderRadius: 2,
   },
   sub: {
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 6,
+    letterSpacing: 0.2,
   },
 });

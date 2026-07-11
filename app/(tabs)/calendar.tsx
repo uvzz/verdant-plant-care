@@ -42,7 +42,7 @@ export default function CalendarScreen() {
         <Text style={[styles.kicker, { color: c.tint }]}>Care calendar</Text>
         <Text style={[styles.title, { color: c.text }]}>Gentle reminders</Text>
         <Text style={[styles.subtitle, { color: c.textMuted }]}>
-          Soft nudges based on each plant’s watering and feeding rhythm.
+          Soft nudges from each plant’s rhythm — not alarms.
         </Text>
       </View>
 
@@ -197,15 +197,15 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   kicker: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '600',
-    letterSpacing: 1.2,
+    letterSpacing: 1.6,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: -0.8,
   },
   subtitle: {

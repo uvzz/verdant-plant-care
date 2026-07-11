@@ -26,14 +26,26 @@ export default function MyPlantsScreen() {
 
   const dueMap = useMemo(() => {
     const items = getCareDueItems(plants, logs);
-    const map = new Map<string, string>();
+    const map = new Map<
+      string,
+      { label: string; colorKey: 'ok' | 'today' | 'late'; width: `${number}%` }
+    >();
     for (const item of items) {
       if (!map.has(item.plant.id)) {
-        const label =
-          item.type === 'water'
-            ? `💧 ${formatRelativeCare(item.daysUntil)}`
-            : `🌿 ${formatRelativeCare(item.daysUntil)}`;
-        map.set(item.plant.id, label);
+        const prefix = item.type === 'water' ? '💧' : '🌿';
+        const colorKey =
+          item.daysUntil < 0 ? 'late' : item.daysUntil === 0 ? 'today' : 'ok';
+        const width: `${number}%` =
+          item.daysUntil < 0
+            ? '100%'
+            : item.daysUntil === 0
+              ? '95%'
+              : (`${Math.max(20, 100 - item.daysUntil * 8)}%` as `${number}%`);
+        map.set(item.plant.id, {
+          label: `${prefix} ${formatRelativeCare(item.daysUntil)}`,
+          colorKey,
+          width,
+        });
       }
     }
     return map;
@@ -68,18 +80,18 @@ export default function MyPlantsScreen() {
           }}
           style={({ pressed }) => [
             styles.addBtn,
-            { backgroundColor: c.tint, opacity: pressed ? 0.85 : 1 },
+            { backgroundColor: c.growth, opacity: pressed ? 0.85 : 1 },
           ]}
         >
-          <Text style={styles.addBtnText}>＋</Text>
+          <Text style={[styles.addBtnText, { color: c.growthInk }]}>＋</Text>
         </Pressable>
       </View>
 
       {plants.length === 0 ? (
         <EmptyState
           emoji="🌿"
-          title="Your garden is empty"
-          body="Add your first plant with a photo. Track care, growth, and quiet progress over time."
+          title="Your glasshouse is quiet"
+          body="Add a plant with a portrait. Care logs and progress photos will live here."
         />
       ) : (
         <FlatList
@@ -89,11 +101,25 @@ export default function MyPlantsScreen() {
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <View style={styles.cardWrap}>
-              <PlantCard plant={item} subtitle={dueMap.get(item.id)} />
-            </View>
-          )}
+          renderItem={({ item }) => {
+            const due = dueMap.get(item.id);
+            const filamentColor =
+              due?.colorKey === 'late'
+                ? c.danger
+                : due?.colorKey === 'today'
+                  ? c.growth
+                  : c.tint;
+            return (
+              <View style={styles.cardWrap}>
+                <PlantCard
+                  plant={item}
+                  subtitle={due?.label}
+                  filamentColor={filamentColor}
+                  filamentWidth={due?.width ?? '60%'}
+                />
+              </View>
+            );
+          }}
           ListFooterComponent={
             !canAddPlant ? (
               <Link href="/(tabs)/settings" asChild>
@@ -119,10 +145,12 @@ export default function MyPlantsScreen() {
             onPress={() => router.push('/plant/add')}
             style={({ pressed }) => [
               styles.cta,
-              { backgroundColor: c.tint, opacity: pressed ? 0.9 : 1 },
+              { backgroundColor: c.growth, opacity: pressed ? 0.9 : 1 },
             ]}
           >
-            <Text style={styles.ctaText}>Add your first plant</Text>
+            <Text style={[styles.ctaText, { color: c.growthInk }]}>
+              Add your first plant
+            </Text>
           </Pressable>
         </View>
       ) : null}
@@ -141,15 +169,15 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   kicker: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '600',
-    letterSpacing: 1.2,
+    letterSpacing: 1.6,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: -0.8,
   },
   subtitle: {
@@ -164,7 +192,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addBtnText: {
-    color: '#F7F4EE',
     fontSize: 28,
     marginTop: -2,
   },
@@ -189,7 +216,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ctaText: {
-    color: '#F7F4EE',
     fontSize: 16,
     fontWeight: '600',
   },

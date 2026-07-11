@@ -67,43 +67,30 @@ export default function SettingsScreen() {
           style={[
             styles.card,
             {
-              backgroundColor: settings.isPremium ? c.tint : c.surface,
-              borderColor: settings.isPremium ? c.tint : c.border,
+              backgroundColor: settings.isPremium ? c.night : c.night,
+              borderColor: settings.isPremium ? c.night : c.night,
             },
           ]}
         >
-          <Text
-            style={[
-              styles.cardTitle,
-              { color: settings.isPremium ? Colors.light.background : c.text },
-            ]}
-          >
+          <Text style={[styles.cardTitle, { color: c.growth }]}>
             {settings.isPremium ? 'Premium active' : 'Verdant Premium'}
           </Text>
           <Text
             style={[
               styles.cardBody,
               {
-                color: settings.isPremium
-                  ? 'rgba(247,244,238,0.9)'
-                  : c.textMuted,
+                color: 'rgba(232,239,233,0.75)',
                 marginBottom: 14,
               },
             ]}
           >
-            Unlimited plants, detailed history & stats, advanced care guides, and family sharing
-            (coming soon). Billing integration ships in a later release — toggle unlocks the UI
-            for demos.
+            Unlimited plants, deep history, care guides, and family sharing. Billing ships later —
+            this toggle unlocks the UI for demos.
           </Text>
           <PrimaryButton
-            label={settings.isPremium ? 'Revert to Free (demo)' : 'Unlock Premium (demo)'}
-            variant={settings.isPremium ? 'secondary' : 'primary'}
+            label={settings.isPremium ? 'Revert to Free (demo)' : 'Unlock Premium'}
+            variant="primary"
             onPress={() => setPremium(!settings.isPremium)}
-            style={
-              settings.isPremium
-                ? { backgroundColor: Colors.light.background }
-                : { backgroundColor: c.tintDark }
-            }
           />
         </View>
 

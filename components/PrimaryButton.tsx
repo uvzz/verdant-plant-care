@@ -24,14 +24,18 @@ export function PrimaryButton({
 
   const bg =
     variant === 'primary'
-      ? c.tint
+      ? c.growth
       : variant === 'secondary'
-        ? c.surfaceAlt
+        ? c.surface
         : variant === 'danger'
           ? c.danger
           : 'transparent';
   const fg =
-    variant === 'primary' || variant === 'danger' ? Colors.light.background : c.text;
+    variant === 'primary'
+      ? c.growthInk
+      : variant === 'danger'
+        ? '#FFFFFF'
+        : c.text;
   const border =
     variant === 'ghost' || variant === 'secondary' ? c.border : 'transparent';
 
@@ -60,7 +64,7 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   btn: {
-    minHeight: 50,
+    minHeight: 52,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
