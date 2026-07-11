@@ -31,6 +31,12 @@ That script bumps versions, prepends a CHANGELOG entry, commits, tags, and pushe
 
 ---
 
+## [0.4.0] - 2026-07-11
+
+### Notes
+
+- Premium AI via server proxy; OpenRouter key stays server-side only
+
 ## [0.3.0] - 2026-07-11
 
 ### Notes
@@ -41,12 +47,11 @@ That script bumps versions, prepends a CHANGELOG entry, commits, tags, and pushe
 
 ### Changed
 
-- OpenRouter API key can seed from gitignored `.env` (`EXPO_PUBLIC_OPENROUTER_API_KEY`) into Secure Store on first use
 - Documented release process and introduced changelog + version bump tooling
 
 ### Security
 
-- Secrets stay in gitignored `.env`; never commit API keys
+- Secrets stay in gitignored env files; never commit API keys
 
 ---
 
