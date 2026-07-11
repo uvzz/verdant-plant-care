@@ -10,6 +10,7 @@ import { FREE_PLANT_LIMIT } from '@/constants/Colors';
 import { persistPhoto } from './photos';
 import {
   createId,
+  DEFAULT_SETTINGS,
   loadCareLogs,
   loadPlants,
   loadSettings,
@@ -18,7 +19,6 @@ import {
   saveSettings,
 } from './storage';
 import type { AppSettings, CareLog, CareLogType, Plant } from './types';
-import { FREE_AI_USES_PER_MONTH } from './types';
 
 interface PlantContextValue {
   plants: Plant[];
@@ -43,7 +43,7 @@ interface PlantContextValue {
   deleteCareLog: (id: string) => Promise<void>;
   setPremium: (value: boolean) => Promise<void>;
   setNotificationsEnabled: (value: boolean) => Promise<void>;
-  /** Consume one free AI use (premium unlimited). Returns false if blocked. */
+  /** Premium gate for AI. Returns false if not Premium. */
   consumeAiUse: () => Promise<{ ok: true } | { ok: false; reason: string }>;
   getPlant: (id: string) => Plant | undefined;
   refresh: () => Promise<void>;
@@ -54,12 +54,7 @@ const PlantContext = createContext<PlantContextValue | null>(null);
 export function PlantProvider({ children }: { children: React.ReactNode }) {
   const [plants, setPlants] = useState<Plant[]>([]);
   const [logs, setLogs] = useState<CareLog[]>([]);
-  const [settings, setSettings] = useState<AppSettings>({
-    isPremium: false,
-    notificationsEnabled: true,
-    aiFreeUsesRemaining: FREE_AI_USES_PER_MONTH,
-    aiQuotaMonth: '',
-  });
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -83,10 +78,11 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const canAddPlant = settings.isPremium || plants.length < FREE_PLANT_LIMIT;
-  const canUseAi = settings.isPremium || settings.aiFreeUsesRemaining > 0;
+  /** AI is Premium-only; OpenRouter key lives on the server, never on-device. */
+  const canUseAi = settings.isPremium;
   const aiUsesLeft: number | 'unlimited' = settings.isPremium
     ? 'unlimited'
-    : settings.aiFreeUsesRemaining;
+    : 0;
 
   const addPlant = useCallback(
     async (input: Omit<Plant, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -194,21 +190,15 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   );
 
   const consumeAiUse = useCallback(async () => {
-    if (settings.isPremium) return { ok: true as const };
-    if (settings.aiFreeUsesRemaining <= 0) {
+    if (!settings.isPremium) {
       return {
         ok: false as const,
-        reason: `Free plan includes ${FREE_AI_USES_PER_MONTH} AI assists per month. Upgrade to Premium for unlimited AI, or wait until next month.`,
+        reason:
+          'AI assist is a Premium feature. Unlock Premium to use plant identify, care guides, and the coach.',
       };
     }
-    const next = {
-      ...settings,
-      aiFreeUsesRemaining: settings.aiFreeUsesRemaining - 1,
-    };
-    setSettings(next);
-    await saveSettings(next);
     return { ok: true as const };
-  }, [settings]);
+  }, [settings.isPremium]);
 
   const getPlant = useCallback(
     (id: string) => plants.find((p) => p.id === id),

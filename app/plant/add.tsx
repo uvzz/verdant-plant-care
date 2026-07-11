@@ -32,7 +32,7 @@ export default function AddPlantScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const router = useRouter();
-  const { addPlant, canAddPlant, consumeAiUse, aiUsesLeft, canUseAi } = usePlants();
+  const { addPlant, canAddPlant, consumeAiUse, canUseAi } = usePlants();
 
   const [name, setName] = useState('');
   const [species, setSpecies] = useState('');
@@ -90,7 +90,10 @@ export default function AddPlantScreen() {
       return;
     }
     if (!canUseAi) {
-      Alert.alert('AI limit reached', 'Upgrade to Premium for unlimited AI assists.');
+      Alert.alert(
+        'Premium required',
+        'AI plant identify is a Premium feature. Unlock Premium in Settings.'
+      );
       return;
     }
     setIdentifying(true);
@@ -201,7 +204,9 @@ export default function AddPlantScreen() {
           label={
             identifying
               ? 'Identifying…'
-              : `✨ AI identify plant${aiUsesLeft === 'unlimited' ? '' : ` (${aiUsesLeft} left)`}`
+              : canUseAi
+                ? '✨ AI identify plant (Premium)'
+                : '✨ AI identify (Premium only)'
           }
           variant="secondary"
           onPress={onIdentify}
@@ -213,7 +218,8 @@ export default function AddPlantScreen() {
           <Text style={[Type.meta, { color: c.tint, marginBottom: 12 }]}>{aiHint}</Text>
         ) : (
           <Text style={[Type.meta, { color: c.textMuted, marginBottom: 12 }]}>
-            AI fills name, species, category, and intervals from your photo. Assistive only.
+            Premium: AI fills name, species, category, and intervals from your photo. Key stays
+            on Verdant’s servers.
           </Text>
         )}
 

@@ -1,13 +1,4 @@
-import { useEffect, useState } from 'react';
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Colors, { APP_NAME, APP_VERSION, FREE_PLANT_LIMIT } from '@/constants/Colors';
@@ -16,8 +7,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ensureNotificationPermissions } from '@/lib/notifications';
 import { usePlants } from '@/lib/PlantContext';
-import { clearOpenRouterKey, getOpenRouterKey, setOpenRouterKey } from '@/lib/secrets';
-import { FREE_AI_USES_PER_MONTH } from '@/lib/types';
+import { getAiProxyUrl } from '@/lib/aiConfig';
 
 type Benefit = {
   label: string;
@@ -35,20 +25,20 @@ const BENEFITS: Benefit[] = [
   },
   {
     label: 'AI plant identify',
-    free: `${FREE_AI_USES_PER_MONTH}/mo shared`,
-    premium: 'Unlimited',
+    free: '—',
+    premium: 'Included (server AI)',
     live: true,
   },
   {
     label: 'AI care guide & coach',
-    free: `${FREE_AI_USES_PER_MONTH}/mo shared`,
-    premium: 'Unlimited',
+    free: '—',
+    premium: 'Included (server AI)',
     live: true,
   },
   {
-    label: 'Collection insights & stats',
-    free: 'Included',
-    premium: 'Included + AI insight',
+    label: 'Collection insights + AI',
+    free: 'Stats only',
+    premium: 'Stats + AI insight',
     live: true,
   },
   {
@@ -75,48 +65,9 @@ export default function SettingsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const insets = useSafeAreaInsets();
-  const { plants, settings, setPremium, setNotificationsEnabled, aiUsesLeft } =
-    usePlants();
+  const { plants, settings, setPremium, setNotificationsEnabled } = usePlants();
   const isPremium = settings.isPremium;
-
-  const [apiKey, setApiKey] = useState('');
-  const [hasKey, setHasKey] = useState(false);
-  const [keySaving, setKeySaving] = useState(false);
-
-  useEffect(() => {
-    getOpenRouterKey().then((k) => {
-      setHasKey(!!k);
-      // Don't prefill full secret; leave empty for re-entry
-      setApiKey('');
-    });
-  }, []);
-
-  const saveKey = async () => {
-    setKeySaving(true);
-    try {
-      await setOpenRouterKey(apiKey);
-      const k = await getOpenRouterKey();
-      setHasKey(!!k);
-      setApiKey('');
-      Alert.alert(
-        k ? 'API key saved' : 'API key cleared',
-        k
-          ? 'Stored securely on this device. AI identify, guides, and coach are ready.'
-          : 'OpenRouter key removed.'
-      );
-    } catch (e) {
-      Alert.alert('Could not save key', e instanceof Error ? e.message : 'Unknown error');
-    } finally {
-      setKeySaving(false);
-    }
-  };
-
-  const clearKey = async () => {
-    await clearOpenRouterKey();
-    setHasKey(false);
-    setApiKey('');
-    Alert.alert('API key removed');
-  };
+  const aiUrl = getAiProxyUrl();
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
@@ -134,54 +85,16 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        {/* AI / OpenRouter */}
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <Text style={[Type.title, { color: c.text }]}>AI assistant (OpenRouter)</Text>
+          <Text style={[Type.title, { color: c.text }]}>AI assistant</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
-            Status: {hasKey ? 'Key on device' : 'No key yet'} · AI left this month:{' '}
-            {aiUsesLeft === 'unlimited' ? 'Unlimited' : aiUsesLeft}
+            Plant identify, care guides, and the coach run on Verdant’s servers for{' '}
+            <Text style={{ fontFamily: Fonts.bodySemi, color: c.text }}>Premium</Text> members
+            only. The OpenRouter API key never lives on your phone.
           </Text>
-          <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 6 }]}>
-            Paste your OpenRouter API key (sk-or-…). Used for plant identify, care guides, and
-            coach. Stored in the device keychain — not uploaded to Verdant servers.
-          </Text>
-          <TextInput
-            value={apiKey}
-            onChangeText={setApiKey}
-            placeholder={hasKey ? 'Enter new key to replace…' : 'sk-or-v1-…'}
-            placeholderTextColor={c.textMuted}
-            autoCapitalize="none"
-            autoCorrect={false}
-            secureTextEntry
-            style={[
-              styles.keyInput,
-              {
-                color: c.text,
-                backgroundColor: c.surfaceAlt,
-                borderColor: c.border,
-                fontFamily: Fonts.body,
-              },
-            ]}
-          />
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <PrimaryButton
-              label={keySaving ? 'Saving…' : 'Save key'}
-              onPress={saveKey}
-              loading={keySaving}
-              style={{ flex: 1 }}
-            />
-            {hasKey ? (
-              <PrimaryButton
-                label="Clear"
-                variant="secondary"
-                onPress={clearKey}
-                style={{ flex: 0.6 }}
-              />
-            ) : null}
-          </View>
           <Text style={[Type.meta, { color: c.textMuted, marginTop: 10 }]}>
-            Get a key at openrouter.ai · Free: {FREE_AI_USES_PER_MONTH} AI uses/month · Premium:
-            unlimited
+            Status: {isPremium ? 'Premium · AI unlocked' : 'Free · upgrade for AI'}
+            {'\n'}Endpoint: {aiUrl}
           </Text>
         </View>
 
@@ -225,7 +138,7 @@ export default function SettingsScreen() {
               { color: 'rgba(232,239,233,0.7)', marginTop: 6, marginBottom: 16 },
             ]}
           >
-            Free is for a small collection with limited AI. Premium removes caps.
+            Free is a small local journal. Premium adds unlimited plants and server-side AI.
           </Text>
 
           <View style={styles.compareHeader}>
@@ -278,7 +191,7 @@ export default function SettingsScreen() {
           ))}
 
           <PrimaryButton
-            label={isPremium ? 'Switch to Free (demo)' : 'Try Premium (demo)'}
+            label={isPremium ? 'Switch to Free (demo)' : 'Unlock Premium (demo)'}
             onPress={() => setPremium(!isPremium)}
             style={{ marginTop: 16 }}
           />
@@ -296,7 +209,8 @@ export default function SettingsScreen() {
           <Text style={[Type.title, { color: c.text }]}>About</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
             {APP_NAME} v{APP_VERSION}{'\n'}
-            Photos stay on device. AI calls go to OpenRouter with your key.
+            Photos stay on device. Premium AI runs via Verdant’s edge API (OpenRouter key
+            server-side only).
           </Text>
         </View>
       </ScrollView>
@@ -314,15 +228,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  keyInput: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 44,
-    marginTop: 12,
-    marginBottom: 10,
-    fontSize: 14,
-  },
   compareHeader: {
     flexDirection: 'row',
     alignItems: 'center',

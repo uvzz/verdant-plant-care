@@ -1,10 +1,8 @@
+import { getAiProxyUrl, getPremiumAccessToken } from './aiConfig';
 import { photoToBase64 } from './photos';
-import { getOpenRouterKey } from './secrets';
 import type { CareLog, Plant, PlantCategory } from './types';
 import { PLANT_CATEGORIES } from './types';
 
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-/** Multimodal-capable model on OpenRouter */
 const VISION_MODEL = 'openai/gpt-4o-mini';
 const TEXT_MODEL = 'openai/gpt-4o-mini';
 
@@ -36,24 +34,27 @@ export type CareCoachResult = {
   disclaimer: string;
 };
 
+/**
+ * Chat via server proxy. OpenRouter key never leaves the server.
+ * Caller must ensure Premium entitlement on the client.
+ */
 async function chat(
   messages: Array<Record<string, unknown>>,
   opts?: { model?: string; json?: boolean }
 ): Promise<string> {
-  const key = await getOpenRouterKey();
-  if (!key) {
+  const token = getPremiumAccessToken();
+  if (!token) {
     throw new Error(
-      'Add your OpenRouter API key in Settings → AI assistant to use this feature.'
+      'AI is not configured. Set EXPO_PUBLIC_VERDANT_AI_URL and EXPO_PUBLIC_VERDANT_PREMIUM_TOKEN for this build.'
     );
   }
 
-  const res = await fetch(OPENROUTER_URL, {
+  const base = getAiProxyUrl();
+  const res = await fetch(`${base}/v1/chat`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${key}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://github.com/uvzz/verdant-plant-care',
-      'X-Title': 'Verdant Plant Care',
     },
     body: JSON.stringify({
       model: opts?.model ?? TEXT_MODEL,
@@ -65,18 +66,20 @@ async function chat(
 
   if (!res.ok) {
     const body = await res.text().catch(() => '');
+    if (res.status === 403) {
+      throw new Error('AI is for Premium members only.');
+    }
     if (res.status === 401) {
-      throw new Error('OpenRouter rejected the API key. Check it in Settings.');
+      throw new Error('Premium access was rejected. Check server configuration.');
     }
-    if (res.status === 402) {
-      throw new Error('OpenRouter account needs credits. Add credits and try again.');
-    }
-    throw new Error(`OpenRouter error (${res.status}): ${body.slice(0, 200)}`);
+    throw new Error(`AI service error (${res.status}): ${body.slice(0, 200)}`);
   }
 
   const data = (await res.json()) as {
     choices?: Array<{ message?: { content?: string } }>;
+    error?: string;
   };
+  if (data.error) throw new Error(data.error);
   const content = data.choices?.[0]?.message?.content?.trim();
   if (!content) throw new Error('Empty response from AI.');
   return content;
@@ -105,7 +108,7 @@ function normalizeCategory(raw: string): PlantCategory {
   return map[raw.toLowerCase().trim()] ?? 'Other';
 }
 
-/** Identify plant from a photo (vision) */
+/** Identify plant from a photo (vision) — Premium only */
 export async function identifyPlantFromPhoto(
   photoUri: string
 ): Promise<PlantIdResult> {
@@ -159,8 +162,7 @@ This is educational assistance, not a definitive botanical identification.`;
     commonName: parsed.commonName?.trim() || 'Mystery plant',
     scientificName: parsed.scientificName?.trim() || '',
     category: normalizeCategory(parsed.category || 'Other'),
-    confidence:
-      conf === 'high' || conf === 'low' ? conf : 'medium',
+    confidence: conf === 'high' || conf === 'low' ? conf : 'medium',
     careSummary: parsed.careSummary?.trim() || '',
     waterIntervalDays: Math.max(1, Number(parsed.waterIntervalDays) || 7),
     fertilizeIntervalDays: Math.max(1, Number(parsed.fertilizeIntervalDays) || 30),
@@ -168,7 +170,6 @@ This is educational assistance, not a definitive botanical identification.`;
   };
 }
 
-/** Species care guide (text) */
 export async function generateCareGuide(
   plant: Pick<Plant, 'name' | 'species' | 'category' | 'notes'>
 ): Promise<CareGuideResult> {
@@ -198,16 +199,13 @@ Notes: ${plant.notes || 'none'}`,
     water: parsed.water?.trim() || 'Water when the top of the medium feels dry.',
     humidity: parsed.humidity?.trim() || 'Average indoor humidity is often fine.',
     soil: parsed.soil?.trim() || 'Use a well-draining mix suited to the plant type.',
-    tips: Array.isArray(parsed.tips)
-      ? parsed.tips.map(String).slice(0, 5)
-      : [],
+    tips: Array.isArray(parsed.tips) ? parsed.tips.map(String).slice(0, 5) : [],
     disclaimer:
       parsed.disclaimer?.trim() ||
       'AI-assisted tips for education only — observe your plant and adjust to your home.',
   };
 }
 
-/** Care coach from plant + recent logs (+ optional photo) */
 export async function askCareCoach(input: {
   plant: Plant;
   logs: CareLog[];
@@ -262,10 +260,25 @@ Question: ${input.question || 'How is this plant doing and what should I do next
     recommendations: Array.isArray(parsed.recommendations)
       ? parsed.recommendations.map(String).slice(0, 5)
       : [],
-    urgency:
-      u === 'none' || u === 'soon' || u === 'urgent' ? u : 'watch',
+    urgency: u === 'none' || u === 'soon' || u === 'urgent' ? u : 'watch',
     disclaimer:
       parsed.disclaimer?.trim() ||
       'AI assistance only — if the plant declines quickly, consult a local grower or extension service.',
   };
+}
+
+/** Collection insight via premium proxy */
+export async function generateCollectionInsight(statsJson: string): Promise<string> {
+  const raw = await chat(
+    [
+      {
+        role: 'system',
+        content:
+          "You are Verdant, a calm plant-collection coach. Give a short (3–6 sentences) encouraging insight about the user's collection stats. No markdown headings. Educational only.",
+      },
+      { role: 'user', content: `Collection stats JSON: ${statsJson}` },
+    ],
+    { model: TEXT_MODEL }
+  );
+  return raw;
 }

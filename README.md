@@ -4,98 +4,71 @@
 
 Photo-first, multi-niche plant care tracker for **iOS** and **Android**, built with **Expo (React Native)**.
 
-Calm, premium presentation for houseplants, orchids, succulents, ferns, herbs, and more — with care logs, visual progress galleries, and gentle reminders.
+## Features (v0.3+)
 
-## Features (MVP v0.2)
+- Add / edit plant with durable photos, date picker, search & category filters
+- Care log + progress gallery + fullscreen photos
+- Care calendar & local reminders
+- **Insights** tab (stats + Premium AI collection insight)
+- **Premium AI** (server-side OpenRouter): identify, care guide, coach
+- Freemium: free up to 5 plants; Premium unlimited plants + AI
 
-- **Add / edit plant** with durable photo storage, species, category, date picker, location, intervals
-- **Care log** — watered, fertilized, notes, photos; long-press to delete entries
-- **Plant detail** — hero photo, due dates, log + progress gallery
-- **AI assist (OpenRouter)** — plant identify from photo, species care guide, care coach
-- **Care calendar** — overdue / today / upcoming, taps through to log care
-- **Gentle notifications** — local reminders for due care
-- **Freemium** — free up to 5 plants + 5 AI uses/month; Premium unlimited (demo toggle)
+## Architecture: AI (Premium only)
 
-## OpenRouter AI setup
+```
+App (Premium)  →  Cloudflare Worker (verdant-ai)  →  OpenRouter
+                      ↑ OPENROUTER_API_KEY secret (never in the app)
+```
 
-1. Create a key at [openrouter.ai](https://openrouter.ai)
-2. Run the app → **Settings → AI assistant**
-3. Paste the key (`sk-or-v1-…`) and tap **Save key**
+- Users **do not** enter an API key.
+- OpenRouter key lives **only** on the Worker (`.dev.vars` locally / `wrangler secret` in prod).
+- Free users see AI entry points but must unlock Premium.
 
-The key is stored in the device keychain (Secure Store). AI requests go to OpenRouter with your key; plant photos are base64-encoded only for that API call.
+### Local AI server
 
-## Platforms
+```bash
+# Terminal 1 — Worker (loads workers/verdant-ai/.dev.vars)
+npm run ai:dev
 
-| Platform | How to run |
-| -------- | ---------- |
-| iOS | `npm run ios` (simulator or device via Expo Go / dev build) |
-| Android | `npm run android` (emulator or device via Expo Go / dev build) |
-| Web | `npm run web` (preview only; camera/notifications limited) |
+# Terminal 2 — Expo app
+# .env must include:
+# EXPO_PUBLIC_VERDANT_AI_URL=http://127.0.0.1:8787
+# EXPO_PUBLIC_VERDANT_PREMIUM_TOKEN=<same as Worker PREMIUM_ACCESS_TOKEN>
+npm run ios
+```
+
+### Deploy Worker
+
+```bash
+cd workers/verdant-ai
+npx wrangler login   # once
+npx wrangler secret put OPENROUTER_API_KEY
+npx wrangler secret put PREMIUM_ACCESS_TOKEN
+npm run deploy
+# Production URL: https://verdant-ai.nebulatv.workers.dev
+# Set EXPO_PUBLIC_VERDANT_AI_URL to that URL in the app `.env` / EAS secrets.
+```
 
 ## Quick start
 
 ```bash
 cd verdant-plant-care
 npm install
+cp .env.example .env   # fill AI URL + premium token
+npm run ai:dev         # separate terminal
 npm start
 ```
 
-Then press `i` for iOS simulator, `a` for Android emulator, or scan the QR code with **Expo Go** on a physical phone.
-
-### Production builds (stores)
-
-```bash
-# Install EAS CLI once
-npm i -g eas-cli
-
-# Configure (requires Expo account)
-eas build:configure
-
-# Native binaries
-eas build --platform ios
-eas build --platform android
-```
-
-## Project structure
-
-```
-app/
-  (tabs)/          # My Plants, Care calendar, Settings
-  plant/           # Add, detail, log care
-components/        # UI building blocks
-constants/         # Theme + limits
-lib/               # Types, storage, care math, context, notifications
-```
-
-## Data
-
-Local-first on device via AsyncStorage. No cloud account required for MVP.
-
 ## Versioning & changelog
 
-**After every big change:** bump version, update notes, commit, tag, and push.
+After every big change:
 
 ```bash
-# patch 0.2.1 → 0.2.2
-npm run release -- patch "Short description of what changed"
-
-# minor 0.2.x → 0.3.0
-npm run release -- minor "New feature summary"
-
-# major → 1.0.0
-npm run release -- major "Breaking or 1.0 ship"
-
-# exact version
-npm run release -- 0.3.0 "Named release notes"
+npm run release -- patch "Short description"
+npm run release -- minor "Feature summary"
 ```
 
-This updates `package.json`, `app.json`, `APP_VERSION`, **`CHANGELOG.md`**, creates git tag `vX.Y.Z`, and pushes to GitHub.
-
-- Human-readable history: [`CHANGELOG.md`](./CHANGELOG.md)
-- Semantic versioning: MAJOR.MINOR.PATCH
-- Notion (optional ops): Project Hub + Version Logs
-
-`SKIP_PUSH=1 npm run release -- patch "…"` commits/tags locally only.
+See [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## License
 

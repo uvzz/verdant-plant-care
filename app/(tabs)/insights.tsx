@@ -16,13 +16,13 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { EmptyState } from '@/components/EmptyState';
 import { computeCollectionStats } from '@/lib/stats';
 import { usePlants } from '@/lib/PlantContext';
-import { getOpenRouterKey } from '@/lib/secrets';
+import { generateCollectionInsight } from '@/lib/openrouter';
 
 export default function InsightsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const insets = useSafeAreaInsets();
-  const { plants, logs, settings, consumeAiUse, canUseAi, aiUsesLeft } = usePlants();
+  const { plants, logs, settings, consumeAiUse, canUseAi } = usePlants();
   const stats = useMemo(() => computeCollectionStats(plants, logs), [plants, logs]);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,64 +35,34 @@ export default function InsightsScreen() {
       return;
     }
     if (!canUseAi) {
-      Alert.alert('AI limit reached', 'Upgrade to Premium for unlimited AI assists.');
-      return;
-    }
-    const key = await getOpenRouterKey();
-    if (!key) {
-      Alert.alert('API key needed', 'Add your OpenRouter key in Settings → AI assistant.');
+      Alert.alert(
+        'Premium required',
+        'AI collection insights are included with Premium. Unlock Premium in Settings.'
+      );
       return;
     }
     setLoading(true);
     try {
       const quota = await consumeAiUse();
       if (!quota.ok) {
-        Alert.alert('AI limit', quota.reason);
+        Alert.alert('Premium required', quota.reason);
         return;
       }
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${key}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://github.com/uvzz/verdant-plant-care',
-          'X-Title': 'Verdant Plant Care',
-        },
-        body: JSON.stringify({
-          model: 'openai/gpt-4o-mini',
-          temperature: 0.5,
-          messages: [
-            {
-              role: 'system',
-              content:
-                'You are Verdant, a calm plant-collection coach. Give a short (3–6 sentences) encouraging insight about the user\'s collection stats. No markdown headings. Educational only.',
-            },
-            {
-              role: 'user',
-              content: `Collection stats JSON: ${JSON.stringify({
-                plants: stats.plantCount,
-                totalLogs: stats.totalLogs,
-                waters: stats.waters,
-                fertilizes: stats.fertilizes,
-                overdue: stats.overdueCount,
-                dueToday: stats.dueTodayCount,
-                streakDays: stats.careStreakDays,
-                last7Days: stats.logsLast7Days,
-                categories: stats.categoryBreakdown,
-                mostActive: stats.mostActivePlant,
-              })}`,
-            },
-          ],
-        }),
-      });
-      if (!res.ok) {
-        const t = await res.text();
-        throw new Error(`OpenRouter ${res.status}: ${t.slice(0, 160)}`);
-      }
-      const data = (await res.json()) as {
-        choices?: Array<{ message?: { content?: string } }>;
-      };
-      setAiSummary(data.choices?.[0]?.message?.content?.trim() || 'No insight returned.');
+      const text = await generateCollectionInsight(
+        JSON.stringify({
+          plants: stats.plantCount,
+          totalLogs: stats.totalLogs,
+          waters: stats.waters,
+          fertilizes: stats.fertilizes,
+          overdue: stats.overdueCount,
+          dueToday: stats.dueTodayCount,
+          streakDays: stats.careStreakDays,
+          last7Days: stats.logsLast7Days,
+          categories: stats.categoryBreakdown,
+          mostActive: stats.mostActivePlant,
+        })
+      );
+      setAiSummary(text);
     } catch (e) {
       Alert.alert('Insight failed', e instanceof Error ? e.message : 'Unknown error');
     } finally {
@@ -107,7 +77,9 @@ export default function InsightsScreen() {
         <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>Insights</Text>
         <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 6 }]}>
           Care history and AI collection coaching.
-          {settings.isPremium ? ' Premium · unlimited AI.' : ` AI left: ${aiUsesLeft}.`}
+          {settings.isPremium
+            ? ' Premium · server AI unlocked.'
+            : ' Free · AI requires Premium.'}
         </Text>
       </View>
 

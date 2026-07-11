@@ -54,7 +54,6 @@ export default function PlantDetailScreen() {
     updatePlant,
     consumeAiUse,
     canUseAi,
-    aiUsesLeft,
   } = usePlants();
   const plant = getPlant(id);
   const [tab, setTab] = useState<'log' | 'gallery' | 'ai'>('log');
@@ -160,7 +159,10 @@ export default function PlantDetailScreen() {
 
   const ensureAiQuota = async () => {
     if (!canUseAi) {
-      Alert.alert('AI limit reached', 'Upgrade to Premium for unlimited AI assists.');
+      Alert.alert(
+        'Premium required',
+        'AI assist is included with Premium. Unlock Premium in Settings.'
+      );
       return false;
     }
     const quota = await consumeAiUse();
@@ -407,8 +409,9 @@ export default function PlantDetailScreen() {
           {tab === 'ai' ? (
             <View style={{ gap: 12, marginTop: 8 }}>
               <Text style={[Type.meta, { color: c.textMuted }]}>
-                AI left: {aiUsesLeft === 'unlimited' ? 'Unlimited (Premium)' : aiUsesLeft} ·
-                Educational only
+                {canUseAi
+                  ? 'Premium AI · requests go to Verdant servers (key not on device)'
+                  : 'Premium required for AI · educational only'}
               </Text>
 
               <View style={[styles.aiCard, { backgroundColor: c.surface, borderColor: c.border }]}>
