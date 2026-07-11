@@ -83,17 +83,11 @@ export default function AddPlantScreen() {
   };
 
   const takePhoto = async () => {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert('Permission needed', 'Allow camera access to photograph your plant.');
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      quality: 0.85,
-      allowsEditing: true,
-      aspect: [1, 1],
-    });
-    if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
+    const { requestCameraCapture } = await import('@/lib/cameraBridge');
+    const pending = requestCameraCapture();
+    router.push('/camera');
+    const uri = await pending;
+    if (uri) setPhotoUri(uri);
   };
 
   const onIdentify = async () => {

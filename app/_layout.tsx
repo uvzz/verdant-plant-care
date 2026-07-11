@@ -139,6 +139,15 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen
+          name="camera"
+          options={{
+            headerShown: false,
+            presentation: 'fullScreenModal',
+            animation: 'fade',
+            gestureEnabled: true,
+          }}
+        />
+        <Stack.Screen
           name="legal/privacy"
           options={{
             title: 'Privacy policy',

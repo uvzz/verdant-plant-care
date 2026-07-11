@@ -104,6 +104,14 @@ export default function EditPlantScreen() {
     if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
   };
 
+  const takePhoto = async () => {
+    const { requestCameraCapture } = await import('@/lib/cameraBridge');
+    const pending = requestCameraCapture();
+    router.push('/camera');
+    const uri = await pending;
+    if (uri) setPhotoUri(uri);
+  };
+
   const onSave = async () => {
     if (!name.trim()) {
       Alert.alert('Name required', 'Give your plant a name.');
@@ -162,7 +170,10 @@ export default function EditPlantScreen() {
             </View>
           )}
         </Pressable>
-        <PrimaryButton label="Change photo" variant="secondary" onPress={pickPhoto} style={{ marginBottom: 12 }} />
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+          <PrimaryButton label="Library" variant="secondary" onPress={pickPhoto} style={{ flex: 1 }} />
+          <PrimaryButton label="Camera" variant="secondary" onPress={takePhoto} style={{ flex: 1 }} />
+        </View>
 
         <Field label="Name" color={c.textMuted}>
           <TextInput value={name} onChangeText={setName} style={inputStyle} />
