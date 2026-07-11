@@ -1,0 +1,320 @@
+import React, { useMemo, useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
+import { format } from 'date-fns';
+
+import Colors from '@/constants/Colors';
+import { useColorScheme } from '@/components/useColorScheme';
+import { PrimaryButton } from '@/components/PrimaryButton';
+import { usePlants } from '@/lib/PlantContext';
+import {
+  DEFAULT_INTERVALS,
+  PLANT_CATEGORIES,
+  type PlantCategory,
+} from '@/lib/types';
+
+export default function AddPlantScreen() {
+  const scheme = useColorScheme() ?? 'light';
+  const c = Colors[scheme];
+  const router = useRouter();
+  const { addPlant, canAddPlant } = usePlants();
+
+  const [name, setName] = useState('');
+  const [species, setSpecies] = useState('');
+  const [category, setCategory] = useState<PlantCategory>('Houseplant');
+  const [location, setLocation] = useState('');
+  const [acquiredDate, setAcquiredDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [notes, setNotes] = useState('');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const intervals = useMemo(() => DEFAULT_INTERVALS[category], [category]);
+  const [waterDays, setWaterDays] = useState(String(intervals.water));
+  const [fertDays, setFertDays] = useState(String(intervals.fertilize));
+
+  const onCategory = (cat: PlantCategory) => {
+    setCategory(cat);
+    setWaterDays(String(DEFAULT_INTERVALS[cat].water));
+    setFertDays(String(DEFAULT_INTERVALS[cat].fertilize));
+  };
+
+  const pickPhoto = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission needed', 'Allow photo library access to add a plant photo.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (!result.canceled && result.assets[0]) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission needed', 'Allow camera access to photograph your plant.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.85,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (!result.canceled && result.assets[0]) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  };
+
+  const onSave = async () => {
+    if (!canAddPlant) {
+      Alert.alert('Plant limit', 'Upgrade to Premium for unlimited plants.');
+      return;
+    }
+    if (!name.trim()) {
+      Alert.alert('Name required', 'Give your plant a name.');
+      return;
+    }
+    setSaving(true);
+    const result = await addPlant({
+      name: name.trim(),
+      species: species.trim(),
+      category,
+      photoUri,
+      acquiredDate: acquiredDate.trim() || format(new Date(), 'yyyy-MM-dd'),
+      location: location.trim(),
+      waterIntervalDays: Math.max(1, parseInt(waterDays, 10) || intervals.water),
+      fertilizeIntervalDays: Math.max(1, parseInt(fertDays, 10) || intervals.fertilize),
+      notes: notes.trim(),
+    });
+    setSaving(false);
+    if (!result.ok) {
+      Alert.alert('Could not add plant', result.reason);
+      return;
+    }
+    router.replace(`/plant/${result.plant.id}`);
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={[styles.flex, { backgroundColor: c.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <Pressable onPress={pickPhoto} style={[styles.photo, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}>
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={styles.photoImg} contentFit="cover" />
+          ) : (
+            <View style={styles.photoPlaceholder}>
+              <Text style={styles.photoEmoji}>📷</Text>
+              <Text style={[styles.photoHint, { color: c.textMuted }]}>
+                Tap to choose a photo
+              </Text>
+            </View>
+          )}
+        </Pressable>
+
+        <View style={styles.photoActions}>
+          <PrimaryButton label="Library" variant="secondary" onPress={pickPhoto} style={styles.half} />
+          <PrimaryButton label="Camera" variant="secondary" onPress={takePhoto} style={styles.half} />
+        </View>
+
+        <Field label="Name" color={c.textMuted}>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="e.g. Moonlight Philodendron"
+            placeholderTextColor={c.textMuted}
+            style={[styles.input, { color: c.text, backgroundColor: c.surface, borderColor: c.border }]}
+          />
+        </Field>
+
+        <Field label="Species" color={c.textMuted}>
+          <TextInput
+            value={species}
+            onChangeText={setSpecies}
+            placeholder="e.g. Philodendron hederaceum"
+            placeholderTextColor={c.textMuted}
+            style={[styles.input, { color: c.text, backgroundColor: c.surface, borderColor: c.border }]}
+          />
+        </Field>
+
+        <Field label="Category" color={c.textMuted}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            {PLANT_CATEGORIES.map((cat) => {
+              const active = cat === category;
+              return (
+                <Pressable
+                  key={cat}
+                  onPress={() => onCategory(cat)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: active ? c.tint : c.surface,
+                      borderColor: active ? c.tint : c.border,
+                    },
+                  ]}
+                >
+                  <Text style={{ color: active ? Colors.light.background : c.text, fontWeight: '600' }}>
+                    {cat}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </Field>
+
+        <Field label="Location" color={c.textMuted}>
+          <TextInput
+            value={location}
+            onChangeText={setLocation}
+            placeholder="e.g. Living room east window"
+            placeholderTextColor={c.textMuted}
+            style={[styles.input, { color: c.text, backgroundColor: c.surface, borderColor: c.border }]}
+          />
+        </Field>
+
+        <Field label="Acquired date (YYYY-MM-DD)" color={c.textMuted}>
+          <TextInput
+            value={acquiredDate}
+            onChangeText={setAcquiredDate}
+            placeholder="2026-07-11"
+            placeholderTextColor={c.textMuted}
+            autoCapitalize="none"
+            style={[styles.input, { color: c.text, backgroundColor: c.surface, borderColor: c.border }]}
+          />
+        </Field>
+
+        <View style={styles.row2}>
+          <View style={styles.half}>
+            <Field label="Water every (days)" color={c.textMuted}>
+              <TextInput
+                value={waterDays}
+                onChangeText={setWaterDays}
+                keyboardType="number-pad"
+                style={[styles.input, { color: c.text, backgroundColor: c.surface, borderColor: c.border }]}
+              />
+            </Field>
+          </View>
+          <View style={styles.half}>
+            <Field label="Fertilize every (days)" color={c.textMuted}>
+              <TextInput
+                value={fertDays}
+                onChangeText={setFertDays}
+                keyboardType="number-pad"
+                style={[styles.input, { color: c.text, backgroundColor: c.surface, borderColor: c.border }]}
+              />
+            </Field>
+          </View>
+        </View>
+
+        <Field label="Notes" color={c.textMuted}>
+          <TextInput
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Soil mix, light notes, provenance…"
+            placeholderTextColor={c.textMuted}
+            multiline
+            style={[
+              styles.input,
+              styles.multiline,
+              { color: c.text, backgroundColor: c.surface, borderColor: c.border },
+            ]}
+          />
+        </Field>
+
+        <PrimaryButton label="Save plant" onPress={onSave} loading={saving} />
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+function Field({
+  label,
+  color,
+  children,
+}: {
+  label: string;
+  color: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={styles.field}>
+      <Text style={[styles.label, { color }]}>{label}</Text>
+      {children}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  scroll: {
+    padding: 16,
+    paddingBottom: 48,
+    gap: 4,
+  },
+  photo: {
+    aspectRatio: 1,
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 10,
+  },
+  photoImg: { width: '100%', height: '100%' },
+  photoPlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  photoEmoji: { fontSize: 40 },
+  photoHint: { fontSize: 14 },
+  photoActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  field: { marginBottom: 12, gap: 6 },
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  input: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  multiline: {
+    minHeight: 90,
+    textAlignVertical: 'top',
+  },
+  chips: { gap: 8, paddingVertical: 2 },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  row2: { flexDirection: 'row', gap: 10 },
+  half: { flex: 1 },
+});

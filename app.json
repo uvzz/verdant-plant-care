@@ -1,22 +1,37 @@
 {
   "expo": {
-    "name": "verdant-plant-care",
+    "name": "Verdant",
     "slug": "verdant-plant-care",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "verdantplantcare",
+    "scheme": "verdant",
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.verdant.plantcare",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Verdant uses the camera to photograph your plants for care logs and progress galleries.",
+        "NSPhotoLibraryUsageDescription": "Verdant uses your photo library to add plant portraits and progress photos.",
+        "NSPhotoLibraryAddUsageDescription": "Verdant may save plant photos to your library when you choose to export."
+      }
     },
     "android": {
+      "package": "com.verdant.plantcare",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#5B7F6B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "permissions": [
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -31,12 +46,29 @@
         {
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#F7F4EE"
         }
-      ]
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Verdant to access your photos for plant portraits and progress galleries.",
+          "cameraPermission": "Allow Verdant to use the camera to photograph your plants."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#5B7F6B"
+        }
+      ],
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {}
     }
   }
 }
