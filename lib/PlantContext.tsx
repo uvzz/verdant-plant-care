@@ -29,6 +29,7 @@ import type {
 import { normalizePlant } from './types';
 import { createFamilyMember, mergeFamilyBackup } from './family';
 import { parseBackupJson, type VerdantBackup } from './export';
+import { consumeLocalAiQuota } from './aiSafety';
 
 interface PlantContextValue {
   plants: Plant[];
@@ -327,12 +328,10 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   );
 
   const consumeAiUse = useCallback(async () => {
-    if (!settings.isPremium) {
-      return {
-        ok: false as const,
-        reason:
-          'AI assist is a Premium feature. Unlock Premium to use plant identify, care guides, and the coach.',
-      };
+    // Premium gate + local soft quota (server still rate-limits)
+    const quota = await consumeLocalAiQuota(settings.isPremium);
+    if (!quota.ok) {
+      return { ok: false as const, reason: quota.reason };
     }
     return { ok: true as const };
   }, [settings.isPremium]);

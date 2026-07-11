@@ -4,7 +4,11 @@ import path from 'node:path';
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['lib/**/*.test.ts', 'lib/__tests__/**/*.test.ts'],
+    include: [
+      'lib/**/*.test.ts',
+      'lib/__tests__/**/*.test.ts',
+      'workers/**/*.test.ts',
+    ],
     exclude: ['**/node_modules/**', 'lib/__tests__/mocks/**'],
   },
   resolve: {
