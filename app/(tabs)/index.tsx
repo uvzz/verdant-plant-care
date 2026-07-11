@@ -11,6 +11,7 @@ import { Link, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Colors, { APP_NAME } from '@/constants/Colors';
+import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { EmptyState } from '@/components/EmptyState';
 import { PlantCard } from '@/components/PlantCard';
@@ -54,7 +55,7 @@ export default function MyPlantsScreen() {
   if (loading) {
     return (
       <View style={[styles.center, { backgroundColor: c.background }]}>
-        <ActivityIndicator color={c.tint} />
+        <ActivityIndicator color={c.growth} />
       </View>
     );
   }
@@ -62,10 +63,10 @@ export default function MyPlantsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <View>
-          <Text style={[styles.kicker, { color: c.tint }]}>{APP_NAME}</Text>
-          <Text style={[styles.title, { color: c.text }]}>My Plants</Text>
-          <Text style={[styles.subtitle, { color: c.textMuted }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={[Type.micro, { color: c.tint }]}>{APP_NAME}</Text>
+          <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>My Plants</Text>
+          <Text style={[Type.meta, { color: c.textMuted, marginTop: 4 }]}>
             {plants.length} plant{plants.length === 1 ? '' : 's'}
             {!settings.isPremium ? ` · Free up to ${freeLimit}` : ' · Premium'}
           </Text>
@@ -79,20 +80,33 @@ export default function MyPlantsScreen() {
             router.push('/plant/add');
           }}
           style={({ pressed }) => [
-            styles.addBtn,
+            styles.fab,
             { backgroundColor: c.growth, opacity: pressed ? 0.85 : 1 },
           ]}
         >
-          <Text style={[styles.addBtnText, { color: c.growthInk }]}>＋</Text>
+          <Text style={{ color: c.growthInk, fontSize: 28, marginTop: -2 }}>＋</Text>
         </Pressable>
       </View>
 
       {plants.length === 0 ? (
-        <EmptyState
-          emoji="🌿"
-          title="Your glasshouse is quiet"
-          body="Add a plant with a portrait. Care logs and progress photos will live here."
-        />
+        <>
+          <EmptyState
+            emoji="🌿"
+            title="Your glasshouse is quiet"
+            body="Add a plant with a portrait. Care logs and progress photos will live here."
+          />
+          <View style={styles.emptyCta}>
+            <Pressable
+              onPress={() => router.push('/plant/add')}
+              style={({ pressed }) => [
+                styles.cta,
+                { backgroundColor: c.growth, opacity: pressed ? 0.9 : 1 },
+              ]}
+            >
+              <Text style={[Type.button, { color: c.growthInk }]}>Add your first plant</Text>
+            </Pressable>
+          </View>
+        </>
       ) : (
         <FlatList
           data={plants}
@@ -126,10 +140,10 @@ export default function MyPlantsScreen() {
                 <Pressable
                   style={[styles.upgradeBanner, { backgroundColor: c.surface, borderColor: c.border }]}
                 >
-                  <Text style={[styles.upgradeTitle, { color: c.text }]}>
+                  <Text style={[Type.title, { color: c.text, fontSize: 15 }]}>
                     Plant limit reached
                   </Text>
-                  <Text style={[styles.upgradeBody, { color: c.textMuted }]}>
+                  <Text style={[Type.meta, { color: c.textMuted, marginTop: 4 }]}>
                     Upgrade to Premium for unlimited plants, deeper history, and care guides.
                   </Text>
                 </Pressable>
@@ -138,22 +152,6 @@ export default function MyPlantsScreen() {
           }
         />
       )}
-
-      {plants.length === 0 ? (
-        <View style={styles.emptyCta}>
-          <Pressable
-            onPress={() => router.push('/plant/add')}
-            style={({ pressed }) => [
-              styles.cta,
-              { backgroundColor: c.growth, opacity: pressed ? 0.9 : 1 },
-            ]}
-          >
-            <Text style={[styles.ctaText, { color: c.growthInk }]}>
-              Add your first plant
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -167,57 +165,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
+    gap: 12,
   },
-  kicker: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 1.6,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '600',
-    letterSpacing: -0.8,
-  },
-  subtitle: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  addBtn: {
+  fab: {
     width: 48,
     height: 48,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  addBtnText: {
-    fontSize: 28,
-    marginTop: -2,
-  },
-  list: {
-    paddingHorizontal: 14,
-    paddingBottom: 40,
-  },
-  row: {
-    gap: 12,
-    marginBottom: 12,
-  },
-  cardWrap: {
-    flex: 1,
-  },
-  emptyCta: {
-    padding: 24,
-  },
+  list: { paddingHorizontal: 14, paddingBottom: 40 },
+  row: { gap: 10, marginBottom: 10 },
+  cardWrap: { flex: 1 },
+  emptyCta: { padding: 24, marginTop: 'auto' },
   cta: {
-    borderRadius: 16,
+    borderRadius: 14,
     minHeight: 52,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  ctaText: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   upgradeBanner: {
     marginTop: 8,
@@ -225,14 +190,5 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    gap: 4,
-  },
-  upgradeTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  upgradeBody: {
-    fontSize: 13,
-    lineHeight: 18,
   },
 });

@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 import Colors from '@/constants/Colors';
+import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 
 interface Props {
@@ -56,7 +57,7 @@ export function PrimaryButton({
       {loading ? (
         <ActivityIndicator color={fg} />
       ) : (
-        <Text style={[styles.label, { color: fg }]}>{label}</Text>
+        <Text style={[Type.button, { color: fg }]}>{label}</Text>
       )}
     </Pressable>
   );
@@ -70,10 +71,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 18,
     borderWidth: StyleSheet.hairlineWidth,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: -0.2,
   },
 });

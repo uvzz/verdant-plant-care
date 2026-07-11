@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { format } from 'date-fns';
 
 import Colors from '@/constants/Colors';
+import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { usePlants } from '@/lib/PlantContext';
@@ -62,9 +63,7 @@ export default function AddPlantScreen() {
       allowsEditing: true,
       aspect: [1, 1],
     });
-    if (!result.canceled && result.assets[0]) {
-      setPhotoUri(result.assets[0].uri);
-    }
+    if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
   };
 
   const takePhoto = async () => {
@@ -78,9 +77,7 @@ export default function AddPlantScreen() {
       allowsEditing: true,
       aspect: [1, 1],
     });
-    if (!result.canceled && result.assets[0]) {
-      setPhotoUri(result.assets[0].uri);
-    }
+    if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
   };
 
   const onSave = async () => {
@@ -112,21 +109,39 @@ export default function AddPlantScreen() {
     router.replace(`/plant/${result.plant.id}`);
   };
 
+  const inputStyle = [
+    styles.input,
+    {
+      color: c.text,
+      backgroundColor: c.surface,
+      borderColor: c.border,
+      fontFamily: Fonts.body,
+    },
+  ];
+
   return (
     <KeyboardAvoidingView
       style={[styles.flex, { backgroundColor: c.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Pressable onPress={pickPhoto} style={[styles.photo, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}>
+        <Pressable
+          onPress={pickPhoto}
+          style={[
+            styles.photo,
+            {
+              backgroundColor: photoUri ? 'transparent' : c.surfaceAlt,
+              borderColor: c.border,
+              borderStyle: photoUri ? 'solid' : 'dashed',
+            },
+          ]}
+        >
           {photoUri ? (
             <Image source={{ uri: photoUri }} style={styles.photoImg} contentFit="cover" />
           ) : (
             <View style={styles.photoPlaceholder}>
-              <Text style={styles.photoEmoji}>📷</Text>
-              <Text style={[styles.photoHint, { color: c.textMuted }]}>
-                Tap to choose a photo
-              </Text>
+              <Text style={{ fontSize: 28 }}>📷</Text>
+              <Text style={[Type.meta, { color: c.textMuted }]}>Tap to choose a photo</Text>
             </View>
           )}
         </Pressable>
@@ -140,9 +155,9 @@ export default function AddPlantScreen() {
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="e.g. Moonlight Philodendron"
+            placeholder="e.g. Moonlight"
             placeholderTextColor={c.textMuted}
-            style={[styles.input, { color: c.text, backgroundColor: c.surface, borderColor: c.border }]}
+            style={inputStyle}
           />
         </Field>
 
@@ -152,7 +167,7 @@ export default function AddPlantScreen() {
             onChangeText={setSpecies}
             placeholder="e.g. Philodendron hederaceum"
             placeholderTextColor={c.textMuted}
-            style={[styles.input, { color: c.text, backgroundColor: c.surface, borderColor: c.border }]}
+            style={inputStyle}
           />
         </Field>
 
@@ -167,12 +182,20 @@ export default function AddPlantScreen() {
                   style={[
                     styles.chip,
                     {
-                      backgroundColor: active ? c.tint : c.surface,
-                      borderColor: active ? c.tint : c.border,
+                      backgroundColor: active ? c.night : c.surface,
+                      borderColor: active ? c.night : c.border,
                     },
                   ]}
                 >
-                  <Text style={{ color: active ? Colors.light.background : c.text, fontWeight: '600' }}>
+                  <Text
+                    style={[
+                      Type.meta,
+                      {
+                        color: active ? c.background : c.text,
+                        fontFamily: Fonts.bodySemi,
+                      },
+                    ]}
+                  >
                     {cat}
                   </Text>
                 </Pressable>
@@ -185,9 +208,9 @@ export default function AddPlantScreen() {
           <TextInput
             value={location}
             onChangeText={setLocation}
-            placeholder="e.g. Living room east window"
+            placeholder="e.g. East window · living room"
             placeholderTextColor={c.textMuted}
-            style={[styles.input, { color: c.text, backgroundColor: c.surface, borderColor: c.border }]}
+            style={inputStyle}
           />
         </Field>
 
@@ -198,7 +221,7 @@ export default function AddPlantScreen() {
             placeholder="2026-07-11"
             placeholderTextColor={c.textMuted}
             autoCapitalize="none"
-            style={[styles.input, { color: c.text, backgroundColor: c.surface, borderColor: c.border }]}
+            style={inputStyle}
           />
         </Field>
 
@@ -209,7 +232,7 @@ export default function AddPlantScreen() {
                 value={waterDays}
                 onChangeText={setWaterDays}
                 keyboardType="number-pad"
-                style={[styles.input, { color: c.text, backgroundColor: c.surface, borderColor: c.border }]}
+                style={inputStyle}
               />
             </Field>
           </View>
@@ -219,7 +242,7 @@ export default function AddPlantScreen() {
                 value={fertDays}
                 onChangeText={setFertDays}
                 keyboardType="number-pad"
-                style={[styles.input, { color: c.text, backgroundColor: c.surface, borderColor: c.border }]}
+                style={inputStyle}
               />
             </Field>
           </View>
@@ -232,11 +255,7 @@ export default function AddPlantScreen() {
             placeholder="Soil mix, light notes, provenance…"
             placeholderTextColor={c.textMuted}
             multiline
-            style={[
-              styles.input,
-              styles.multiline,
-              { color: c.text, backgroundColor: c.surface, borderColor: c.border },
-            ]}
+            style={[inputStyle, styles.multiline]}
           />
         </Field>
 
@@ -257,7 +276,7 @@ function Field({
 }) {
   return (
     <View style={styles.field}>
-      <Text style={[styles.label, { color }]}>{label}</Text>
+      <Text style={[Type.micro, { color, letterSpacing: 0.8 }]}>{label}</Text>
       {children}
     </View>
   );
@@ -265,16 +284,13 @@ function Field({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  scroll: {
-    padding: 16,
-    paddingBottom: 48,
-    gap: 4,
-  },
+  scroll: { padding: 16, paddingBottom: 48 },
   photo: {
     aspectRatio: 1,
-    borderRadius: 24,
+    borderRadius: 20,
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
     marginBottom: 10,
   },
   photoImg: { width: '100%', height: '100%' },
@@ -284,30 +300,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  photoEmoji: { fontSize: 40 },
-  photoHint: { fontSize: 14 },
-  photoActions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 12,
-  },
+  photoActions: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   field: { marginBottom: 12, gap: 6 },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
   input: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: 15,
+    height: 44,
   },
-  multiline: {
-    minHeight: 90,
-    textAlignVertical: 'top',
-  },
+  multiline: { minHeight: 90, height: undefined, textAlignVertical: 'top' },
   chips: { gap: 8, paddingVertical: 2 },
   chip: {
     paddingHorizontal: 14,

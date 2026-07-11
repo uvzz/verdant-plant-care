@@ -3,6 +3,7 @@ import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 
 import Colors from '@/constants/Colors';
+import { Fonts } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 
 export default function TabLayout() {
@@ -14,9 +15,15 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: c.tabIconSelected,
         tabBarInactiveTintColor: c.tabIconDefault,
+        tabBarLabelStyle: {
+          fontFamily: Fonts.bodySemi,
+          fontSize: 10,
+          letterSpacing: 0.2,
+        },
         tabBarStyle: {
           backgroundColor: c.surface,
           borderTopColor: c.border,
+          borderTopWidth: StyleSheetHairline,
           height: Platform.OS === 'ios' ? 88 : 64,
           paddingTop: 6,
         },
@@ -26,16 +33,12 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'My Plants',
+          title: 'Plants',
           tabBarIcon: ({ color }) => (
             <SymbolView
-              name={{
-                ios: 'leaf.fill',
-                android: 'spa',
-                web: 'spa',
-              }}
+              name={{ ios: 'leaf.fill', android: 'spa', web: 'spa' }}
               tintColor={color}
-              size={26}
+              size={24}
             />
           ),
         }}
@@ -46,13 +49,9 @@ export default function TabLayout() {
           title: 'Care',
           tabBarIcon: ({ color }) => (
             <SymbolView
-              name={{
-                ios: 'calendar',
-                android: 'calendar_today',
-                web: 'calendar_today',
-              }}
+              name={{ ios: 'calendar', android: 'calendar_today', web: 'calendar_today' }}
               tintColor={color}
-              size={26}
+              size={24}
             />
           ),
         }}
@@ -63,13 +62,9 @@ export default function TabLayout() {
           title: 'Settings',
           tabBarIcon: ({ color }) => (
             <SymbolView
-              name={{
-                ios: 'gearshape.fill',
-                android: 'settings',
-                web: 'settings',
-              }}
+              name={{ ios: 'gearshape.fill', android: 'settings', web: 'settings' }}
               tintColor={color}
-              size={26}
+              size={24}
             />
           ),
         }}
@@ -77,3 +72,5 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const StyleSheetHairline = 0.5;

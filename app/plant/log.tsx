@@ -15,6 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import Colors from '@/constants/Colors';
+import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { usePlants } from '@/lib/PlantContext';
@@ -61,11 +62,7 @@ export default function LogCareScreen() {
     });
     if (!result.canceled && result.assets[0]) {
       setPhotoUri(result.assets[0].uri);
-      if (type === 'water' || type === 'fertilize') {
-        // keep type
-      } else {
-        setType('photo');
-      }
+      if (type !== 'water' && type !== 'fertilize') setType('photo');
     }
   };
 
@@ -109,7 +106,7 @@ export default function LogCareScreen() {
   if (!plant) {
     return (
       <View style={[styles.center, { backgroundColor: c.background }]}>
-        <Text style={{ color: c.textMuted }}>Plant not found.</Text>
+        <Text style={[Type.body, { color: c.textMuted }]}>Plant not found.</Text>
       </View>
     );
   }
@@ -120,13 +117,13 @@ export default function LogCareScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={[styles.plantName, { color: c.text }]}>{plant.name}</Text>
-        <Text style={[styles.hint, { color: c.textMuted }]}>
-          Log a quiet moment of care. Photos help you see progress over seasons.
+        <Text style={[Type.displayM, { color: c.text }]}>{plant.name}</Text>
+        <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 6, marginBottom: 16 }]}>
+          A quiet moment of care. Photos help you see seasons of growth.
         </Text>
 
-        <Text style={[styles.label, { color: c.textMuted }]}>Care type</Text>
-        <View style={styles.types}>
+        <Text style={[Type.micro, { color: c.textMuted, marginBottom: 8 }]}>Care type</Text>
+        <View style={styles.typeGrid}>
           {TYPES.map((t) => {
             const active = t === type;
             return (
@@ -134,20 +131,22 @@ export default function LogCareScreen() {
                 key={t}
                 onPress={() => setType(t)}
                 style={[
-                  styles.typeChip,
+                  styles.typeCell,
                   {
-                    backgroundColor: active ? c.tint : c.surface,
-                    borderColor: active ? c.tint : c.border,
+                    backgroundColor: active ? c.night : c.surface,
+                    borderColor: active ? c.night : c.border,
                   },
                 ]}
               >
-                <Text style={{ fontSize: 16 }}>{CARE_TYPE_EMOJI[t]}</Text>
+                <Text style={{ fontSize: 18, marginBottom: 4 }}>{CARE_TYPE_EMOJI[t]}</Text>
                 <Text
-                  style={{
-                    color: active ? Colors.light.background : c.text,
-                    fontWeight: '600',
-                    fontSize: 13,
-                  }}
+                  style={[
+                    Type.meta,
+                    {
+                      color: active ? c.background : c.text,
+                      fontFamily: Fonts.bodySemi,
+                    },
+                  ]}
                 >
                   {CARE_TYPE_LABELS[t]}
                 </Text>
@@ -156,20 +155,29 @@ export default function LogCareScreen() {
           })}
         </View>
 
-        <Text style={[styles.label, { color: c.textMuted }]}>Note (optional)</Text>
+        <Text style={[Type.micro, { color: c.textMuted, marginBottom: 8, marginTop: 8 }]}>
+          Note
+        </Text>
         <TextInput
           value={note}
           onChangeText={setNote}
-          placeholder="How does it look? New leaf? Dry soil?"
+          placeholder="New leaf almost open…"
           placeholderTextColor={c.textMuted}
           multiline
           style={[
             styles.input,
-            { color: c.text, backgroundColor: c.surface, borderColor: c.border },
+            {
+              color: c.text,
+              backgroundColor: c.surface,
+              borderColor: c.border,
+              fontFamily: Fonts.body,
+            },
           ]}
         />
 
-        <Text style={[styles.label, { color: c.textMuted }]}>Photo (optional)</Text>
+        <Text style={[Type.micro, { color: c.textMuted, marginBottom: 8, marginTop: 8 }]}>
+          Photo
+        </Text>
         <Pressable
           onPress={pickPhoto}
           style={[
@@ -180,7 +188,7 @@ export default function LogCareScreen() {
           {photoUri ? (
             <Image source={{ uri: photoUri }} style={styles.photo} contentFit="cover" />
           ) : (
-            <Text style={{ color: c.textMuted }}>Tap to attach a photo</Text>
+            <Text style={[Type.meta, { color: c.textMuted }]}>Tap to attach a photo</Text>
           )}
         </Pressable>
         <View style={styles.photoActions}>
@@ -202,51 +210,33 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: 16, paddingBottom: 48 },
-  plantName: {
-    fontSize: 24,
-    fontWeight: '700',
-    letterSpacing: -0.4,
-  },
-  hint: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 6,
-    marginBottom: 18,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 8,
-    marginTop: 8,
-  },
-  types: {
+  typeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
     marginBottom: 8,
   },
-  typeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 999,
+  typeCell: {
+    width: '48%',
+    flexGrow: 1,
     borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 14,
+    padding: 12,
+    alignItems: 'center',
   },
   input: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 16,
-    minHeight: 100,
+    fontSize: 15,
+    minHeight: 88,
     textAlignVertical: 'top',
     marginBottom: 8,
   },
   photoBox: {
-    height: 200,
-    borderRadius: 18,
+    height: 160,
+    borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
@@ -254,10 +244,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   photo: { width: '100%', height: '100%' },
-  photoActions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 20,
-  },
+  photoActions: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   half: { flex: 1 },
 });

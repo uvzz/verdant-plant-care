@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Colors from '@/constants/Colors';
+import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import type { Plant } from '@/lib/types';
 
@@ -44,12 +45,14 @@ export function PlantCard({
             </View>
           )}
         </View>
-        {/* Specimen label strip */}
         <View style={styles.specimen}>
-          <Text style={[styles.name, { color: c.text }]} numberOfLines={1}>
+          <Text
+            style={[styles.name, { color: c.text, fontFamily: Fonts.display }]}
+            numberOfLines={1}
+          >
             {plant.name}
           </Text>
-          <Text style={[styles.species, { color: c.textMuted }]} numberOfLines={1}>
+          <Text style={[Type.latin, { color: c.textMuted, fontSize: 12 }]} numberOfLines={1}>
             {plant.species || plant.category}
           </Text>
           <View style={[styles.filamentTrack, { backgroundColor: c.surfaceAlt }]}>
@@ -60,15 +63,12 @@ export function PlantCard({
               ]}
             />
           </View>
-          {subtitle ? (
-            <Text style={[styles.sub, { color: track }]} numberOfLines={1}>
-              {subtitle}
-            </Text>
-          ) : (
-            <Text style={[styles.sub, { color: c.textMuted }]} numberOfLines={1}>
-              {plant.location || plant.category}
-            </Text>
-          )}
+          <Text
+            style={[Type.meta, { color: subtitle ? track : c.textMuted, fontSize: 11, marginTop: 6 }]}
+            numberOfLines={1}
+          >
+            {subtitle || plant.location || plant.category}
+          </Text>
         </View>
       </Pressable>
     </Link>
@@ -86,22 +86,10 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 3,
   },
-  imageWrap: {
-    aspectRatio: 1,
-    width: '100%',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  placeholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderEmoji: {
-    fontSize: 40,
-  },
+  imageWrap: { aspectRatio: 1, width: '100%' },
+  image: { width: '100%', height: '100%' },
+  placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  placeholderEmoji: { fontSize: 40 },
   specimen: {
     paddingHorizontal: 12,
     paddingTop: 10,
@@ -109,13 +97,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 15,
-    fontWeight: '600',
     letterSpacing: -0.3,
-  },
-  species: {
-    fontSize: 12,
-    fontStyle: 'italic',
-    marginTop: 1,
   },
   filamentTrack: {
     height: 2,
@@ -126,11 +108,5 @@ const styles = StyleSheet.create({
   filamentFill: {
     height: '100%',
     borderRadius: 2,
-  },
-  sub: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 6,
-    letterSpacing: 0.2,
   },
 });

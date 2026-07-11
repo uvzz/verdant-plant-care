@@ -10,9 +10,10 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { format, parseISO } from 'date-fns';
+import { differenceInCalendarDays, format, parseISO, startOfDay } from 'date-fns';
 
 import Colors from '@/constants/Colors';
+import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { CareLogRow } from '@/components/CareLogRow';
 import { PrimaryButton } from '@/components/PrimaryButton';
@@ -23,7 +24,6 @@ import {
   nextDueDate,
 } from '@/lib/care';
 import { usePlants } from '@/lib/PlantContext';
-import { differenceInCalendarDays, startOfDay } from 'date-fns';
 
 const { width } = Dimensions.get('window');
 
@@ -48,7 +48,6 @@ export default function PlantDetailScreen() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: plant?.name ?? 'Plant',
       headerRight: () =>
         plant ? (
           <Pressable
@@ -70,16 +69,18 @@ export default function PlantDetailScreen() {
               );
             }}
           >
-            <Text style={{ color: c.danger, fontSize: 16 }}>Delete</Text>
+            <Text style={{ color: '#FFFFFF', fontFamily: Fonts.bodySemi, fontSize: 15 }}>
+              Delete
+            </Text>
           </Pressable>
         ) : null,
     });
-  }, [navigation, plant, deletePlant, router, c.danger]);
+  }, [navigation, plant, deletePlant, router]);
 
   if (!plant) {
     return (
       <View style={[styles.center, { backgroundColor: c.background }]}>
-        <Text style={{ color: c.textMuted }}>Plant not found.</Text>
+        <Text style={[Type.body, { color: c.textMuted }]}>Plant not found.</Text>
       </View>
     );
   }
@@ -117,52 +118,44 @@ export default function PlantDetailScreen() {
               <Text style={{ fontSize: 64 }}>🪴</Text>
             </View>
           )}
-          <View style={[styles.heroOverlay, { backgroundColor: 'rgba(0,0,0,0.28)' }]}>
-            <Text style={styles.heroName}>{plant.name}</Text>
-            <Text style={styles.heroSpecies}>
+          <View style={styles.heroOverlay}>
+            <Text style={[Type.micro, { color: 'rgba(255,255,255,0.8)' }]}>
+              {plant.category}
+              {plant.location ? ` · ${plant.location}` : ''}
+            </Text>
+            <Text style={[Type.displayM, { color: '#fff', fontSize: 28, marginTop: 4 }]}>
+              {plant.name}
+            </Text>
+            <Text style={[Type.latin, { color: 'rgba(255,255,255,0.9)', marginTop: 2 }]}>
               {plant.species || plant.category}
             </Text>
           </View>
         </View>
 
         <View style={styles.body}>
-          <View style={styles.metaRow}>
-            <MetaChip label={plant.category} bg={c.surfaceAlt} color={c.text} />
-            {plant.location ? (
-              <MetaChip label={plant.location} bg={c.surfaceAlt} color={c.textMuted} />
-            ) : null}
-            <MetaChip
-              label={`Since ${format(parseISO(plant.acquiredDate), 'MMM yyyy')}`}
-              bg={c.surfaceAlt}
-              color={c.textMuted}
-            />
-          </View>
-
           <View style={styles.dueRow}>
             <DueCard
               emoji="💧"
               title="Water"
               value={formatRelativeCare(waterDays)}
+              accent={waterDays < 0 ? c.danger : waterDays === 0 ? c.growth : c.tint}
               bg={c.surface}
               border={c.border}
-              text={c.text}
               muted={c.textMuted}
-              accent={waterDays < 0 ? c.danger : c.sky}
             />
             <DueCard
               emoji="🌿"
               title="Fertilize"
               value={formatRelativeCare(fertDays)}
+              accent={fertDays < 0 ? c.danger : c.text}
               bg={c.surface}
               border={c.border}
-              text={c.text}
               muted={c.textMuted}
-              accent={fertDays < 0 ? c.danger : c.tint}
             />
           </View>
 
           {plant.notes ? (
-            <Text style={[styles.notes, { color: c.textMuted }]}>{plant.notes}</Text>
+            <Text style={[Type.bodySmall, { color: c.textMuted }]}>{plant.notes}</Text>
           ) : null}
 
           <View style={styles.actions}>
@@ -177,7 +170,7 @@ export default function PlantDetailScreen() {
               style={styles.actionBtn}
             />
             <PrimaryButton
-              label="🌿 Fertilized"
+              label="🌿 Fed"
               variant="secondary"
               onPress={() =>
                 router.push({
@@ -202,34 +195,32 @@ export default function PlantDetailScreen() {
           <View style={[styles.tabs, { backgroundColor: c.surfaceAlt }]}>
             <Pressable
               onPress={() => setTab('log')}
-              style={[
-                styles.tab,
-                tab === 'log' && { backgroundColor: c.surface },
-              ]}
+              style={[styles.tab, tab === 'log' && { backgroundColor: c.surface }]}
             >
-              <Text style={{ color: c.text, fontWeight: '600' }}>Care log</Text>
+              <Text style={[Type.meta, { color: c.text, fontFamily: Fonts.bodySemi }]}>
+                Care log
+              </Text>
             </Pressable>
             <Pressable
               onPress={() => setTab('gallery')}
-              style={[
-                styles.tab,
-                tab === 'gallery' && { backgroundColor: c.surface },
-              ]}
+              style={[styles.tab, tab === 'gallery' && { backgroundColor: c.surface }]}
             >
-              <Text style={{ color: c.text, fontWeight: '600' }}>Progress</Text>
+              <Text style={[Type.meta, { color: c.text, fontFamily: Fonts.bodySemi }]}>
+                Progress
+              </Text>
             </Pressable>
           </View>
 
           {tab === 'log' ? (
             plantLogs.length === 0 ? (
-              <Text style={[styles.empty, { color: c.textMuted }]}>
+              <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 8 }]}>
                 No care entries yet. Log watering, feeding, notes, and photos as you go.
               </Text>
             ) : (
               plantLogs.map((log) => <CareLogRow key={log.id} log={log} />)
             )
           ) : galleryUris.length === 0 ? (
-            <Text style={[styles.empty, { color: c.textMuted }]}>
+            <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 8 }]}>
               Add a portrait or care photos to watch growth over time.
             </Text>
           ) : (
@@ -241,7 +232,7 @@ export default function PlantDetailScreen() {
                     style={styles.galleryImage}
                     contentFit="cover"
                   />
-                  <Text style={[styles.galleryLabel, { color: c.textMuted }]}>
+                  <Text style={[Type.meta, { color: c.textMuted, marginTop: 6, marginLeft: 2 }]}>
                     {item.label}
                   </Text>
                 </View>
@@ -254,29 +245,12 @@ export default function PlantDetailScreen() {
   );
 }
 
-function MetaChip({
-  label,
-  bg,
-  color,
-}: {
-  label: string;
-  bg: string;
-  color: string;
-}) {
-  return (
-    <View style={[styles.chip, { backgroundColor: bg }]}>
-      <Text style={{ color, fontSize: 13, fontWeight: '500' }}>{label}</Text>
-    </View>
-  );
-}
-
 function DueCard({
   emoji,
   title,
   value,
   bg,
   border,
-  text,
   muted,
   accent,
 }: {
@@ -285,15 +259,16 @@ function DueCard({
   value: string;
   bg: string;
   border: string;
-  text: string;
   muted: string;
   accent: string;
 }) {
   return (
     <View style={[styles.dueCard, { backgroundColor: bg, borderColor: border }]}>
-      <Text style={styles.dueEmoji}>{emoji}</Text>
-      <Text style={[styles.dueTitle, { color: muted }]}>{title}</Text>
-      <Text style={[styles.dueValue, { color: accent || text }]}>{value}</Text>
+      <Text style={{ fontSize: 16 }}>{emoji}</Text>
+      <Text style={[Type.micro, { color: muted, marginTop: 2, letterSpacing: 0.8 }]}>
+        {title}
+      </Text>
+      <Text style={[Type.title, { color: accent, fontSize: 14, marginTop: 4 }]}>{value}</Text>
     </View>
   );
 }
@@ -314,72 +289,29 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: 20,
     paddingVertical: 20,
+    backgroundColor: 'rgba(15,22,18,0.55)',
   },
-  heroName: {
-    color: '#fff',
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  heroSpecies: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 15,
-    fontStyle: 'italic',
-    marginTop: 2,
-  },
-  body: {
-    padding: 16,
-    gap: 12,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-  dueRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
+  body: { padding: 16, gap: 12 },
+  dueRow: { flexDirection: 'row', gap: 10 },
   dueCard: {
     flex: 1,
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
-    padding: 14,
-    gap: 2,
+    padding: 12,
   },
-  dueEmoji: { fontSize: 18 },
-  dueTitle: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase' },
-  dueValue: { fontSize: 15, fontWeight: '600', marginTop: 2 },
-  notes: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  actionBtn: { flex: 1 },
+  actions: { flexDirection: 'row', gap: 10 },
+  actionBtn: { flex: 1, minHeight: 44 },
   tabs: {
     flexDirection: 'row',
-    borderRadius: 14,
-    padding: 4,
-    marginTop: 8,
+    borderRadius: 12,
+    padding: 3,
+    marginTop: 4,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 10,
-    borderRadius: 12,
-  },
-  empty: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 8,
+    borderRadius: 10,
   },
   gallery: {
     flexDirection: 'row',
@@ -387,17 +319,10 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 8,
   },
-  galleryItem: {
-    width: (width - 42) / 2,
-  },
+  galleryItem: { width: (width - 42) / 2 },
   galleryImage: {
     width: '100%',
     aspectRatio: 1,
-    borderRadius: 16,
-  },
-  galleryLabel: {
-    fontSize: 12,
-    marginTop: 6,
-    marginLeft: 2,
+    borderRadius: 14,
   },
 });

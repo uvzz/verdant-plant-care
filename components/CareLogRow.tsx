@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { format, parseISO } from 'date-fns';
 import { StyleSheet, Text, View } from 'react-native';
 import Colors from '@/constants/Colors';
+import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { CARE_TYPE_EMOJI, CARE_TYPE_LABELS, type CareLog } from '@/lib/types';
 
@@ -15,14 +16,14 @@ export function CareLogRow({ log }: { log: CareLog }) {
         <Text style={styles.emoji}>{CARE_TYPE_EMOJI[log.type]}</Text>
       </View>
       <View style={styles.content}>
-        <Text style={[styles.title, { color: c.text }]}>
+        <Text style={[Type.title, { color: c.text, fontSize: 15 }]}>
           {CARE_TYPE_LABELS[log.type]}
         </Text>
-        <Text style={[styles.date, { color: c.textMuted }]}>
-          {format(parseISO(log.createdAt), 'MMM d, yyyy · h:mm a')}
+        <Text style={[Type.meta, { color: c.textMuted }]}>
+          {format(parseISO(log.createdAt), 'MMM d · h:mm a')}
         </Text>
         {log.note ? (
-          <Text style={[styles.note, { color: c.text }]} numberOfLines={3}>
+          <Text style={[Type.bodySmall, { color: c.text, marginTop: 4 }]} numberOfLines={3}>
             {log.note}
           </Text>
         ) : null}
@@ -39,40 +40,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    padding: 14,
-    borderRadius: 16,
+    padding: 12,
+    borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   badge: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emoji: {
-    fontSize: 18,
-  },
-  content: {
-    flex: 1,
-    gap: 2,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  date: {
-    fontSize: 12,
-  },
-  note: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 4,
-  },
-  thumb: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
-  },
+  emoji: { fontSize: 15 },
+  content: { flex: 1, gap: 2 },
+  thumb: { width: 44, height: 44, borderRadius: 8 },
 });
