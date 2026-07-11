@@ -31,6 +31,12 @@ That script bumps versions, prepends a CHANGELOG entry, commits, tags, and pushe
 
 ---
 
+## [0.3.0] - 2026-07-11
+
+### Notes
+
+- Insights, search, AI guide/coach persistence, photo lightbox, re-identify
+
 ## [0.2.1] - 2026-07-11
 
 ### Changed
