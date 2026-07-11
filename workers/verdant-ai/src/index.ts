@@ -16,7 +16,8 @@ export interface Env {
 }
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const DEFAULT_MODEL = 'openai/gpt-4o-mini';
+/** DeepSeek V4 Flash — fast, cost-efficient (OpenRouter id) */
+const DEFAULT_MODEL = 'deepseek/deepseek-v4-flash';
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',

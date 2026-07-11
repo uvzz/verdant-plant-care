@@ -3,8 +3,13 @@ import { photoToBase64 } from './photos';
 import type { CareLog, Plant, PlantCategory } from './types';
 import { PLANT_CATEGORIES } from './types';
 
-const VISION_MODEL = 'openai/gpt-4o-mini';
-const TEXT_MODEL = 'openai/gpt-4o-mini';
+/**
+ * OpenRouter models (key lives on Worker only).
+ * DeepSeek V4 Flash = fast text; multimodal needed for plant photos.
+ */
+const TEXT_MODEL = 'deepseek/deepseek-v4-flash';
+/** V4 Flash is text-only — vision path uses a fast multimodal model */
+const VISION_MODEL = 'google/gemini-2.5-flash-lite';
 
 export type PlantIdResult = {
   commonName: string;
