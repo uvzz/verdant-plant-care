@@ -2,7 +2,7 @@
   "expo": {
     "name": "Verdant",
     "slug": "verdant-plant-care",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "verdant",
@@ -20,7 +20,7 @@
     "android": {
       "package": "com.verdant.plantcare",
       "adaptiveIcon": {
-        "backgroundColor": "#5B7F6B",
+        "backgroundColor": "#0F1612",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -46,7 +46,11 @@
         {
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#EEF2EF"
+          "backgroundColor": "#EEF2EF",
+          "dark": {
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#0F1612"
+          }
         }
       ],
       [
@@ -71,7 +75,17 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "replace-after-eas-init"
+      }
+    },
+    "owner": "uvzz",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/replace-after-eas-init"
     }
   }
 }

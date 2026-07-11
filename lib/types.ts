@@ -68,6 +68,8 @@ export interface Plant {
    * Competitors fail here by treating schedules as orders.
    */
   checkBeforeWater?: boolean;
+  /** Optional household caretaker (family sharing) */
+  caretakerId?: string | null;
   /** Cached AI care guide */
   aiGuide?: StoredCareGuide | null;
   /** Recent AI coach Q&A (newest first, max ~10) */
@@ -85,6 +87,15 @@ export interface CareLog {
   createdAt: string;
 }
 
+export type PremiumSource = 'none' | 'demo' | 'store' | 'restore' | 'family';
+
+export interface FamilyMember {
+  id: string;
+  name: string;
+  role: 'owner' | 'member';
+  createdAt: string;
+}
+
 export interface AppSettings {
   isPremium: boolean;
   notificationsEnabled: boolean;
@@ -92,6 +103,14 @@ export interface AppSettings {
   aiFreeUsesRemaining: number;
   /** YYYY-MM of last AI free-quota reset */
   aiQuotaMonth: string;
+  /** How Premium was unlocked */
+  premiumSource?: PremiumSource;
+  /** Store product id if purchased */
+  premiumProductId?: string | null;
+  /** Local household name for family sharing */
+  householdName?: string;
+  /** Family members who share this glasshouse */
+  familyMembers?: FamilyMember[];
 }
 
 export const FREE_AI_USES_PER_MONTH = 5;
@@ -193,6 +212,7 @@ export function normalizePlant(raw: Partial<Plant> & Pick<Plant, 'id' | 'name'>)
     potSize: raw.potSize ?? 'medium',
     petToxicity: raw.petToxicity ?? 'unknown',
     checkBeforeWater: raw.checkBeforeWater !== false,
+    caretakerId: raw.caretakerId ?? null,
     aiGuide: raw.aiGuide ?? null,
     aiCoachHistory: raw.aiCoachHistory ?? [],
     aiIdentityConfidence: raw.aiIdentityConfidence ?? null,

@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Colors, { APP_NAME, APP_VERSION, FREE_PLANT_LIMIT } from '@/constants/Colors';
@@ -10,6 +18,15 @@ import { ensureNotificationPermissions } from '@/lib/notifications';
 import { usePlants } from '@/lib/PlantContext';
 import { getAiProxyUrl } from '@/lib/aiConfig';
 import { exportCollectionBackup } from '@/lib/export';
+import {
+  PREMIUM_DISPLAY,
+  PREMIUM_PRODUCT_IDS,
+  premiumSourceLabel,
+  purchasePremium,
+  restorePurchases,
+} from '@/lib/billing';
+import { getCareDueItems } from '@/lib/care';
+import { shareCareSheet, shareFamilyInvite } from '@/lib/family';
 
 type Benefit = {
   label: string;
@@ -32,55 +49,22 @@ const BENEFITS: Benefit[] = [
     live: true,
   },
   {
-    label: 'Light + pot-aware schedules',
+    label: 'Family household & care sheets',
     free: 'Included',
     premium: 'Included',
     live: true,
   },
   {
-    label: 'Rooms, pet safety flags',
-    free: 'Included',
-    premium: 'Included',
-    live: true,
-  },
-  {
-    label: 'AI plant identify',
+    label: 'AI plant identify + coach',
     free: '—',
     premium: 'Server AI',
     live: true,
   },
   {
-    label: 'AI care guide & coach',
-    free: '—',
-    premium: 'Server AI',
-    live: true,
-  },
-  {
-    label: 'Export your data',
+    label: 'Export / import backup',
     free: 'Included',
     premium: 'Included',
     live: true,
-  },
-  {
-    label: 'Family sharing',
-    free: '—',
-    premium: 'Coming soon',
-    live: false,
-  },
-];
-
-const WHY_BETTER = [
-  {
-    title: 'vs PictureThis',
-    body: 'No dark-pattern free trials or ad-data harvesting. Journal stays on-device; AI key never on your phone.',
-  },
-  {
-    title: 'vs Planta',
-    body: '“Still moist” snooze + pot/light-aware intervals — schedules don’t blindly overwater.',
-  },
-  {
-    title: 'vs Greg',
-    body: 'Water tracking and calendar stay free. Premium is AI, not locking basic care.',
   },
 ];
 
@@ -88,15 +72,38 @@ export default function SettingsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const insets = useSafeAreaInsets();
-  const { plants, logs, settings, setPremium, setNotificationsEnabled } = usePlants();
+  const {
+    plants,
+    logs,
+    settings,
+    setPremium,
+    setNotificationsEnabled,
+    setHouseholdName,
+    addFamilyMember,
+    removeFamilyMember,
+    importBackup,
+    familyMembers,
+  } = usePlants();
   const isPremium = settings.isPremium;
   const aiUrl = getAiProxyUrl();
   const [exporting, setExporting] = useState(false);
+  const [buying, setBuying] = useState(false);
+  const [memberName, setMemberName] = useState('');
+  const [householdDraft, setHouseholdDraft] = useState(
+    settings.householdName ?? ''
+  );
+  const [importJson, setImportJson] = useState('');
 
   const onExport = async () => {
     setExporting(true);
     try {
-      const result = await exportCollectionBackup({ plants, logs, settings });
+      const result = await exportCollectionBackup({
+        plants,
+        logs,
+        settings,
+        familyMembers,
+        householdName: settings.householdName,
+      });
       if (!result.ok) {
         Alert.alert('Export failed', result.reason);
         return;
@@ -105,7 +112,7 @@ export default function SettingsScreen() {
         Alert.alert(
           'Backup ready',
           plants.length
-            ? `Shared JSON for ${plants.length} plant${plants.length === 1 ? '' : 's'}. Photos are local paths — re-link photos after restore if needed.`
+            ? `Shared JSON for ${plants.length} plant${plants.length === 1 ? '' : 's'}.`
             : 'Empty collection exported.'
         );
       }
@@ -113,6 +120,93 @@ export default function SettingsScreen() {
       setExporting(false);
     }
   };
+
+  const onBuy = async () => {
+    setBuying(true);
+    try {
+      const result = await purchasePremium('yearly');
+      if (!result.ok) {
+        Alert.alert('Purchase unavailable', result.reason);
+        return;
+      }
+      await setPremium(true, {
+        source: result.source,
+        productId: result.productId ?? PREMIUM_PRODUCT_IDS.yearly,
+      });
+      Alert.alert(
+        'Premium unlocked',
+        result.source === 'demo'
+          ? 'Development demo unlock. Store products go live with EAS production builds + App Store / Play SKUs.'
+          : 'Thank you — Premium is active.'
+      );
+    } finally {
+      setBuying(false);
+    }
+  };
+
+  const onRestore = async () => {
+    const result = await restorePurchases();
+    if (!result.ok) {
+      Alert.alert('Restore', result.reason);
+      return;
+    }
+    if (result.restored) {
+      await setPremium(true, { source: 'restore' });
+      Alert.alert('Restored', 'Your Premium purchase was restored.');
+    } else {
+      Alert.alert(
+        'No purchases found',
+        'No active Verdant Premium subscription on this store account yet.'
+      );
+    }
+  };
+
+  const onAddMember = async () => {
+    if (!memberName.trim()) {
+      Alert.alert('Name needed', 'Enter a family member name.');
+      return;
+    }
+    await addFamilyMember(memberName.trim());
+    setMemberName('');
+  };
+
+  const onImport = async (mode: 'merge' | 'replace') => {
+    if (!importJson.trim()) {
+      Alert.alert('Paste backup', 'Paste the JSON backup into the field first.');
+      return;
+    }
+    const run = async () => {
+      const result = await importBackup(importJson.trim(), mode);
+      if (!result.ok) {
+        Alert.alert('Import failed', result.reason);
+        return;
+      }
+      setImportJson('');
+      Alert.alert('Import complete', result.message);
+    };
+    if (mode === 'replace') {
+      Alert.alert(
+        'Replace collection?',
+        'This overwrites plants and care logs on this device.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Replace', style: 'destructive', onPress: run },
+        ]
+      );
+    } else {
+      await run();
+    }
+  };
+
+  const inputStyle = [
+    styles.input,
+    {
+      color: c.text,
+      backgroundColor: c.background,
+      borderColor: c.border,
+      fontFamily: Fonts.body,
+    },
+  ];
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
@@ -126,7 +220,8 @@ export default function SettingsScreen() {
           <Text style={[Type.title, { color: c.text }]}>Your collection</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
             {plants.length} of {isPremium ? '∞' : FREE_PLANT_LIMIT} plants ·{' '}
-            {isPremium ? 'Premium' : 'Free'} plan
+            {isPremium ? 'Premium' : 'Free'} ·{' '}
+            {premiumSourceLabel(settings.premiumSource)}
           </Text>
           <PrimaryButton
             label={exporting ? 'Exporting…' : 'Export backup (JSON)'}
@@ -135,29 +230,225 @@ export default function SettingsScreen() {
             loading={exporting}
             style={{ marginTop: 12 }}
           />
-          <Text style={[Type.meta, { color: c.textMuted, marginTop: 8 }]}>
-            Your journal is local-first — export anytime. Competitors often trap data in the cloud.
+        </View>
+
+        {/* Billing */}
+        <View style={[styles.card, { backgroundColor: c.night, borderColor: c.night }]}>
+          <Text style={[Type.micro, { color: c.growth }]}>Premium</Text>
+          <Text style={[Type.displayM, { color: '#EEF3EF', marginTop: 6, fontSize: 22 }]}>
+            {isPremium ? 'Premium active' : 'Unlock Premium'}
+          </Text>
+          <Text
+            style={[
+              Type.bodySmall,
+              { color: 'rgba(232,239,233,0.7)', marginTop: 6, marginBottom: 12 },
+            ]}
+          >
+            Unlimited plants + server AI. Product IDs ready for App Store / Play
+            ({PREMIUM_PRODUCT_IDS.yearly}).
+          </Text>
+
+          <View style={styles.compareHeader}>
+            <Text style={[styles.compareLabel, { color: 'rgba(232,239,233,0.45)' }]}>
+              Feature
+            </Text>
+            <Text style={[styles.compareCol, { color: 'rgba(232,239,233,0.45)' }]}>Free</Text>
+            <Text style={[styles.compareCol, { color: c.growth }]}>Premium</Text>
+          </View>
+          {BENEFITS.map((b, i) => (
+            <View
+              key={b.label}
+              style={[
+                styles.compareRow,
+                i < BENEFITS.length - 1 && {
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                  borderBottomColor: 'rgba(255,255,255,0.08)',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.compareLabel,
+                  Type.meta,
+                  { color: '#EEF3EF', fontFamily: Fonts.bodyMedium },
+                ]}
+              >
+                {b.label}
+              </Text>
+              <Text style={[styles.compareCol, Type.meta, { color: 'rgba(232,239,233,0.55)' }]}>
+                {b.free}
+              </Text>
+              <Text
+                style={[
+                  styles.compareCol,
+                  Type.meta,
+                  { color: c.growth, fontFamily: Fonts.bodySemi },
+                ]}
+              >
+                {b.premium}
+              </Text>
+            </View>
+          ))}
+
+          {!isPremium ? (
+            <>
+              <PrimaryButton
+                label={`${PREMIUM_DISPLAY.yearlyLabel} · ${PREMIUM_DISPLAY.yearlyPriceHint}`}
+                onPress={onBuy}
+                loading={buying}
+                style={{ marginTop: 16 }}
+              />
+              <PrimaryButton
+                label="Restore purchases"
+                variant="secondary"
+                onPress={onRestore}
+                style={{ marginTop: 10 }}
+              />
+            </>
+          ) : (
+            <PrimaryButton
+              label={
+                settings.premiumSource === 'demo'
+                  ? 'Switch to Free (demo)'
+                  : 'Manage plan in system Settings'
+              }
+              variant="secondary"
+              onPress={() => {
+                if (settings.premiumSource === 'demo' || __DEV__) {
+                  setPremium(false);
+                } else {
+                  Alert.alert(
+                    'Manage subscription',
+                    'Cancel or change Premium in iOS Settings → Apple ID → Subscriptions, or Google Play → Payments & subscriptions.'
+                  );
+                }
+              }}
+              style={{ marginTop: 16 }}
+            />
+          )}
+          <Text
+            style={[
+              Type.meta,
+              { color: 'rgba(232,239,233,0.4)', textAlign: 'center', marginTop: 10 },
+            ]}
+          >
+            {__DEV__
+              ? 'Dev: purchase uses demo unlock until StoreKit / Play is linked in EAS builds.'
+              : 'Purchases process through Apple / Google when store products are live.'}
           </Text>
         </View>
 
+        {/* Family */}
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <Text style={[Type.title, { color: c.text }]}>Why Verdant is different</Text>
-          {WHY_BETTER.map((w) => (
-            <View key={w.title} style={{ marginTop: 12 }}>
-              <Text style={[Type.meta, { color: c.tint, fontFamily: Fonts.bodySemi }]}>
-                {w.title}
-              </Text>
-              <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 2 }]}>{w.body}</Text>
-            </View>
-          ))}
+          <Text style={[Type.title, { color: c.text }]}>Family sharing</Text>
+          <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
+            Local household — assign caretakers, share care sheets, import backups.
+            No cloud account required.
+          </Text>
+          <Text style={[Type.micro, { color: c.textMuted, marginTop: 12 }]}>
+            Household name
+          </Text>
+          <TextInput
+            value={householdDraft}
+            onChangeText={setHouseholdDraft}
+            onBlur={() => setHouseholdName(householdDraft)}
+            placeholder="e.g. Our glasshouse"
+            placeholderTextColor={c.textMuted}
+            style={[inputStyle, { marginTop: 6 }]}
+          />
+          <Text style={[Type.micro, { color: c.textMuted, marginTop: 14 }]}>
+            Members
+          </Text>
+          {familyMembers.length === 0 ? (
+            <Text style={[Type.meta, { color: c.textMuted, marginTop: 6 }]}>
+              No members yet — add partners, roommates, or kids who help water.
+            </Text>
+          ) : (
+            familyMembers.map((m) => (
+              <View key={m.id} style={styles.memberRow}>
+                <Text style={[Type.bodySmall, { color: c.text, flex: 1 }]}>
+                  {m.name}
+                  <Text style={{ color: c.textMuted }}> · {m.role}</Text>
+                </Text>
+                <PrimaryButton
+                  label="Remove"
+                  variant="ghost"
+                  onPress={() =>
+                    Alert.alert('Remove member?', m.name, [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Remove',
+                        style: 'destructive',
+                        onPress: () => removeFamilyMember(m.id),
+                      },
+                    ])
+                  }
+                  style={{ minHeight: 36, paddingHorizontal: 8 }}
+                />
+              </View>
+            ))
+          )}
+          <View style={styles.memberAdd}>
+            <TextInput
+              value={memberName}
+              onChangeText={setMemberName}
+              placeholder="Name"
+              placeholderTextColor={c.textMuted}
+              style={[inputStyle, { flex: 1 }]}
+            />
+            <PrimaryButton label="Add" onPress={onAddMember} style={{ minWidth: 72 }} />
+          </View>
+          <PrimaryButton
+            label="Share care sheet"
+            variant="secondary"
+            onPress={async () => {
+              const due = getCareDueItems(plants, logs);
+              const r = await shareCareSheet({
+                dueItems: due,
+                members: familyMembers,
+              });
+              if (!r.ok) Alert.alert('Share failed', r.reason);
+            }}
+            style={{ marginTop: 12 }}
+          />
+          <PrimaryButton
+            label="Invite family (instructions)"
+            variant="ghost"
+            onPress={() => shareFamilyInvite(settings.householdName || 'our plants')}
+            style={{ marginTop: 8 }}
+          />
+          <Text style={[Type.micro, { color: c.textMuted, marginTop: 16 }]}>
+            Import shared backup
+          </Text>
+          <TextInput
+            value={importJson}
+            onChangeText={setImportJson}
+            placeholder="Paste Verdant backup JSON…"
+            placeholderTextColor={c.textMuted}
+            multiline
+            style={[inputStyle, styles.importBox, { marginTop: 6 }]}
+          />
+          <View style={styles.memberAdd}>
+            <PrimaryButton
+              label="Merge"
+              variant="secondary"
+              onPress={() => onImport('merge')}
+              style={{ flex: 1 }}
+            />
+            <PrimaryButton
+              label="Replace"
+              variant="secondary"
+              onPress={() => onImport('replace')}
+              style={{ flex: 1 }}
+            />
+          </View>
         </View>
 
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
           <Text style={[Type.title, { color: c.text }]}>AI assistant</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
-            Plant identify, care guides, and the coach run on Verdant’s servers for{' '}
-            <Text style={{ fontFamily: Fonts.bodySemi, color: c.text }}>Premium</Text> members
-            only. The OpenRouter API key never lives on your phone.
+            Premium AI via DeepSeek V4 Flash (server-side OpenRouter key). Photos for ID use a
+            vision model.
           </Text>
           <Text style={[Type.meta, { color: c.textMuted, marginTop: 10 }]}>
             Status: {isPremium ? 'Premium · AI unlocked' : 'Free · upgrade for AI'}
@@ -170,7 +461,7 @@ export default function SettingsScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[Type.title, { color: c.text }]}>Gentle notifications</Text>
               <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
-                Local reminders when care is due today or tomorrow.
+                Local reminders to check soil when care is due.
               </Text>
             </View>
             <Switch
@@ -192,93 +483,11 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <View style={[styles.card, { backgroundColor: c.night, borderColor: c.night }]}>
-          <Text style={[Type.micro, { color: c.growth }]}>
-            {isPremium ? 'Your plan' : 'Plans'}
-          </Text>
-          <Text style={[Type.displayM, { color: '#EEF3EF', marginTop: 6, fontSize: 22 }]}>
-            {isPremium ? 'Premium active' : 'What Premium unlocks'}
-          </Text>
-          <Text
-            style={[
-              Type.bodySmall,
-              { color: 'rgba(232,239,233,0.7)', marginTop: 6, marginBottom: 16 },
-            ]}
-          >
-            Free keeps the journal, calendar, and smart schedules. Premium adds unlimited plants
-            and server-side AI — no credit-card trap to open the app.
-          </Text>
-
-          <View style={styles.compareHeader}>
-            <Text style={[styles.compareLabel, { color: 'rgba(232,239,233,0.45)' }]}>
-              Feature
-            </Text>
-            <Text style={[styles.compareCol, { color: 'rgba(232,239,233,0.45)' }]}>Free</Text>
-            <Text style={[styles.compareCol, { color: c.growth }]}>Premium</Text>
-          </View>
-
-          {BENEFITS.map((b, i) => (
-            <View
-              key={b.label}
-              style={[
-                styles.compareRow,
-                i < BENEFITS.length - 1 && {
-                  borderBottomWidth: StyleSheet.hairlineWidth,
-                  borderBottomColor: 'rgba(255,255,255,0.08)',
-                },
-              ]}
-            >
-              <View style={styles.compareLabel}>
-                <Text style={[Type.meta, { color: '#EEF3EF', fontFamily: Fonts.bodyMedium }]}>
-                  {b.label}
-                </Text>
-                {!b.live ? (
-                  <Text
-                    style={[
-                      Type.meta,
-                      { color: 'rgba(232,239,233,0.4)', fontSize: 10, marginTop: 2 },
-                    ]}
-                  >
-                    Coming soon
-                  </Text>
-                ) : null}
-              </View>
-              <Text style={[styles.compareCol, Type.meta, { color: 'rgba(232,239,233,0.55)' }]}>
-                {b.free}
-              </Text>
-              <Text
-                style={[
-                  styles.compareCol,
-                  Type.meta,
-                  { color: c.growth, fontFamily: Fonts.bodySemi },
-                ]}
-              >
-                {b.premium}
-              </Text>
-            </View>
-          ))}
-
-          <PrimaryButton
-            label={isPremium ? 'Switch to Free (demo)' : 'Unlock Premium (demo)'}
-            onPress={() => setPremium(!isPremium)}
-            style={{ marginTop: 16 }}
-          />
-          <Text
-            style={[
-              Type.meta,
-              { color: 'rgba(232,239,233,0.4)', textAlign: 'center', marginTop: 10 },
-            ]}
-          >
-            Demo plan toggle — store billing not connected yet
-          </Text>
-        </View>
-
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
           <Text style={[Type.title, { color: c.text }]}>About</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
             {APP_NAME} v{APP_VERSION}{'\n'}
-            Local-first plant journal. Photos stay on device. Premium AI via edge proxy
-            (OpenRouter key server-side only). Check soil before you water.
+            Local-first plant journal · branded icon · EAS-ready builds.
           </Text>
         </View>
       </ScrollView>
@@ -309,4 +518,25 @@ const styles = StyleSheet.create({
   },
   compareLabel: { flex: 1.4, paddingRight: 6 },
   compareCol: { flex: 1, textAlign: 'left' },
+  input: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    minHeight: 42,
+  },
+  importBox: { minHeight: 90, textAlignVertical: 'top' },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 8,
+  },
+  memberAdd: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+    alignItems: 'center',
+  },
 });

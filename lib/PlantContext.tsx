@@ -18,7 +18,17 @@ import {
   savePlants,
   saveSettings,
 } from './storage';
-import type { AppSettings, CareLog, CareLogType, Plant } from './types';
+import type {
+  AppSettings,
+  CareLog,
+  CareLogType,
+  FamilyMember,
+  Plant,
+  PremiumSource,
+} from './types';
+import { normalizePlant } from './types';
+import { createFamilyMember, mergeFamilyBackup } from './family';
+import { parseBackupJson, type VerdantBackup } from './export';
 
 interface PlantContextValue {
   plants: Plant[];
@@ -29,6 +39,7 @@ interface PlantContextValue {
   freeLimit: number;
   canUseAi: boolean;
   aiUsesLeft: number | 'unlimited';
+  familyMembers: FamilyMember[];
   addPlant: (
     input: Omit<Plant, 'id' | 'createdAt' | 'updatedAt'>
   ) => Promise<{ ok: true; plant: Plant } | { ok: false; reason: string }>;
@@ -41,8 +52,18 @@ interface PlantContextValue {
     photoUri?: string | null;
   }) => Promise<CareLog>;
   deleteCareLog: (id: string) => Promise<void>;
-  setPremium: (value: boolean) => Promise<void>;
+  setPremium: (
+    value: boolean,
+    meta?: { source?: PremiumSource; productId?: string | null }
+  ) => Promise<void>;
   setNotificationsEnabled: (value: boolean) => Promise<void>;
+  setHouseholdName: (name: string) => Promise<void>;
+  addFamilyMember: (name: string) => Promise<FamilyMember>;
+  removeFamilyMember: (id: string) => Promise<void>;
+  importBackup: (
+    raw: string,
+    mode: 'merge' | 'replace'
+  ) => Promise<{ ok: true; message: string } | { ok: false; reason: string }>;
   /** Premium gate for AI. Returns false if not Premium. */
   consumeAiUse: () => Promise<{ ok: true } | { ok: false; reason: string }>;
   getPlant: (id: string) => Plant | undefined;
@@ -54,7 +75,10 @@ const PlantContext = createContext<PlantContextValue | null>(null);
 export function PlantProvider({ children }: { children: React.ReactNode }) {
   const [plants, setPlants] = useState<Plant[]>([]);
   const [logs, setLogs] = useState<CareLog[]>([]);
-  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<AppSettings>({
+    ...DEFAULT_SETTINGS,
+    familyMembers: [],
+  });
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -66,7 +90,6 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     setPlants(p);
     setLogs(l);
     setSettings(s);
-    // Persist quota reset if month rolled
     await saveSettings(s);
   }, []);
 
@@ -78,11 +101,11 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const canAddPlant = settings.isPremium || plants.length < FREE_PLANT_LIMIT;
-  /** AI is Premium-only; OpenRouter key lives on the server, never on-device. */
   const canUseAi = settings.isPremium;
   const aiUsesLeft: number | 'unlimited' = settings.isPremium
     ? 'unlimited'
     : 0;
+  const familyMembers = settings.familyMembers ?? [];
 
   const addPlant = useCallback(
     async (input: Omit<Plant, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -172,8 +195,16 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   );
 
   const setPremium = useCallback(
-    async (value: boolean) => {
-      const next = { ...settings, isPremium: value };
+    async (
+      value: boolean,
+      meta?: { source?: PremiumSource; productId?: string | null }
+    ) => {
+      const next: AppSettings = {
+        ...settings,
+        isPremium: value,
+        premiumSource: value ? meta?.source ?? 'demo' : 'none',
+        premiumProductId: value ? meta?.productId ?? null : null,
+      };
       setSettings(next);
       await saveSettings(next);
     },
@@ -187,6 +218,112 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       await saveSettings(next);
     },
     [settings]
+  );
+
+  const setHouseholdName = useCallback(
+    async (name: string) => {
+      const next = { ...settings, householdName: name.trim() };
+      setSettings(next);
+      await saveSettings(next);
+    },
+    [settings]
+  );
+
+  const addFamilyMember = useCallback(
+    async (name: string) => {
+      const member = createFamilyMember(name, 'member');
+      const members = [...(settings.familyMembers ?? []), member];
+      const next = { ...settings, familyMembers: members };
+      setSettings(next);
+      await saveSettings(next);
+      return member;
+    },
+    [settings]
+  );
+
+  const removeFamilyMember = useCallback(
+    async (id: string) => {
+      const members = (settings.familyMembers ?? []).filter((m) => m.id !== id);
+      const nextPlants = plants.map((p) =>
+        p.caretakerId === id ? { ...p, caretakerId: null } : p
+      );
+      const next = { ...settings, familyMembers: members };
+      setSettings(next);
+      setPlants(nextPlants);
+      await Promise.all([saveSettings(next), savePlants(nextPlants)]);
+    },
+    [settings, plants]
+  );
+
+  const importBackup = useCallback(
+    async (raw: string, mode: 'merge' | 'replace') => {
+      const parsed = parseBackupJson(raw);
+      if (!parsed.ok) return parsed;
+
+      const backup: VerdantBackup = parsed.backup;
+      const incomingPlants = backup.plants.map((p) =>
+        normalizePlant(p as Plant)
+      );
+      const incomingLogs = backup.logs;
+
+      if (mode === 'replace') {
+        setPlants(incomingPlants);
+        setLogs(incomingLogs);
+        await Promise.all([
+          savePlants(incomingPlants),
+          saveCareLogs(incomingLogs),
+        ]);
+        if (backup.familyMembers?.length) {
+          const next = {
+            ...settings,
+            familyMembers: backup.familyMembers,
+            householdName: backup.householdName || settings.householdName,
+          };
+          setSettings(next);
+          await saveSettings(next);
+        }
+        return {
+          ok: true as const,
+          message: `Replaced collection with ${incomingPlants.length} plants and ${incomingLogs.length} logs.`,
+        };
+      }
+
+      const merged = mergeFamilyBackup({
+        existingPlants: plants,
+        existingLogs: logs,
+        incomingPlants,
+        incomingLogs,
+      });
+      setPlants(merged.plants);
+      setLogs(merged.logs);
+      await Promise.all([
+        savePlants(merged.plants),
+        saveCareLogs(merged.logs),
+      ]);
+
+      if (backup.familyMembers?.length) {
+        const existingIds = new Set(
+          (settings.familyMembers ?? []).map((m) => m.id)
+        );
+        const extra = backup.familyMembers.filter((m) => !existingIds.has(m.id));
+        if (extra.length) {
+          const next = {
+            ...settings,
+            familyMembers: [...(settings.familyMembers ?? []), ...extra],
+            householdName:
+              settings.householdName || backup.householdName || '',
+          };
+          setSettings(next);
+          await saveSettings(next);
+        }
+      }
+
+      return {
+        ok: true as const,
+        message: `Merged ${merged.addedPlants} plants and ${merged.addedLogs} care logs.`,
+      };
+    },
+    [plants, logs, settings]
   );
 
   const consumeAiUse = useCallback(async () => {
@@ -215,6 +352,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       freeLimit: FREE_PLANT_LIMIT,
       canUseAi,
       aiUsesLeft,
+      familyMembers,
       addPlant,
       updatePlant,
       deletePlant,
@@ -222,6 +360,10 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       deleteCareLog,
       setPremium,
       setNotificationsEnabled,
+      setHouseholdName,
+      addFamilyMember,
+      removeFamilyMember,
+      importBackup,
       consumeAiUse,
       getPlant,
       refresh,
@@ -234,6 +376,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       canAddPlant,
       canUseAi,
       aiUsesLeft,
+      familyMembers,
       addPlant,
       updatePlant,
       deletePlant,
@@ -241,6 +384,10 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       deleteCareLog,
       setPremium,
       setNotificationsEnabled,
+      setHouseholdName,
+      addFamilyMember,
+      removeFamilyMember,
+      importBackup,
       consumeAiUse,
       getPlant,
       refresh,

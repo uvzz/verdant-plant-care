@@ -75,6 +75,26 @@ npm run release -- minor "Feature summary"
 
 See [`CHANGELOG.md`](./CHANGELOG.md).
 
+## Tests & CI
+
+```bash
+npm test
+npm run typecheck
+```
+
+GitHub Actions runs typecheck + vitest on every push to `main` (`.github/workflows/ci.yml`).
+
+## EAS production builds
+
+```bash
+eas login
+eas init
+npm run eas:build:preview
+npm run eas:build:production
+```
+
+See [`docs/EAS.md`](./docs/EAS.md) for secrets, store SKUs, and submit.
+
 ## License
 
 Private / all rights reserved unless otherwise noted.

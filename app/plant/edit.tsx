@@ -42,7 +42,7 @@ export default function EditPlantScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const router = useRouter();
-  const { getPlant, updatePlant } = usePlants();
+  const { getPlant, updatePlant, familyMembers } = usePlants();
   const plant = getPlant(plantId);
 
   const [name, setName] = useState('');
@@ -58,6 +58,7 @@ export default function EditPlantScreen() {
   const [potSize, setPotSize] = useState<PotSize>('medium');
   const [petToxicity, setPetToxicity] = useState<PetToxicity>('unknown');
   const [checkBeforeWater, setCheckBeforeWater] = useState(true);
+  const [caretakerId, setCaretakerId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -75,6 +76,7 @@ export default function EditPlantScreen() {
     setPotSize(plant.potSize ?? 'medium');
     setPetToxicity(plant.petToxicity ?? 'unknown');
     setCheckBeforeWater(plant.checkBeforeWater !== false);
+    setCaretakerId(plant.caretakerId ?? null);
   }, [plant]);
 
   const intervals = useMemo(() => DEFAULT_INTERVALS[category], [category]);
@@ -122,6 +124,7 @@ export default function EditPlantScreen() {
       potSize,
       petToxicity,
       checkBeforeWater,
+      caretakerId,
     });
     setSaving(false);
     router.back();
@@ -276,6 +279,63 @@ export default function EditPlantScreen() {
             </Text>
           </View>
         </Pressable>
+
+        {familyMembers.length > 0 ? (
+          <Field label="Family caretaker" color={c.textMuted}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+              <Pressable
+                onPress={() => setCaretakerId(null)}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor: !caretakerId ? c.night : c.surface,
+                    borderColor: !caretakerId ? c.night : c.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    Type.meta,
+                    {
+                      color: !caretakerId ? c.background : c.text,
+                      fontFamily: Fonts.bodySemi,
+                    },
+                  ]}
+                >
+                  Anyone
+                </Text>
+              </Pressable>
+              {familyMembers.map((m) => {
+                const active = caretakerId === m.id;
+                return (
+                  <Pressable
+                    key={m.id}
+                    onPress={() => setCaretakerId(m.id)}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: active ? c.night : c.surface,
+                        borderColor: active ? c.night : c.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        Type.meta,
+                        {
+                          color: active ? c.background : c.text,
+                          fontFamily: Fonts.bodySemi,
+                        },
+                      ]}
+                    >
+                      {m.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Field>
+        ) : null}
 
         <Field label="Notes" color={c.textMuted}>
           <TextInput

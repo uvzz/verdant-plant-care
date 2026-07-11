@@ -23,13 +23,16 @@ That script bumps versions, prepends a CHANGELOG entry, commits, tags, and pushe
 
 ### Planned
 
-- Real App Store / Play billing (replace Premium demo toggle)
-- Family sharing
-- Custom app icon and branded splash
-- Automated tests and CI
-- EAS production builds
+- Native StoreKit / Play Billing module (wire into `lib/billing.ts` when SKUs go live)
+- Cloud family sync (beyond local household + backup merge)
 
 ---
+
+## [0.6.0] - 2026-07-11
+
+### Notes
+
+- Ship planned: billing, family, icon/splash, tests/CI, EAS
 
 ## [0.5.0] - 2026-07-11
 
