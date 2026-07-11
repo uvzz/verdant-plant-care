@@ -39,7 +39,6 @@ export function sanitizeUserText(
 export function isLikelyPromptInjection(text: string): boolean {
   const t = (text || '').trim();
   if (!t) return false;
-  // Short messages that are only jailbreaks
   if (t.length < 400 && INJECTION_SOFT.some((p) => p.test(t))) return true;
   return false;
 }
@@ -58,59 +57,91 @@ export type LocalAiQuota =
   | { ok: true; remainingDay: number }
   | { ok: false; reason: string };
 
-/**
- * Consume one local AI slot. Call after Premium check.
- */
-export async function consumeLocalAiQuota(
-  isPremium: boolean
-): Promise<LocalAiQuota> {
-  if (!isPremium) {
-    return {
-      ok: false,
-      reason: 'AI assist is a Premium feature.',
-    };
-  }
-
+async function readCounts(): Promise<{
+  day: string;
+  dayCount: number;
+  minute: string;
+  minCount: number;
+}> {
   const day = dayKey();
   const minute = minuteKey();
-
   const [storedDay, storedCount, storedMin, storedMinCount] = await Promise.all([
     AsyncStorage.getItem(KEY_DAY),
     AsyncStorage.getItem(KEY_COUNT),
     AsyncStorage.getItem(KEY_MINUTE),
     AsyncStorage.getItem(KEY_MINUTE_COUNT),
   ]);
-
-  let dayCount = storedDay === day ? parseInt(storedCount || '0', 10) || 0 : 0;
-  let minCount =
+  const dayCount = storedDay === day ? parseInt(storedCount || '0', 10) || 0 : 0;
+  const minCount =
     storedMin === minute ? parseInt(storedMinCount || '0', 10) || 0 : 0;
+  return { day, dayCount, minute, minCount };
+}
 
+/** Peek without consuming (for UI remaining count) */
+export async function peekLocalAiQuota(isPremium: boolean): Promise<{
+  remainingDay: number;
+  remainingMinute: number;
+  blockedReason?: string;
+}> {
+  if (!isPremium) {
+    return {
+      remainingDay: 0,
+      remainingMinute: 0,
+      blockedReason: 'AI assist is a Premium feature.',
+    };
+  }
+  const { dayCount, minCount } = await readCounts();
+  const remainingDay = Math.max(0, AI_SOFT_LIMITS.perDayPremium - dayCount);
+  const remainingMinute = Math.max(0, AI_SOFT_LIMITS.perMinute - minCount);
+  let blockedReason: string | undefined;
   if (minCount >= AI_SOFT_LIMITS.perMinute) {
-    return {
-      ok: false,
-      reason: `Slow down — max ${AI_SOFT_LIMITS.perMinute} AI requests per minute.`,
-    };
+    blockedReason = `Slow down — max ${AI_SOFT_LIMITS.perMinute} AI requests per minute.`;
+  } else if (dayCount >= AI_SOFT_LIMITS.perDayPremium) {
+    blockedReason = `Daily AI limit reached (${AI_SOFT_LIMITS.perDayPremium}/day on this device). Try again tomorrow.`;
   }
-  if (dayCount >= AI_SOFT_LIMITS.perDayPremium) {
-    return {
-      ok: false,
-      reason: `Daily AI limit reached (${AI_SOFT_LIMITS.perDayPremium}/day on this device). Try again tomorrow.`,
-    };
+  return { remainingDay, remainingMinute, blockedReason };
+}
+
+/**
+ * Consume one local AI slot. Call only when a request is about to hit the network.
+ */
+export async function consumeLocalAiQuota(
+  isPremium: boolean
+): Promise<LocalAiQuota> {
+  const peek = await peekLocalAiQuota(isPremium);
+  if (peek.blockedReason) {
+    return { ok: false, reason: peek.blockedReason };
   }
 
-  dayCount += 1;
-  minCount += 1;
+  const { day, dayCount, minute, minCount } = await readCounts();
+  const nextDay = dayCount + 1;
+  const nextMin = minCount + 1;
   await Promise.all([
     AsyncStorage.setItem(KEY_DAY, day),
-    AsyncStorage.setItem(KEY_COUNT, String(dayCount)),
+    AsyncStorage.setItem(KEY_COUNT, String(nextDay)),
     AsyncStorage.setItem(KEY_MINUTE, minute),
-    AsyncStorage.setItem(KEY_MINUTE_COUNT, String(minCount)),
+    AsyncStorage.setItem(KEY_MINUTE_COUNT, String(nextMin)),
   ]);
 
   return {
     ok: true,
-    remainingDay: Math.max(0, AI_SOFT_LIMITS.perDayPremium - dayCount),
+    remainingDay: Math.max(0, AI_SOFT_LIMITS.perDayPremium - nextDay),
   };
+}
+
+/** Undo a consume when the network call fails before a usable result */
+export async function refundLocalAiQuota(): Promise<void> {
+  try {
+    const { day, dayCount, minute, minCount } = await readCounts();
+    await Promise.all([
+      AsyncStorage.setItem(KEY_DAY, day),
+      AsyncStorage.setItem(KEY_COUNT, String(Math.max(0, dayCount - 1))),
+      AsyncStorage.setItem(KEY_MINUTE, minute),
+      AsyncStorage.setItem(KEY_MINUTE_COUNT, String(Math.max(0, minCount - 1))),
+    ]);
+  } catch {
+    /* best-effort */
+  }
 }
 
 /** In-flight guard so double-taps don't fire two paid calls */

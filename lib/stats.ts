@@ -30,10 +30,20 @@ function countType(logs: CareLog[], type: CareLogType): number {
 }
 
 /** Consecutive days (ending today or yesterday) with at least one care log */
+function logDayKey(createdAt: string): string | null {
+  try {
+    const d = parseISO(createdAt);
+    if (Number.isNaN(d.getTime())) return null;
+    return format(d, 'yyyy-MM-dd');
+  } catch {
+    return null;
+  }
+}
+
 export function computeCareStreak(logs: CareLog[]): number {
   if (logs.length === 0) return 0;
   const daysWithCare = new Set(
-    logs.map((l) => format(parseISO(l.createdAt), 'yyyy-MM-dd'))
+    logs.map((l) => logDayKey(l.createdAt)).filter((d): d is string => !!d)
   );
   let streak = 0;
   let cursor = startOfDay(new Date());
@@ -82,11 +92,18 @@ export function computeCollectionStats(
   const byDayLast14: { date: string; count: number }[] = [];
   for (let i = 13; i >= 0; i--) {
     const d = format(subDays(now, i), 'yyyy-MM-dd');
-    const count = logs.filter(
-      (l) => format(parseISO(l.createdAt), 'yyyy-MM-dd') === d
-    ).length;
+    const count = logs.filter((l) => logDayKey(l.createdAt) === d).length;
     byDayLast14.push({ date: d, count });
   }
+
+  const validLogTime = (createdAt: string): Date | null => {
+    try {
+      const t = parseISO(createdAt);
+      return Number.isNaN(t.getTime()) ? null : t;
+    } catch {
+      return null;
+    }
+  };
 
   return {
     plantCount: plants.length,
@@ -95,10 +112,16 @@ export function computeCollectionStats(
     fertilizes: countType(logs, 'fertilize'),
     notes: countType(logs, 'note'),
     photos: countType(logs, 'photo'),
-    overdueCount: due.filter((d) => d.overdue).length,
+    overdueCount: due.filter((d) => d.overdue && !Number.isNaN(d.daysUntil)).length,
     dueTodayCount: due.filter((d) => d.daysUntil === 0).length,
-    logsLast7Days: logs.filter((l) => parseISO(l.createdAt) >= d7).length,
-    logsLast30Days: logs.filter((l) => parseISO(l.createdAt) >= d30).length,
+    logsLast7Days: logs.filter((l) => {
+      const t = validLogTime(l.createdAt);
+      return t ? t >= d7 : false;
+    }).length,
+    logsLast30Days: logs.filter((l) => {
+      const t = validLogTime(l.createdAt);
+      return t ? t >= d30 : false;
+    }).length,
     mostActivePlant,
     categoryBreakdown,
     careStreakDays: computeCareStreak(logs),

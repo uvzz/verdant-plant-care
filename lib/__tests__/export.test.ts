@@ -43,4 +43,35 @@ describe('parseBackupJson roundtrip', () => {
   it('rejects garbage', () => {
     expect(parseBackupJson('not-json').ok).toBe(false);
   });
+
+  it('normalizes corrupt plants/logs and strips premium flag', () => {
+    const r = parseBackupJson(
+      JSON.stringify({
+        app: 'verdant-plant-care',
+        plants: [{ id: 'p1', name: 'A' }, { name: '' }, null],
+        logs: [
+          {
+            id: 'l1',
+            plantId: 'p1',
+            type: 'water',
+            note: '',
+            photoUri: null,
+            createdAt: '2026-01-01T00:00:00.000Z',
+          },
+          { id: 'orphan', plantId: 'missing', type: 'water' },
+          { type: 'bogus' },
+        ],
+        settings: { isPremium: true, notificationsEnabled: true },
+      })
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.backup.plants.length).toBeGreaterThanOrEqual(1);
+      expect(r.backup.logs.every((l) => l.plantId === 'p1' || r.backup.plants.some((p) => p.id === l.plantId))).toBe(
+        true
+      );
+      expect(r.backup.logs.some((l) => l.plantId === 'missing')).toBe(false);
+      expect(r.backup.settings.isPremium).toBe(false);
+    }
+  });
 });

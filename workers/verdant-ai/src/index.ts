@@ -368,50 +368,6 @@ export default {
         );
       }
 
-      // --- Rate limits ---
-      const perMin = Math.max(1, parseInt(env.RATE_LIMIT_PER_MINUTE || '8', 10) || 8);
-      const perHour = Math.max(1, parseInt(env.RATE_LIMIT_PER_HOUR || '40', 10) || 40);
-      const perDay = Math.max(1, parseInt(env.RATE_LIMIT_PER_DAY || '120', 10) || 120);
-
-      const ip = clientIp(request);
-      const tokenFp = (await sha256Hex(token)).slice(0, 16);
-      const ipFp = (await sha256Hex(ip)).slice(0, 16);
-
-      const windows: Array<{ key: string; limit: number; ms: number }> = [
-        { key: `m:ip:${ipFp}`, limit: perMin, ms: 60_000 },
-        { key: `h:ip:${ipFp}`, limit: perHour, ms: 3_600_000 },
-        { key: `d:ip:${ipFp}`, limit: perDay, ms: 86_400_000 },
-        { key: `m:tok:${tokenFp}`, limit: perMin, ms: 60_000 },
-        { key: `h:tok:${tokenFp}`, limit: perHour, ms: 3_600_000 },
-        { key: `d:tok:${tokenFp}`, limit: perDay, ms: 86_400_000 },
-      ];
-
-      let remaining = perMin;
-      let resetAt = Date.now() + 60_000;
-
-      for (const w of windows) {
-        const r = await consumeRate(w.key, w.limit, w.ms);
-        if (!r.ok) {
-          const retry = Math.max(1, Math.ceil((r.resetAt - Date.now()) / 1000));
-          return json(
-            {
-              error: 'Rate limit exceeded. Try again later.',
-              retryAfterSec: retry,
-            },
-            429,
-            {
-              'Retry-After': String(retry),
-              'X-RateLimit-Remaining': '0',
-              'X-RateLimit-Reset': String(r.resetAt),
-            }
-          );
-        }
-        if (w.ms === 60_000) {
-          remaining = Math.min(remaining, r.remaining);
-          resetAt = r.resetAt;
-        }
-      }
-
       let body: {
         model?: string;
         messages?: unknown[];
@@ -469,6 +425,50 @@ export default {
         (body.response_format as { type?: string }).type === 'json_object'
       ) {
         responseFormat = { type: 'json_object' };
+      }
+
+      // --- Rate limits (after validation — rejected requests do not burn quota) ---
+      const perMin = Math.max(1, parseInt(env.RATE_LIMIT_PER_MINUTE || '8', 10) || 8);
+      const perHour = Math.max(1, parseInt(env.RATE_LIMIT_PER_HOUR || '40', 10) || 40);
+      const perDay = Math.max(1, parseInt(env.RATE_LIMIT_PER_DAY || '120', 10) || 120);
+
+      const ip = clientIp(request);
+      const tokenFp = (await sha256Hex(token)).slice(0, 16);
+      const ipFp = (await sha256Hex(ip)).slice(0, 16);
+
+      const windows: Array<{ key: string; limit: number; ms: number }> = [
+        { key: `m:ip:${ipFp}`, limit: perMin, ms: 60_000 },
+        { key: `h:ip:${ipFp}`, limit: perHour, ms: 3_600_000 },
+        { key: `d:ip:${ipFp}`, limit: perDay, ms: 86_400_000 },
+        { key: `m:tok:${tokenFp}`, limit: perMin, ms: 60_000 },
+        { key: `h:tok:${tokenFp}`, limit: perHour, ms: 3_600_000 },
+        { key: `d:tok:${tokenFp}`, limit: perDay, ms: 86_400_000 },
+      ];
+
+      let remaining = perMin;
+      let resetAt = Date.now() + 60_000;
+
+      for (const w of windows) {
+        const r = await consumeRate(w.key, w.limit, w.ms);
+        if (!r.ok) {
+          const retry = Math.max(1, Math.ceil((r.resetAt - Date.now()) / 1000));
+          return json(
+            {
+              error: 'Rate limit exceeded. Try again later.',
+              retryAfterSec: retry,
+            },
+            429,
+            {
+              'Retry-After': String(retry),
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': String(r.resetAt),
+            }
+          );
+        }
+        if (w.ms === 60_000) {
+          remaining = Math.min(remaining, r.remaining);
+          resetAt = r.resetAt;
+        }
       }
 
       const upstream = await fetch(OPENROUTER_URL, {

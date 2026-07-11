@@ -192,20 +192,44 @@ export const CARE_TYPE_EMOJI: Record<CareLogType, string> = {
   check: '🖐️',
 };
 
+const VALID_CARE_TYPES: CareLogType[] = [
+  'water',
+  'fertilize',
+  'note',
+  'photo',
+  'check',
+];
+
 /** Normalize older plant records missing new fields */
-export function normalizePlant(raw: Partial<Plant> & Pick<Plant, 'id' | 'name'>): Plant {
+export function normalizePlant(
+  raw: Partial<Plant> & { id?: string; name?: string }
+): Plant {
   const now = new Date().toISOString();
+  const id =
+    typeof raw.id === 'string' && raw.id.trim()
+      ? raw.id.trim()
+      : `plant-${now.slice(0, 10)}-${Math.random().toString(36).slice(2, 8)}`;
+  const acquired =
+    typeof raw.acquiredDate === 'string' && /^\d{4}-\d{2}-\d{2}/.test(raw.acquiredDate)
+      ? raw.acquiredDate.slice(0, 10)
+      : now.slice(0, 10);
+  const category = PLANT_CATEGORIES.includes(raw.category as PlantCategory)
+    ? (raw.category as PlantCategory)
+    : 'Other';
   return {
-    id: raw.id,
-    name: raw.name || 'Plant',
-    species: raw.species ?? '',
-    category: raw.category ?? 'Other',
+    id,
+    name: (raw.name || 'Plant').toString().slice(0, 120),
+    species: (raw.species ?? '').toString().slice(0, 160),
+    category,
     photoUri: raw.photoUri ?? null,
-    acquiredDate: raw.acquiredDate ?? now.slice(0, 10),
-    location: raw.location ?? '',
-    waterIntervalDays: Math.max(1, Number(raw.waterIntervalDays) || 7),
-    fertilizeIntervalDays: Math.max(1, Number(raw.fertilizeIntervalDays) || 30),
-    notes: raw.notes ?? '',
+    acquiredDate: acquired,
+    location: (raw.location ?? '').toString().slice(0, 120),
+    waterIntervalDays: Math.min(365, Math.max(1, Number(raw.waterIntervalDays) || 7)),
+    fertilizeIntervalDays: Math.min(
+      365,
+      Math.max(1, Number(raw.fertilizeIntervalDays) || 30)
+    ),
+    notes: (raw.notes ?? '').toString().slice(0, 4000),
     createdAt: raw.createdAt ?? now,
     updatedAt: raw.updatedAt ?? now,
     lightLevel: raw.lightLevel ?? 'medium',
@@ -214,7 +238,37 @@ export function normalizePlant(raw: Partial<Plant> & Pick<Plant, 'id' | 'name'>)
     checkBeforeWater: raw.checkBeforeWater !== false,
     caretakerId: raw.caretakerId ?? null,
     aiGuide: raw.aiGuide ?? null,
-    aiCoachHistory: raw.aiCoachHistory ?? [],
+    aiCoachHistory: Array.isArray(raw.aiCoachHistory)
+      ? raw.aiCoachHistory.slice(0, MAX_COACH_HISTORY)
+      : [],
     aiIdentityConfidence: raw.aiIdentityConfidence ?? null,
+  };
+}
+
+/** Drop/normalize corrupt care logs from backups */
+export function normalizeCareLog(
+  raw: Partial<CareLog> & { id?: string }
+): CareLog | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const plantId = typeof raw.plantId === 'string' ? raw.plantId.trim() : '';
+  if (!plantId) return null;
+  const type = VALID_CARE_TYPES.includes(raw.type as CareLogType)
+    ? (raw.type as CareLogType)
+    : 'note';
+  const now = new Date().toISOString();
+  const id =
+    typeof raw.id === 'string' && raw.id.trim()
+      ? raw.id.trim()
+      : `log-${Math.random().toString(36).slice(2, 10)}`;
+  return {
+    id,
+    plantId,
+    type,
+    note: (raw.note ?? '').toString().slice(0, 2000),
+    photoUri: raw.photoUri ?? null,
+    createdAt:
+      typeof raw.createdAt === 'string' && raw.createdAt
+        ? raw.createdAt
+        : now,
   };
 }

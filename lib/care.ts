@@ -1,6 +1,29 @@
-import { addDays, differenceInCalendarDays, parseISO, startOfDay } from 'date-fns';
+import {
+  addDays,
+  differenceInCalendarDays,
+  isValid,
+  parseISO,
+  startOfDay,
+} from 'date-fns';
 import type { CareDueItem, CareLog, LightLevel, Plant, PotSize } from './types';
 import { MOISTURE_SNOOZE_DAYS } from './types';
+
+/** Parse ISO date safely — invalid → today (avoids NaN due chains) */
+export function safeParseDate(iso: string | undefined | null): Date {
+  if (!iso) return startOfDay(new Date());
+  try {
+    const d = parseISO(iso);
+    if (isValid(d)) return d;
+  } catch {
+    /* fall through */
+  }
+  // YYYY-MM-DD only
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const d = parseISO(`${iso}T12:00:00`);
+    if (isValid(d)) return d;
+  }
+  return startOfDay(new Date());
+}
 
 export function lastCareOfType(
   logs: CareLog[],
@@ -54,7 +77,9 @@ export function nextDueDate(
   if (type === 'fertilize') {
     const last = lastCareOfType(logs, plant.id, 'fertilize');
     const interval = effectiveFertilizeIntervalDays(plant);
-    const base = last ? parseISO(last.createdAt) : parseISO(plant.acquiredDate);
+    const base = last
+      ? safeParseDate(last.createdAt)
+      : safeParseDate(plant.acquiredDate);
     return startOfDay(addDays(base, interval));
   }
 
@@ -62,13 +87,13 @@ export function nextDueDate(
   const lastCheck = lastCareOfType(logs, plant.id, 'check');
   const interval = effectiveWaterIntervalDays(plant);
   const waterBase = lastWater
-    ? parseISO(lastWater.createdAt)
-    : parseISO(plant.acquiredDate);
+    ? safeParseDate(lastWater.createdAt)
+    : safeParseDate(plant.acquiredDate);
   const fromWater = startOfDay(addDays(waterBase, interval));
 
   if (lastCheck) {
-    const checkAt = parseISO(lastCheck.createdAt);
-    const waterAt = lastWater ? parseISO(lastWater.createdAt) : null;
+    const checkAt = safeParseDate(lastCheck.createdAt);
+    const waterAt = lastWater ? safeParseDate(lastWater.createdAt) : null;
     if (!waterAt || checkAt > waterAt) {
       return startOfDay(addDays(checkAt, MOISTURE_SNOOZE_DAYS));
     }

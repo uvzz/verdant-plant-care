@@ -17,10 +17,13 @@ import {
 import {
   AI_SOFT_LIMITS,
   beginAiRequest,
+  consumeLocalAiQuota,
   endAiRequest,
   isLikelyPromptInjection,
+  refundLocalAiQuota,
   sanitizeUserText,
 } from './aiSafety';
+import { loadSettings } from './storage';
 
 /**
  * OpenRouter models (key lives on Worker only).
@@ -76,7 +79,14 @@ async function chat(
   const gate = beginAiRequest();
   if (!gate.ok) throw new Error(gate.reason);
 
+  let charged = false;
   try {
+    // Premium + local soft quota (consume only when about to hit network)
+    const settings = await loadSettings();
+    const quota = await consumeLocalAiQuota(settings.isPremium);
+    if (!quota.ok) throw new Error(quota.reason);
+    charged = true;
+
     const base = getAiProxyUrl();
     const res = await fetch(`${base}/v1/chat`, {
       method: 'POST',
@@ -141,6 +151,9 @@ async function chat(
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) throw new Error('Empty response from AI.');
     return content;
+  } catch (e) {
+    if (charged) await refundLocalAiQuota();
+    throw e;
   } finally {
     endAiRequest();
   }

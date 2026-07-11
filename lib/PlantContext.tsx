@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { FREE_PLANT_LIMIT } from '@/constants/Colors';
@@ -26,10 +27,9 @@ import type {
   Plant,
   PremiumSource,
 } from './types';
-import { normalizePlant } from './types';
 import { createFamilyMember, mergeFamilyBackup } from './family';
 import { parseBackupJson, type VerdantBackup } from './export';
-import { consumeLocalAiQuota } from './aiSafety';
+import { peekLocalAiQuota } from './aiSafety';
 
 interface PlantContextValue {
   plants: Plant[];
@@ -81,6 +81,16 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     familyMembers: [],
   });
   const [loading, setLoading] = useState(true);
+  /** Soft daily remaining when Premium; 0 on free */
+  const [aiUsesLeft, setAiUsesLeft] = useState<number | 'unlimited'>(0);
+
+  // Refs keep latest collections for concurrent-safe mutations (no lost updates)
+  const plantsRef = useRef(plants);
+  const logsRef = useRef(logs);
+  const settingsRef = useRef(settings);
+  plantsRef.current = plants;
+  logsRef.current = logs;
+  settingsRef.current = settings;
 
   const refresh = useCallback(async () => {
     const [p, l, s] = await Promise.all([
@@ -88,6 +98,9 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       loadCareLogs(),
       loadSettings(),
     ]);
+    plantsRef.current = p;
+    logsRef.current = l;
+    settingsRef.current = s;
     setPlants(p);
     setLogs(l);
     setSettings(s);
@@ -103,14 +116,29 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
 
   const canAddPlant = settings.isPremium || plants.length < FREE_PLANT_LIMIT;
   const canUseAi = settings.isPremium;
-  const aiUsesLeft: number | 'unlimited' = settings.isPremium
-    ? 'unlimited'
-    : 0;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!settings.isPremium) {
+        if (!cancelled) setAiUsesLeft(0);
+        return;
+      }
+      const peek = await peekLocalAiQuota(true);
+      if (!cancelled) setAiUsesLeft(peek.remainingDay);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [settings.isPremium, plants.length, logs.length]);
+
   const familyMembers = settings.familyMembers ?? [];
 
   const addPlant = useCallback(
     async (input: Omit<Plant, 'id' | 'createdAt' | 'updatedAt'>) => {
-      if (!settings.isPremium && plants.length >= FREE_PLANT_LIMIT) {
+      const prev = plantsRef.current;
+      const isPremium = settingsRef.current.isPremium;
+      if (!isPremium && prev.length >= FREE_PLANT_LIMIT) {
         return {
           ok: false as const,
           reason: `Free plan includes up to ${FREE_PLANT_LIMIT} plants. Upgrade for unlimited plants.`,
@@ -125,41 +153,39 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
         createdAt: now,
         updatedAt: now,
       };
-      const next = [plant, ...plants];
+      const next = [plant, ...plantsRef.current];
+      plantsRef.current = next;
       setPlants(next);
       await savePlants(next);
       return { ok: true as const, plant };
     },
-    [plants, settings.isPremium]
+    []
   );
 
-  const updatePlant = useCallback(
-    async (id: string, patch: Partial<Plant>) => {
-      let nextPatch = { ...patch };
-      if (patch.photoUri !== undefined) {
-        nextPatch.photoUri = await persistPhoto(patch.photoUri);
-      }
-      const next = plants.map((p) =>
-        p.id === id
-          ? { ...p, ...nextPatch, id: p.id, updatedAt: new Date().toISOString() }
-          : p
-      );
-      setPlants(next);
-      await savePlants(next);
-    },
-    [plants]
-  );
+  const updatePlant = useCallback(async (id: string, patch: Partial<Plant>) => {
+    let nextPatch = { ...patch };
+    if (patch.photoUri !== undefined) {
+      nextPatch.photoUri = await persistPhoto(patch.photoUri);
+    }
+    const next = plantsRef.current.map((p) =>
+      p.id === id
+        ? { ...p, ...nextPatch, id: p.id, updatedAt: new Date().toISOString() }
+        : p
+    );
+    plantsRef.current = next;
+    setPlants(next);
+    await savePlants(next);
+  }, []);
 
-  const deletePlant = useCallback(
-    async (id: string) => {
-      const nextPlants = plants.filter((p) => p.id !== id);
-      const nextLogs = logs.filter((l) => l.plantId !== id);
-      setPlants(nextPlants);
-      setLogs(nextLogs);
-      await Promise.all([savePlants(nextPlants), saveCareLogs(nextLogs)]);
-    },
-    [plants, logs]
-  );
+  const deletePlant = useCallback(async (id: string) => {
+    const nextPlants = plantsRef.current.filter((p) => p.id !== id);
+    const nextLogs = logsRef.current.filter((l) => l.plantId !== id);
+    plantsRef.current = nextPlants;
+    logsRef.current = nextLogs;
+    setPlants(nextPlants);
+    setLogs(nextLogs);
+    await Promise.all([savePlants(nextPlants), saveCareLogs(nextLogs)]);
+  }, []);
 
   const addCareLog = useCallback(
     async (input: {
@@ -177,23 +203,30 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
         photoUri,
         createdAt: new Date().toISOString(),
       };
-      const next = [entry, ...logs];
-      setLogs(next);
-      await saveCareLogs(next);
-      await updatePlant(input.plantId, {});
+      const nextLogs = [entry, ...logsRef.current];
+      logsRef.current = nextLogs;
+      setLogs(nextLogs);
+      await saveCareLogs(nextLogs);
+
+      const nextPlants = plantsRef.current.map((p) =>
+        p.id === input.plantId
+          ? { ...p, updatedAt: new Date().toISOString() }
+          : p
+      );
+      plantsRef.current = nextPlants;
+      setPlants(nextPlants);
+      await savePlants(nextPlants);
       return entry;
     },
-    [logs, updatePlant]
+    []
   );
 
-  const deleteCareLog = useCallback(
-    async (id: string) => {
-      const next = logs.filter((l) => l.id !== id);
-      setLogs(next);
-      await saveCareLogs(next);
-    },
-    [logs]
-  );
+  const deleteCareLog = useCallback(async (id: string) => {
+    const next = logsRef.current.filter((l) => l.id !== id);
+    logsRef.current = next;
+    setLogs(next);
+    await saveCareLogs(next);
+  }, []);
 
   const setPremium = useCallback(
     async (
@@ -201,60 +234,56 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       meta?: { source?: PremiumSource; productId?: string | null }
     ) => {
       const next: AppSettings = {
-        ...settings,
+        ...settingsRef.current,
         isPremium: value,
         premiumSource: value ? meta?.source ?? 'demo' : 'none',
         premiumProductId: value ? meta?.productId ?? null : null,
       };
+      settingsRef.current = next;
       setSettings(next);
       await saveSettings(next);
     },
-    [settings]
+    []
   );
 
-  const setNotificationsEnabled = useCallback(
-    async (value: boolean) => {
-      const next = { ...settings, notificationsEnabled: value };
-      setSettings(next);
-      await saveSettings(next);
-    },
-    [settings]
-  );
+  const setNotificationsEnabled = useCallback(async (value: boolean) => {
+    const next = { ...settingsRef.current, notificationsEnabled: value };
+    settingsRef.current = next;
+    setSettings(next);
+    await saveSettings(next);
+  }, []);
 
-  const setHouseholdName = useCallback(
-    async (name: string) => {
-      const next = { ...settings, householdName: name.trim() };
-      setSettings(next);
-      await saveSettings(next);
-    },
-    [settings]
-  );
+  const setHouseholdName = useCallback(async (name: string) => {
+    const next = { ...settingsRef.current, householdName: name.trim() };
+    settingsRef.current = next;
+    setSettings(next);
+    await saveSettings(next);
+  }, []);
 
-  const addFamilyMember = useCallback(
-    async (name: string) => {
-      const member = createFamilyMember(name, 'member');
-      const members = [...(settings.familyMembers ?? []), member];
-      const next = { ...settings, familyMembers: members };
-      setSettings(next);
-      await saveSettings(next);
-      return member;
-    },
-    [settings]
-  );
+  const addFamilyMember = useCallback(async (name: string) => {
+    const member = createFamilyMember(name, 'member');
+    const members = [...(settingsRef.current.familyMembers ?? []), member];
+    const next = { ...settingsRef.current, familyMembers: members };
+    settingsRef.current = next;
+    setSettings(next);
+    await saveSettings(next);
+    return member;
+  }, []);
 
-  const removeFamilyMember = useCallback(
-    async (id: string) => {
-      const members = (settings.familyMembers ?? []).filter((m) => m.id !== id);
-      const nextPlants = plants.map((p) =>
-        p.caretakerId === id ? { ...p, caretakerId: null } : p
-      );
-      const next = { ...settings, familyMembers: members };
-      setSettings(next);
-      setPlants(nextPlants);
-      await Promise.all([saveSettings(next), savePlants(nextPlants)]);
-    },
-    [settings, plants]
-  );
+  const removeFamilyMember = useCallback(async (id: string) => {
+    const members = (settingsRef.current.familyMembers ?? []).filter(
+      (m) => m.id !== id
+    );
+    const nextPlants = plantsRef.current.map((p) =>
+      p.caretakerId === id ? { ...p, caretakerId: null } : p
+    );
+    const next = { ...settingsRef.current, familyMembers: members };
+    settingsRef.current = next;
+    plantsRef.current = nextPlants;
+    setSettings(next);
+    setPlants(nextPlants);
+    await Promise.all([saveSettings(next), savePlants(nextPlants)]);
+  }, []);
 
   const importBackup = useCallback(
     async (raw: string, mode: 'merge' | 'replace') => {
@@ -262,12 +291,13 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       if (!parsed.ok) return parsed;
 
       const backup: VerdantBackup = parsed.backup;
-      const incomingPlants = backup.plants.map((p) =>
-        normalizePlant(p as Plant)
-      );
+      // Already normalized in parseBackupJson
+      const incomingPlants = backup.plants;
       const incomingLogs = backup.logs;
 
       if (mode === 'replace') {
+        plantsRef.current = incomingPlants;
+        logsRef.current = incomingLogs;
         setPlants(incomingPlants);
         setLogs(incomingLogs);
         await Promise.all([
@@ -276,10 +306,12 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
         ]);
         if (backup.familyMembers?.length) {
           const next = {
-            ...settings,
+            ...settingsRef.current,
             familyMembers: backup.familyMembers,
-            householdName: backup.householdName || settings.householdName,
+            householdName:
+              backup.householdName || settingsRef.current.householdName,
           };
+          settingsRef.current = next;
           setSettings(next);
           await saveSettings(next);
         }
@@ -290,11 +322,13 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       }
 
       const merged = mergeFamilyBackup({
-        existingPlants: plants,
-        existingLogs: logs,
+        existingPlants: plantsRef.current,
+        existingLogs: logsRef.current,
         incomingPlants,
         incomingLogs,
       });
+      plantsRef.current = merged.plants;
+      logsRef.current = merged.logs;
       setPlants(merged.plants);
       setLogs(merged.logs);
       await Promise.all([
@@ -304,16 +338,22 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
 
       if (backup.familyMembers?.length) {
         const existingIds = new Set(
-          (settings.familyMembers ?? []).map((m) => m.id)
+          (settingsRef.current.familyMembers ?? []).map((m) => m.id)
         );
         const extra = backup.familyMembers.filter((m) => !existingIds.has(m.id));
         if (extra.length) {
           const next = {
-            ...settings,
-            familyMembers: [...(settings.familyMembers ?? []), ...extra],
+            ...settingsRef.current,
+            familyMembers: [
+              ...(settingsRef.current.familyMembers ?? []),
+              ...extra,
+            ],
             householdName:
-              settings.householdName || backup.householdName || '',
+              settingsRef.current.householdName ||
+              backup.householdName ||
+              '',
           };
+          settingsRef.current = next;
           setSettings(next);
           await saveSettings(next);
         }
@@ -324,15 +364,23 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
         message: `Merged ${merged.addedPlants} plants and ${merged.addedLogs} care logs.`,
       };
     },
-    [plants, logs, settings]
+    []
   );
 
   const consumeAiUse = useCallback(async () => {
-    // Premium gate + local soft quota (server still rate-limits)
-    const quota = await consumeLocalAiQuota(settings.isPremium);
-    if (!quota.ok) {
-      return { ok: false as const, reason: quota.reason };
+    // Preflight only — actual local charge happens in openrouter.chat
+    // so failed network calls do not burn quota.
+    if (!settings.isPremium) {
+      return {
+        ok: false as const,
+        reason: 'AI assist is a Premium feature.',
+      };
     }
+    const peek = await peekLocalAiQuota(true);
+    if (peek.blockedReason) {
+      return { ok: false as const, reason: peek.blockedReason };
+    }
+    setAiUsesLeft(peek.remainingDay);
     return { ok: true as const };
   }, [settings.isPremium]);
 

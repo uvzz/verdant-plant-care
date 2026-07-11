@@ -34,11 +34,13 @@ export function CareLogRow({
       style={[styles.row, { backgroundColor: c.surface, borderColor: c.border }]}
     >
       <View style={[styles.badge, { backgroundColor: c.surfaceAlt }]}>
-        <Text style={styles.emoji}>{CARE_TYPE_EMOJI[log.type]}</Text>
+        <Text style={styles.emoji}>
+          {CARE_TYPE_EMOJI[log.type] ?? '📝'}
+        </Text>
       </View>
       <View style={styles.content}>
         <Text style={[Type.title, { color: c.text, fontSize: 15 }]}>
-          {CARE_TYPE_LABELS[log.type]}
+          {CARE_TYPE_LABELS[log.type] ?? 'Care'}
         </Text>
         <Text style={[Type.meta, { color: c.textMuted }]}>
           {format(parseISO(log.createdAt), 'MMM d · h:mm a')}
