@@ -1,5 +1,7 @@
 # Verdant — Plant Care Tracker
 
+[![GitHub](https://img.shields.io/badge/GitHub-uvzz%2Fverdant--plant-care-5B7F6B)](https://github.com/uvzz/verdant-plant-care)
+
 Photo-first, multi-niche plant care tracker for **iOS** and **Android**, built with **Expo (React Native)**.
 
 Calm, premium presentation for houseplants, orchids, succulents, ferns, herbs, and more — with care logs, visual progress galleries, and gentle reminders.
