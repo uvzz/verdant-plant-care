@@ -32,8 +32,9 @@ export default function WelcomeScreen() {
         Care you can{'\n'}see grow.
       </Text>
       <Text style={[Type.body, styles.sub, { color: '#A8B5AE' }]}>
-        A photo-first journal for every plant in your collection — with AI identify,
-        care guides, and a gentle coach when you need a second eye.
+        A local-first plant journal that asks you to check soil before watering —
+        not blind schedules. Photos stay on your phone. Premium AI never puts an
+        API key on your device.
       </Text>
 
       <View style={styles.preview}>

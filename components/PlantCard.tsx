@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Colors from '@/constants/Colors';
 import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
-import type { Plant } from '@/lib/types';
+import { PET_LABELS, type Plant } from '@/lib/types';
 
 interface Props {
   plant: Plant;
@@ -22,6 +22,7 @@ export function PlantCard({
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const track = filamentColor ?? c.tint;
+  const tox = plant.petToxicity && plant.petToxicity !== 'unknown' ? plant.petToxicity : null;
 
   return (
     <Link href={`/plant/${plant.id}`} asChild>
@@ -44,6 +45,21 @@ export function PlantCard({
               <Text style={styles.placeholderEmoji}>🪴</Text>
             </View>
           )}
+          {tox ? (
+            <View
+              style={[
+                styles.petBadge,
+                {
+                  backgroundColor:
+                    tox === 'toxic' ? c.danger : tox === 'caution' ? '#C4A35A' : c.growth,
+                },
+              ]}
+            >
+              <Text style={styles.petBadgeText}>
+                {tox === 'toxic' ? '🐾!' : tox === 'caution' ? '🐾?' : '🐾'}
+              </Text>
+            </View>
+          ) : null}
         </View>
         <View style={styles.specimen}>
           <Text
@@ -69,6 +85,11 @@ export function PlantCard({
           >
             {subtitle || plant.location || plant.category}
           </Text>
+          {tox ? (
+            <Text style={[Type.meta, { color: c.textMuted, fontSize: 10, marginTop: 2 }]} numberOfLines={1}>
+              {PET_LABELS[tox]}
+            </Text>
+          ) : null}
         </View>
       </Pressable>
     </Link>
@@ -90,6 +111,15 @@ const styles = StyleSheet.create({
   image: { width: '100%', height: '100%' },
   placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   placeholderEmoji: { fontSize: 40 },
+  petBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
+  petBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   specimen: {
     paddingHorizontal: 12,
     paddingTop: 10,

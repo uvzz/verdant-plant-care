@@ -16,7 +16,7 @@ import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { EmptyState } from '@/components/EmptyState';
 import { PlantCard } from '@/components/PlantCard';
-import { formatRelativeCare, getCareDueItems } from '@/lib/care';
+import { formatRelativeCare, getCareDueItems, listRooms } from '@/lib/care';
 import { usePlants } from '@/lib/PlantContext';
 import type { PlantCategory } from '@/lib/types';
 import { PLANT_CATEGORIES } from '@/lib/types';
@@ -29,6 +29,9 @@ export default function MyPlantsScreen() {
   const { plants, logs, loading, canAddPlant, freeLimit, settings } = usePlants();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<PlantCategory | 'All'>('All');
+  const [room, setRoom] = useState<string | 'All'>('All');
+
+  const rooms = useMemo(() => listRooms(plants), [plants]);
 
   const dueMap = useMemo(() => {
     const items = getCareDueItems(plants, logs);
@@ -61,6 +64,7 @@ export default function MyPlantsScreen() {
     const q = query.trim().toLowerCase();
     return plants.filter((p) => {
       if (category !== 'All' && p.category !== category) return false;
+      if (room !== 'All' && (p.location || '').trim() !== room) return false;
       if (!q) return true;
       return (
         p.name.toLowerCase().includes(q) ||
@@ -69,7 +73,7 @@ export default function MyPlantsScreen() {
         p.notes.toLowerCase().includes(q)
       );
     });
-  }, [plants, query, category]);
+  }, [plants, query, category, room]);
 
   if (loading) {
     return (
@@ -113,7 +117,7 @@ export default function MyPlantsScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search name, species, location…"
+            placeholder="Search name, species, room…"
             placeholderTextColor={c.textMuted}
             style={[
               styles.search,
@@ -161,6 +165,42 @@ export default function MyPlantsScreen() {
               );
             }}
           />
+          {rooms.length > 0 ? (
+            <FlatList
+              horizontal
+              data={['All', ...rooms] as const}
+              keyExtractor={(item) => `room-${item}`}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chips}
+              renderItem={({ item }) => {
+                const active = item === room;
+                return (
+                  <Pressable
+                    onPress={() => setRoom(item)}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: active ? c.tint : c.surface,
+                        borderColor: active ? c.tint : c.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        Type.meta,
+                        {
+                          color: active ? '#FFFFFF' : c.text,
+                          fontFamily: Fonts.bodySemi,
+                        },
+                      ]}
+                    >
+                      {item === 'All' ? 'All rooms' : item}
+                    </Text>
+                  </Pressable>
+                );
+              }}
+            />
+          ) : null}
         </View>
       ) : null}
 
@@ -169,7 +209,7 @@ export default function MyPlantsScreen() {
           <EmptyState
             emoji="🌿"
             title="Your glasshouse is quiet"
-            body="Add a plant with a portrait. Use AI identify to fill species and care intervals."
+            body="Add a plant with a portrait. Use AI identify to fill species and care intervals — then set room, light, and pot so schedules stay smart."
           />
           <View style={styles.emptyCta}>
             <Pressable
@@ -187,7 +227,7 @@ export default function MyPlantsScreen() {
         <EmptyState
           emoji="🔎"
           title="No matches"
-          body="Try another search or category filter."
+          body="Try another search, category, or room filter."
         />
       ) : (
         <FlatList

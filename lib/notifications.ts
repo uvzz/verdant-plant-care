@@ -43,11 +43,14 @@ export async function scheduleGentleReminders(
       triggerDate.setTime(Date.now() + 60 * 60 * 1000);
     }
 
-    const action = item.type === 'water' ? 'water' : 'feed';
+    const body =
+      item.type === 'water'
+        ? `Check soil on ${item.plant.name} — water only if dry`
+        : `Consider feeding ${item.plant.name}`;
     await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Gentle plant reminder 🌿',
-        body: `Time to ${action} ${item.plant.name}`,
+        body,
         data: { plantId: item.plant.id, type: item.type },
       },
       trigger: {

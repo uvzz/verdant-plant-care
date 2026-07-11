@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,6 +9,7 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { ensureNotificationPermissions } from '@/lib/notifications';
 import { usePlants } from '@/lib/PlantContext';
 import { getAiProxyUrl } from '@/lib/aiConfig';
+import { exportCollectionBackup } from '@/lib/export';
 
 type Benefit = {
   label: string;
@@ -24,31 +26,37 @@ const BENEFITS: Benefit[] = [
     live: true,
   },
   {
-    label: 'AI plant identify',
-    free: '—',
-    premium: 'Included (server AI)',
-    live: true,
-  },
-  {
-    label: 'AI care guide & coach',
-    free: '—',
-    premium: 'Included (server AI)',
-    live: true,
-  },
-  {
-    label: 'Collection insights + AI',
-    free: 'Stats only',
-    premium: 'Stats + AI insight',
-    live: true,
-  },
-  {
-    label: 'Photo care logs & gallery',
+    label: 'Check-before-water calendar',
     free: 'Included',
     premium: 'Included',
     live: true,
   },
   {
-    label: 'Care calendar & reminders',
+    label: 'Light + pot-aware schedules',
+    free: 'Included',
+    premium: 'Included',
+    live: true,
+  },
+  {
+    label: 'Rooms, pet safety flags',
+    free: 'Included',
+    premium: 'Included',
+    live: true,
+  },
+  {
+    label: 'AI plant identify',
+    free: '—',
+    premium: 'Server AI',
+    live: true,
+  },
+  {
+    label: 'AI care guide & coach',
+    free: '—',
+    premium: 'Server AI',
+    live: true,
+  },
+  {
+    label: 'Export your data',
     free: 'Included',
     premium: 'Included',
     live: true,
@@ -61,13 +69,50 @@ const BENEFITS: Benefit[] = [
   },
 ];
 
+const WHY_BETTER = [
+  {
+    title: 'vs PictureThis',
+    body: 'No dark-pattern free trials or ad-data harvesting. Journal stays on-device; AI key never on your phone.',
+  },
+  {
+    title: 'vs Planta',
+    body: '“Still moist” snooze + pot/light-aware intervals — schedules don’t blindly overwater.',
+  },
+  {
+    title: 'vs Greg',
+    body: 'Water tracking and calendar stay free. Premium is AI, not locking basic care.',
+  },
+];
+
 export default function SettingsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const insets = useSafeAreaInsets();
-  const { plants, settings, setPremium, setNotificationsEnabled } = usePlants();
+  const { plants, logs, settings, setPremium, setNotificationsEnabled } = usePlants();
   const isPremium = settings.isPremium;
   const aiUrl = getAiProxyUrl();
+  const [exporting, setExporting] = useState(false);
+
+  const onExport = async () => {
+    setExporting(true);
+    try {
+      const result = await exportCollectionBackup({ plants, logs, settings });
+      if (!result.ok) {
+        Alert.alert('Export failed', result.reason);
+        return;
+      }
+      if (result.path !== 'cancelled') {
+        Alert.alert(
+          'Backup ready',
+          plants.length
+            ? `Shared JSON for ${plants.length} plant${plants.length === 1 ? '' : 's'}. Photos are local paths — re-link photos after restore if needed.`
+            : 'Empty collection exported.'
+        );
+      }
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
@@ -83,6 +128,28 @@ export default function SettingsScreen() {
             {plants.length} of {isPremium ? '∞' : FREE_PLANT_LIMIT} plants ·{' '}
             {isPremium ? 'Premium' : 'Free'} plan
           </Text>
+          <PrimaryButton
+            label={exporting ? 'Exporting…' : 'Export backup (JSON)'}
+            variant="secondary"
+            onPress={onExport}
+            loading={exporting}
+            style={{ marginTop: 12 }}
+          />
+          <Text style={[Type.meta, { color: c.textMuted, marginTop: 8 }]}>
+            Your journal is local-first — export anytime. Competitors often trap data in the cloud.
+          </Text>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <Text style={[Type.title, { color: c.text }]}>Why Verdant is different</Text>
+          {WHY_BETTER.map((w) => (
+            <View key={w.title} style={{ marginTop: 12 }}>
+              <Text style={[Type.meta, { color: c.tint, fontFamily: Fonts.bodySemi }]}>
+                {w.title}
+              </Text>
+              <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 2 }]}>{w.body}</Text>
+            </View>
+          ))}
         </View>
 
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
@@ -138,7 +205,8 @@ export default function SettingsScreen() {
               { color: 'rgba(232,239,233,0.7)', marginTop: 6, marginBottom: 16 },
             ]}
           >
-            Free is a small local journal. Premium adds unlimited plants and server-side AI.
+            Free keeps the journal, calendar, and smart schedules. Premium adds unlimited plants
+            and server-side AI — no credit-card trap to open the app.
           </Text>
 
           <View style={styles.compareHeader}>
@@ -209,8 +277,8 @@ export default function SettingsScreen() {
           <Text style={[Type.title, { color: c.text }]}>About</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
             {APP_NAME} v{APP_VERSION}{'\n'}
-            Photos stay on device. Premium AI runs via Verdant’s edge API (OpenRouter key
-            server-side only).
+            Local-first plant journal. Photos stay on device. Premium AI via edge proxy
+            (OpenRouter key server-side only). Check soil before you water.
           </Text>
         </View>
       </ScrollView>

@@ -23,9 +23,19 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { usePlants } from '@/lib/PlantContext';
 import {
   DEFAULT_INTERVALS,
+  LIGHT_LABELS,
+  LIGHT_LEVELS,
+  PET_LABELS,
+  PET_TOXICITY,
   PLANT_CATEGORIES,
+  POT_LABELS,
+  POT_SIZES,
+  type LightLevel,
+  type PetToxicity,
   type PlantCategory,
+  type PotSize,
 } from '@/lib/types';
+import { effectiveWaterIntervalDays } from '@/lib/care';
 
 export default function EditPlantScreen() {
   const { plantId } = useLocalSearchParams<{ plantId: string }>();
@@ -44,6 +54,10 @@ export default function EditPlantScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [waterDays, setWaterDays] = useState('7');
   const [fertDays, setFertDays] = useState('30');
+  const [lightLevel, setLightLevel] = useState<LightLevel>('medium');
+  const [potSize, setPotSize] = useState<PotSize>('medium');
+  const [petToxicity, setPetToxicity] = useState<PetToxicity>('unknown');
+  const [checkBeforeWater, setCheckBeforeWater] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -57,6 +71,10 @@ export default function EditPlantScreen() {
     setPhotoUri(plant.photoUri);
     setWaterDays(String(plant.waterIntervalDays));
     setFertDays(String(plant.fertilizeIntervalDays));
+    setLightLevel(plant.lightLevel ?? 'medium');
+    setPotSize(plant.potSize ?? 'medium');
+    setPetToxicity(plant.petToxicity ?? 'unknown');
+    setCheckBeforeWater(plant.checkBeforeWater !== false);
   }, [plant]);
 
   const intervals = useMemo(() => DEFAULT_INTERVALS[category], [category]);
@@ -100,10 +118,21 @@ export default function EditPlantScreen() {
       waterIntervalDays: Math.max(1, parseInt(waterDays, 10) || intervals.water),
       fertilizeIntervalDays: Math.max(1, parseInt(fertDays, 10) || intervals.fertilize),
       notes: notes.trim(),
+      lightLevel,
+      potSize,
+      petToxicity,
+      checkBeforeWater,
     });
     setSaving(false);
     router.back();
   };
+
+  const previewInterval = effectiveWaterIntervalDays({
+    ...plant,
+    waterIntervalDays: Math.max(1, parseInt(waterDays, 10) || intervals.water),
+    lightLevel,
+    potSize,
+  });
 
   const inputStyle = [
     styles.input,
@@ -162,13 +191,60 @@ export default function EditPlantScreen() {
             })}
           </ScrollView>
         </Field>
-        <Field label="Location" color={c.textMuted}>
-          <TextInput value={location} onChangeText={setLocation} style={inputStyle} />
+        <Field label="Room / location" color={c.textMuted}>
+          <TextInput
+            value={location}
+            onChangeText={setLocation}
+            placeholder="e.g. Living room · east window"
+            placeholderTextColor={c.textMuted}
+            style={inputStyle}
+          />
         </Field>
         <DateField label="Acquired date" value={acquiredDate} onChange={setAcquiredDate} />
+
+        <Field label="Light at this spot" color={c.textMuted}>
+          <ChipRow
+            options={LIGHT_LEVELS}
+            value={lightLevel}
+            labels={LIGHT_LABELS}
+            activeBg={c.night}
+            activeFg={c.background}
+            idleBg={c.surface}
+            idleFg={c.text}
+            border={c.border}
+            onChange={setLightLevel}
+          />
+        </Field>
+        <Field label="Pot size" color={c.textMuted}>
+          <ChipRow
+            options={POT_SIZES}
+            value={potSize}
+            labels={POT_LABELS}
+            activeBg={c.night}
+            activeFg={c.background}
+            idleBg={c.surface}
+            idleFg={c.text}
+            border={c.border}
+            onChange={setPotSize}
+          />
+        </Field>
+        <Field label="Pet safety" color={c.textMuted}>
+          <ChipRow
+            options={PET_TOXICITY}
+            value={petToxicity}
+            labels={PET_LABELS}
+            activeBg={c.night}
+            activeFg={c.background}
+            idleBg={c.surface}
+            idleFg={c.text}
+            border={c.border}
+            onChange={setPetToxicity}
+          />
+        </Field>
+
         <View style={styles.row2}>
           <View style={styles.half}>
-            <Field label="Water every (days)" color={c.textMuted}>
+            <Field label="Base water (days)" color={c.textMuted}>
               <TextInput value={waterDays} onChangeText={setWaterDays} keyboardType="number-pad" style={inputStyle} />
             </Field>
           </View>
@@ -178,6 +254,29 @@ export default function EditPlantScreen() {
             </Field>
           </View>
         </View>
+        <Text style={[Type.meta, { color: c.tint, marginBottom: 12 }]}>
+          Effective water rhythm ≈ every {previewInterval} days (adjusted for light + pot —
+          beats blind schedules that overwater).
+        </Text>
+
+        <Pressable
+          onPress={() => setCheckBeforeWater((v) => !v)}
+          style={[
+            styles.checkRow,
+            { backgroundColor: c.surface, borderColor: c.border },
+          ]}
+        >
+          <Text style={{ fontSize: 18 }}>{checkBeforeWater ? '✅' : '⬜️'}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[Type.title, { color: c.text, fontSize: 14 }]}>
+              Check soil before watering
+            </Text>
+            <Text style={[Type.meta, { color: c.textMuted, marginTop: 2 }]}>
+              Calendar shows “Still moist” snooze — core Verdant vs Planta difference.
+            </Text>
+          </View>
+        </Pressable>
+
         <Field label="Notes" color={c.textMuted}>
           <TextInput
             value={notes}
@@ -189,6 +288,61 @@ export default function EditPlantScreen() {
         <PrimaryButton label="Save changes" onPress={onSave} loading={saving} />
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+function ChipRow<T extends string>({
+  options,
+  value,
+  labels,
+  activeBg,
+  activeFg,
+  idleBg,
+  idleFg,
+  border,
+  onChange,
+}: {
+  options: readonly T[];
+  value: T;
+  labels: Record<T, string>;
+  activeBg: string;
+  activeFg: string;
+  idleBg: string;
+  idleFg: string;
+  border: string;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      {options.map((opt) => {
+        const active = opt === value;
+        return (
+          <Pressable
+            key={opt}
+            onPress={() => onChange(opt)}
+            style={[
+              styles.chip,
+              {
+                backgroundColor: active ? activeBg : idleBg,
+                borderColor: active ? activeBg : border,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                Type.meta,
+                {
+                  color: active ? activeFg : idleFg,
+                  fontFamily: Fonts.bodySemi,
+                },
+              ]}
+            >
+              {labels[opt]}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
   );
 }
 
@@ -241,4 +395,13 @@ const styles = StyleSheet.create({
   },
   row2: { flexDirection: 'row', gap: 10 },
   half: { flex: 1 },
+  checkRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 14,
+  },
 });

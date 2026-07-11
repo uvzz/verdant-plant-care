@@ -25,7 +25,7 @@ import {
   type CareLogType,
 } from '@/lib/types';
 
-const TYPES: CareLogType[] = ['water', 'fertilize', 'note', 'photo'];
+const TYPES: CareLogType[] = ['water', 'fertilize', 'check', 'note', 'photo'];
 
 export default function LogCareScreen() {
   const { plantId, type: typeParam } = useLocalSearchParams<{

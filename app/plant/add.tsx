@@ -24,8 +24,17 @@ import { identifyPlantFromPhoto } from '@/lib/openrouter';
 import { usePlants } from '@/lib/PlantContext';
 import {
   DEFAULT_INTERVALS,
+  LIGHT_LABELS,
+  LIGHT_LEVELS,
+  PET_LABELS,
+  PET_TOXICITY,
   PLANT_CATEGORIES,
+  POT_LABELS,
+  POT_SIZES,
+  type LightLevel,
+  type PetToxicity,
   type PlantCategory,
+  type PotSize,
 } from '@/lib/types';
 
 export default function AddPlantScreen() {
@@ -41,6 +50,9 @@ export default function AddPlantScreen() {
   const [acquiredDate, setAcquiredDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [notes, setNotes] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [lightLevel, setLightLevel] = useState<LightLevel>('medium');
+  const [potSize, setPotSize] = useState<PotSize>('medium');
+  const [petToxicity, setPetToxicity] = useState<PetToxicity>('unknown');
   const [saving, setSaving] = useState(false);
   const [identifying, setIdentifying] = useState(false);
   const [aiHint, setAiHint] = useState<string | null>(null);
@@ -149,6 +161,10 @@ export default function AddPlantScreen() {
       waterIntervalDays: Math.max(1, parseInt(waterDays, 10) || intervals.water),
       fertilizeIntervalDays: Math.max(1, parseInt(fertDays, 10) || intervals.fertilize),
       notes: notes.trim(),
+      lightLevel,
+      potSize,
+      petToxicity,
+      checkBeforeWater: true,
     });
     setSaving(false);
     if (!result.ok) {
@@ -273,14 +289,104 @@ export default function AddPlantScreen() {
           </ScrollView>
         </Field>
 
-        <Field label="Location" color={c.textMuted}>
+        <Field label="Room / location" color={c.textMuted}>
           <TextInput
             value={location}
             onChangeText={setLocation}
-            placeholder="e.g. East window · living room"
+            placeholder="e.g. Living room · east window"
             placeholderTextColor={c.textMuted}
             style={inputStyle}
           />
+        </Field>
+
+        <Field label="Light at this spot" color={c.textMuted}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            {LIGHT_LEVELS.map((lv) => {
+              const active = lv === lightLevel;
+              return (
+                <Pressable
+                  key={lv}
+                  onPress={() => setLightLevel(lv)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: active ? c.night : c.surface,
+                      borderColor: active ? c.night : c.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      Type.meta,
+                      { color: active ? c.background : c.text, fontFamily: Fonts.bodySemi },
+                    ]}
+                  >
+                    {LIGHT_LABELS[lv]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </Field>
+
+        <Field label="Pot size" color={c.textMuted}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            {POT_SIZES.map((sz) => {
+              const active = sz === potSize;
+              return (
+                <Pressable
+                  key={sz}
+                  onPress={() => setPotSize(sz)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: active ? c.night : c.surface,
+                      borderColor: active ? c.night : c.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      Type.meta,
+                      { color: active ? c.background : c.text, fontFamily: Fonts.bodySemi },
+                    ]}
+                  >
+                    {POT_LABELS[sz]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </Field>
+
+        <Field label="Pet safety" color={c.textMuted}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            {PET_TOXICITY.map((tx) => {
+              const active = tx === petToxicity;
+              return (
+                <Pressable
+                  key={tx}
+                  onPress={() => setPetToxicity(tx)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: active ? c.night : c.surface,
+                      borderColor: active ? c.night : c.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      Type.meta,
+                      { color: active ? c.background : c.text, fontFamily: Fonts.bodySemi },
+                    ]}
+                  >
+                    {PET_LABELS[tx]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </Field>
 
         <DateField label="Acquired date" value={acquiredDate} onChange={setAcquiredDate} />
@@ -307,12 +413,16 @@ export default function AddPlantScreen() {
             </Field>
           </View>
         </View>
+        <Text style={[Type.meta, { color: c.textMuted, marginBottom: 12 }]}>
+          Schedules adapt to light + pot size. Calendar uses check-before-water (not blind
+          “water now” like most care apps).
+        </Text>
 
         <Field label="Notes" color={c.textMuted}>
           <TextInput
             value={notes}
             onChangeText={setNotes}
-            placeholder="Soil mix, light notes, provenance…"
+            placeholder="Soil mix, provenance…"
             placeholderTextColor={c.textMuted}
             multiline
             style={[inputStyle, styles.multiline]}

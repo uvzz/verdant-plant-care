@@ -21,6 +21,7 @@ import { CareLogRow } from '@/components/CareLogRow';
 import { PhotoLightbox } from '@/components/PhotoLightbox';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import {
+  effectiveWaterIntervalDays,
   formatRelativeCare,
   getPlantLogs,
   getProgressPhotos,
@@ -35,7 +36,14 @@ import {
   type CareGuideResult,
 } from '@/lib/openrouter';
 import { usePlants } from '@/lib/PlantContext';
-import { MAX_COACH_HISTORY, type StoredCoachEntry } from '@/lib/types';
+import {
+  LIGHT_LABELS,
+  MAX_COACH_HISTORY,
+  MOISTURE_SNOOZE_DAYS,
+  PET_LABELS,
+  POT_LABELS,
+  type StoredCoachEntry,
+} from '@/lib/types';
 import { plantAgeDays } from '@/lib/stats';
 
 const { width } = Dimensions.get('window');
@@ -52,6 +60,7 @@ export default function PlantDetailScreen() {
     deletePlant,
     deleteCareLog,
     updatePlant,
+    addCareLog,
     consumeAiUse,
     canUseAi,
   } = usePlants();
@@ -294,6 +303,35 @@ export default function PlantDetailScreen() {
         </Pressable>
 
         <View style={styles.body}>
+          <View style={styles.profileChips}>
+            <MetaChip
+              label={LIGHT_LABELS[plant.lightLevel ?? 'medium']}
+              bg={c.surfaceAlt}
+              fg={c.text}
+            />
+            <MetaChip
+              label={POT_LABELS[plant.potSize ?? 'medium']}
+              bg={c.surfaceAlt}
+              fg={c.text}
+            />
+            <MetaChip
+              label={PET_LABELS[plant.petToxicity ?? 'unknown']}
+              bg={
+                plant.petToxicity === 'toxic'
+                  ? 'rgba(180,60,50,0.15)'
+                  : plant.petToxicity === 'safe'
+                    ? 'rgba(90,140,100,0.18)'
+                    : c.surfaceAlt
+              }
+              fg={c.text}
+            />
+            <MetaChip
+              label={`~${effectiveWaterIntervalDays(plant)}d water rhythm`}
+              bg={c.surfaceAlt}
+              fg={c.tint}
+            />
+          </View>
+
           <View style={styles.dueRow}>
             <DueCard
               emoji="💧"
@@ -331,6 +369,24 @@ export default function PlantDetailScreen() {
               style={styles.actionBtn}
             />
             <PrimaryButton
+              label="🖐️ Still moist"
+              variant="secondary"
+              onPress={async () => {
+                await addCareLog({
+                  plantId: plant.id,
+                  type: 'check',
+                  note: `Still moist — snoozed ${MOISTURE_SNOOZE_DAYS} days`,
+                });
+                Alert.alert(
+                  'Snoozed',
+                  `Water reminder pushed ~${MOISTURE_SNOOZE_DAYS} days. Check soil again then — don't water on autopilot.`
+                );
+              }}
+              style={styles.actionBtn}
+            />
+          </View>
+          <View style={styles.actions}>
+            <PrimaryButton
               label="🌿 Fed"
               variant="secondary"
               onPress={() =>
@@ -341,17 +397,18 @@ export default function PlantDetailScreen() {
               }
               style={styles.actionBtn}
             />
+            <PrimaryButton
+              label="Note / photo"
+              variant="ghost"
+              onPress={() =>
+                router.push({
+                  pathname: '/plant/log',
+                  params: { plantId: plant.id, type: 'note' },
+                })
+              }
+              style={styles.actionBtn}
+            />
           </View>
-          <PrimaryButton
-            label="Add note or photo"
-            variant="ghost"
-            onPress={() =>
-              router.push({
-                pathname: '/plant/log',
-                params: { plantId: plant.id, type: 'note' },
-              })
-            }
-          />
 
           <View style={[styles.tabs, { backgroundColor: c.surfaceAlt }]}>
             {(['log', 'gallery', 'ai'] as const).map((t) => (
@@ -598,6 +655,16 @@ function urgencyColor(
   return c.textMuted;
 }
 
+function MetaChip({ label, bg, fg }: { label: string; bg: string; fg: string }) {
+  return (
+    <View style={[styles.metaChip, { backgroundColor: bg }]}>
+      <Text style={[Type.meta, { color: fg, fontSize: 11, fontFamily: Fonts.bodySemi }]}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 function DueCard({
   emoji,
   title,
@@ -645,6 +712,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15,22,18,0.55)',
   },
   body: { padding: 16, gap: 12 },
+  profileChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  metaChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
   dueRow: { flexDirection: 'row', gap: 10 },
   dueCard: {
     flex: 1,

@@ -4,14 +4,19 @@
 
 Photo-first, multi-niche plant care tracker for **iOS** and **Android**, built with **Expo (React Native)**.
 
-## Features (v0.3+)
+## Features (v0.5+)
 
-- Add / edit plant with durable photos, date picker, search & category filters
+- Add / edit plant with durable photos, date picker, search, category **and room filters**
+- **Check-before-water** calendar: Watered · Still moist (snooze) · Details
+- **Light + pot-aware** watering intervals (no blind overwatering)
+- **Pet safety** flags on cards and plant detail
 - Care log + progress gallery + fullscreen photos
-- Care calendar & local reminders
+- **Export backup** (JSON) — local-first, no cloud lock-in
 - **Insights** tab (stats + Premium AI collection insight)
 - **Premium AI** (server-side OpenRouter): identify, care guide, coach
-- Freemium: free up to 5 plants; Premium unlimited plants + AI
+- Freemium: free up to 5 plants + full journal; Premium unlimited plants + AI
+
+See [`docs/COMPETITIVE.md`](./docs/COMPETITIVE.md) for how we beat Planta / PictureThis / Greg.
 
 ## Architecture: AI (Premium only)
 
