@@ -6,14 +6,23 @@ Photo-first, multi-niche plant care tracker for **iOS** and **Android**, built w
 
 Calm, premium presentation for houseplants, orchids, succulents, ferns, herbs, and more — with care logs, visual progress galleries, and gentle reminders.
 
-## Features (MVP v0.1)
+## Features (MVP v0.2)
 
-- **Add plant** with photo, species, category, acquired date, location, care intervals
-- **Care log** — watered, fertilized, notes, photos over time
+- **Add / edit plant** with durable photo storage, species, category, date picker, location, intervals
+- **Care log** — watered, fertilized, notes, photos; long-press to delete entries
 - **Plant detail** — hero photo, due dates, log + progress gallery
+- **AI assist (OpenRouter)** — plant identify from photo, species care guide, care coach
 - **Care calendar** — overdue / today / upcoming, taps through to log care
 - **Gentle notifications** — local reminders for due care
-- **Freemium scaffolding** — free up to 5 plants; Premium unlock (demo toggle)
+- **Freemium** — free up to 5 plants + 5 AI uses/month; Premium unlimited (demo toggle)
+
+## OpenRouter AI setup
+
+1. Create a key at [openrouter.ai](https://openrouter.ai)
+2. Run the app → **Settings → AI assistant**
+3. Paste the key (`sk-or-v1-…`) and tap **Save key**
+
+The key is stored in the device keychain (Secure Store). AI requests go to OpenRouter with your key; plant photos are base64-encoded only for that API call.
 
 ## Platforms
 

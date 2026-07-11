@@ -1,11 +1,13 @@
 import { useLayoutEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Dimensions,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -23,6 +25,12 @@ import {
   getProgressPhotos,
   nextDueDate,
 } from '@/lib/care';
+import {
+  askCareCoach,
+  generateCareGuide,
+  type CareCoachResult,
+  type CareGuideResult,
+} from '@/lib/openrouter';
 import { usePlants } from '@/lib/PlantContext';
 
 const { width } = Dimensions.get('window');
@@ -33,9 +41,22 @@ export default function PlantDetailScreen() {
   const c = Colors[scheme];
   const router = useRouter();
   const navigation = useNavigation();
-  const { getPlant, logs, deletePlant } = usePlants();
+  const {
+    getPlant,
+    logs,
+    deletePlant,
+    deleteCareLog,
+    consumeAiUse,
+    canUseAi,
+    aiUsesLeft,
+  } = usePlants();
   const plant = getPlant(id);
-  const [tab, setTab] = useState<'log' | 'gallery'>('log');
+  const [tab, setTab] = useState<'log' | 'gallery' | 'ai'>('log');
+  const [question, setQuestion] = useState('How is this plant doing? What should I do next?');
+  const [coachLoading, setCoachLoading] = useState(false);
+  const [guideLoading, setGuideLoading] = useState(false);
+  const [coach, setCoach] = useState<CareCoachResult | null>(null);
+  const [guide, setGuide] = useState<CareGuideResult | null>(null);
 
   const plantLogs = useMemo(
     () => (plant ? getPlantLogs(logs, plant.id) : []),
@@ -50,29 +71,40 @@ export default function PlantDetailScreen() {
     navigation.setOptions({
       headerRight: () =>
         plant ? (
-          <Pressable
-            onPress={() => {
-              Alert.alert(
-                'Remove plant?',
-                `Delete ${plant.name} and its care history? This cannot be undone.`,
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: async () => {
-                      await deletePlant(plant.id);
-                      router.back();
+          <View style={{ flexDirection: 'row', gap: 14, marginRight: 4 }}>
+            <Pressable
+              onPress={() =>
+                router.push({ pathname: '/plant/edit', params: { plantId: plant.id } })
+              }
+            >
+              <Text style={{ color: '#FFFFFF', fontFamily: Fonts.bodySemi, fontSize: 15 }}>
+                Edit
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                Alert.alert(
+                  'Remove plant?',
+                  `Delete ${plant.name} and its care history? This cannot be undone.`,
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Delete',
+                      style: 'destructive',
+                      onPress: async () => {
+                        await deletePlant(plant.id);
+                        router.back();
+                      },
                     },
-                  },
-                ]
-              );
-            }}
-          >
-            <Text style={{ color: '#FFFFFF', fontFamily: Fonts.bodySemi, fontSize: 15 }}>
-              Delete
-            </Text>
-          </Pressable>
+                  ]
+                );
+              }}
+            >
+              <Text style={{ color: '#FFB4A8', fontFamily: Fonts.bodySemi, fontSize: 15 }}>
+                Delete
+              </Text>
+            </Pressable>
+          </View>
         ) : null,
     });
   }, [navigation, plant, deletePlant, router]);
@@ -101,6 +133,53 @@ export default function PlantDetailScreen() {
         label: format(parseISO(p.createdAt), 'MMM d, yyyy'),
       })),
   ];
+
+  const runCoach = async () => {
+    if (!canUseAi) {
+      Alert.alert('AI limit reached', 'Upgrade to Premium for unlimited AI assists.');
+      return;
+    }
+    setCoachLoading(true);
+    try {
+      const quota = await consumeAiUse();
+      if (!quota.ok) {
+        Alert.alert('AI limit', quota.reason);
+        return;
+      }
+      const result = await askCareCoach({
+        plant,
+        logs: plantLogs,
+        question: question.trim() || 'How is this plant doing?',
+        photoUri: plant.photoUri,
+      });
+      setCoach(result);
+    } catch (e) {
+      Alert.alert('Care coach failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setCoachLoading(false);
+    }
+  };
+
+  const runGuide = async () => {
+    if (!canUseAi) {
+      Alert.alert('AI limit reached', 'Upgrade to Premium for unlimited AI assists.');
+      return;
+    }
+    setGuideLoading(true);
+    try {
+      const quota = await consumeAiUse();
+      if (!quota.ok) {
+        Alert.alert('AI limit', quota.reason);
+        return;
+      }
+      const result = await generateCareGuide(plant);
+      setGuide(result);
+    } catch (e) {
+      Alert.alert('Care guide failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setGuideLoading(false);
+    }
+  };
 
   return (
     <>
@@ -193,22 +272,17 @@ export default function PlantDetailScreen() {
           />
 
           <View style={[styles.tabs, { backgroundColor: c.surfaceAlt }]}>
-            <Pressable
-              onPress={() => setTab('log')}
-              style={[styles.tab, tab === 'log' && { backgroundColor: c.surface }]}
-            >
-              <Text style={[Type.meta, { color: c.text, fontFamily: Fonts.bodySemi }]}>
-                Care log
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setTab('gallery')}
-              style={[styles.tab, tab === 'gallery' && { backgroundColor: c.surface }]}
-            >
-              <Text style={[Type.meta, { color: c.text, fontFamily: Fonts.bodySemi }]}>
-                Progress
-              </Text>
-            </Pressable>
+            {(['log', 'gallery', 'ai'] as const).map((t) => (
+              <Pressable
+                key={t}
+                onPress={() => setTab(t)}
+                style={[styles.tab, tab === t && { backgroundColor: c.surface }]}
+              >
+                <Text style={[Type.meta, { color: c.text, fontFamily: Fonts.bodySemi }]}>
+                  {t === 'log' ? 'Care log' : t === 'gallery' ? 'Progress' : 'AI assist'}
+                </Text>
+              </Pressable>
+            ))}
           </View>
 
           {tab === 'log' ? (
@@ -217,32 +291,149 @@ export default function PlantDetailScreen() {
                 No care entries yet. Log watering, feeding, notes, and photos as you go.
               </Text>
             ) : (
-              plantLogs.map((log) => <CareLogRow key={log.id} log={log} />)
+              plantLogs.map((log) => (
+                <CareLogRow key={log.id} log={log} onDelete={deleteCareLog} />
+              ))
             )
-          ) : galleryUris.length === 0 ? (
-            <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 8 }]}>
-              Add a portrait or care photos to watch growth over time.
-            </Text>
-          ) : (
-            <View style={styles.gallery}>
-              {galleryUris.map((item) => (
-                <View key={item.key} style={styles.galleryItem}>
-                  <Image
-                    source={{ uri: item.uri }}
-                    style={styles.galleryImage}
-                    contentFit="cover"
-                  />
-                  <Text style={[Type.meta, { color: c.textMuted, marginTop: 6, marginLeft: 2 }]}>
-                    {item.label}
-                  </Text>
-                </View>
-              ))}
+          ) : null}
+
+          {tab === 'gallery' ? (
+            galleryUris.length === 0 ? (
+              <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 8 }]}>
+                Add a portrait or care photos to watch growth over time.
+              </Text>
+            ) : (
+              <View style={styles.gallery}>
+                {galleryUris.map((item) => (
+                  <View key={item.key} style={styles.galleryItem}>
+                    <Image
+                      source={{ uri: item.uri }}
+                      style={styles.galleryImage}
+                      contentFit="cover"
+                    />
+                    <Text style={[Type.meta, { color: c.textMuted, marginTop: 6, marginLeft: 2 }]}>
+                      {item.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )
+          ) : null}
+
+          {tab === 'ai' ? (
+            <View style={{ gap: 12, marginTop: 8 }}>
+              <Text style={[Type.meta, { color: c.textMuted }]}>
+                AI assists left: {aiUsesLeft === 'unlimited' ? 'Unlimited (Premium)' : aiUsesLeft} ·
+                Educational only
+              </Text>
+
+              <View style={[styles.aiCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+                <Text style={[Type.title, { color: c.text }]}>Species care guide</Text>
+                <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4, marginBottom: 10 }]}>
+                  Light, water, humidity, and tips for this plant.
+                </Text>
+                <PrimaryButton
+                  label={guideLoading ? 'Writing…' : '✨ Generate care guide'}
+                  onPress={runGuide}
+                  loading={guideLoading}
+                  variant="secondary"
+                />
+                {guideLoading ? <ActivityIndicator color={c.tint} style={{ marginTop: 10 }} /> : null}
+                {guide ? (
+                  <View style={{ marginTop: 12, gap: 8 }}>
+                    <Text style={[Type.title, { color: c.text }]}>{guide.title}</Text>
+                    <GuideLine label="Light" body={guide.light} muted={c.textMuted} text={c.text} />
+                    <GuideLine label="Water" body={guide.water} muted={c.textMuted} text={c.text} />
+                    <GuideLine label="Humidity" body={guide.humidity} muted={c.textMuted} text={c.text} />
+                    <GuideLine label="Soil" body={guide.soil} muted={c.textMuted} text={c.text} />
+                    {guide.tips.map((t, i) => (
+                      <Text key={i} style={[Type.bodySmall, { color: c.text }]}>
+                        • {t}
+                      </Text>
+                    ))}
+                    <Text style={[Type.meta, { color: c.textMuted, marginTop: 4 }]}>
+                      {guide.disclaimer}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+
+              <View style={[styles.aiCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+                <Text style={[Type.title, { color: c.text }]}>Care coach</Text>
+                <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4, marginBottom: 8 }]}>
+                  Uses this plant’s log history and portrait photo when available.
+                </Text>
+                <TextInput
+                  value={question}
+                  onChangeText={setQuestion}
+                  multiline
+                  placeholder="e.g. Yellow tips on new leaves — what should I check?"
+                  placeholderTextColor={c.textMuted}
+                  style={[
+                    styles.question,
+                    {
+                      color: c.text,
+                      backgroundColor: c.surfaceAlt,
+                      borderColor: c.border,
+                      fontFamily: Fonts.body,
+                    },
+                  ]}
+                />
+                <PrimaryButton
+                  label={coachLoading ? 'Thinking…' : '✨ Ask care coach'}
+                  onPress={runCoach}
+                  loading={coachLoading}
+                />
+                {coach ? (
+                  <View style={{ marginTop: 12, gap: 8 }}>
+                    <Text style={[Type.micro, { color: urgencyColor(coach.urgency, c) }]}>
+                      Urgency · {coach.urgency}
+                    </Text>
+                    <Text style={[Type.body, { color: c.text }]}>{coach.assessment}</Text>
+                    {coach.recommendations.map((r, i) => (
+                      <Text key={i} style={[Type.bodySmall, { color: c.text }]}>
+                        • {r}
+                      </Text>
+                    ))}
+                    <Text style={[Type.meta, { color: c.textMuted }]}>{coach.disclaimer}</Text>
+                  </View>
+                ) : null}
+              </View>
             </View>
-          )}
+          ) : null}
         </View>
       </ScrollView>
     </>
   );
+}
+
+function GuideLine({
+  label,
+  body,
+  muted,
+  text,
+}: {
+  label: string;
+  body: string;
+  muted: string;
+  text: string;
+}) {
+  return (
+    <View>
+      <Text style={[Type.micro, { color: muted }]}>{label}</Text>
+      <Text style={[Type.bodySmall, { color: text, marginTop: 2 }]}>{body}</Text>
+    </View>
+  );
+}
+
+function urgencyColor(
+  u: CareCoachResult['urgency'],
+  c: (typeof Colors)['light']
+): string {
+  if (u === 'urgent') return c.danger;
+  if (u === 'soon') return c.growth;
+  if (u === 'watch') return c.tint;
+  return c.textMuted;
 }
 
 function DueCard({
@@ -324,5 +515,19 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 1,
     borderRadius: 14,
+  },
+  aiCard: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 14,
+  },
+  question: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    padding: 12,
+    minHeight: 72,
+    textAlignVertical: 'top',
+    marginBottom: 10,
+    fontSize: 15,
   },
 });

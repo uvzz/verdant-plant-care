@@ -1,17 +1,38 @@
 import { Image } from 'expo-image';
 import { format, parseISO } from 'date-fns';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import Colors from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { CARE_TYPE_EMOJI, CARE_TYPE_LABELS, type CareLog } from '@/lib/types';
 
-export function CareLogRow({ log }: { log: CareLog }) {
+export function CareLogRow({
+  log,
+  onDelete,
+}: {
+  log: CareLog;
+  onDelete?: (id: string) => void;
+}) {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
 
+  const confirmDelete = () => {
+    if (!onDelete) return;
+    Alert.alert('Delete entry?', 'Remove this care log item.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => onDelete(log.id),
+      },
+    ]);
+  };
+
   return (
-    <View style={[styles.row, { backgroundColor: c.surface, borderColor: c.border }]}>
+    <Pressable
+      onLongPress={onDelete ? confirmDelete : undefined}
+      style={[styles.row, { backgroundColor: c.surface, borderColor: c.border }]}
+    >
       <View style={[styles.badge, { backgroundColor: c.surfaceAlt }]}>
         <Text style={styles.emoji}>{CARE_TYPE_EMOJI[log.type]}</Text>
       </View>
@@ -27,11 +48,16 @@ export function CareLogRow({ log }: { log: CareLog }) {
             {log.note}
           </Text>
         ) : null}
+        {onDelete ? (
+          <Text style={[Type.meta, { color: c.textMuted, marginTop: 4, fontSize: 10 }]}>
+            Long-press to delete
+          </Text>
+        ) : null}
       </View>
       {log.photoUri ? (
         <Image source={{ uri: log.photoUri }} style={styles.thumb} contentFit="cover" />
       ) : null}
-    </View>
+    </Pressable>
   );
 }
 

@@ -36,7 +36,13 @@ export interface CareLog {
 export interface AppSettings {
   isPremium: boolean;
   notificationsEnabled: boolean;
+  /** Free-tier AI calls remaining this calendar month */
+  aiFreeUsesRemaining: number;
+  /** YYYY-MM of last AI free-quota reset */
+  aiQuotaMonth: string;
 }
+
+export const FREE_AI_USES_PER_MONTH = 5;
 
 export interface CareDueItem {
   plant: Plant;

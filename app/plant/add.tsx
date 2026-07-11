@@ -18,7 +18,9 @@ import { format } from 'date-fns';
 import Colors from '@/constants/Colors';
 import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
+import { DateField } from '@/components/DateField';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import { identifyPlantFromPhoto } from '@/lib/openrouter';
 import { usePlants } from '@/lib/PlantContext';
 import {
   DEFAULT_INTERVALS,
@@ -30,7 +32,7 @@ export default function AddPlantScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const router = useRouter();
-  const { addPlant, canAddPlant } = usePlants();
+  const { addPlant, canAddPlant, consumeAiUse, aiUsesLeft, canUseAi } = usePlants();
 
   const [name, setName] = useState('');
   const [species, setSpecies] = useState('');
@@ -40,6 +42,8 @@ export default function AddPlantScreen() {
   const [notes, setNotes] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [identifying, setIdentifying] = useState(false);
+  const [aiHint, setAiHint] = useState<string | null>(null);
 
   const intervals = useMemo(() => DEFAULT_INTERVALS[category], [category]);
   const [waterDays, setWaterDays] = useState(String(intervals.water));
@@ -80,6 +84,48 @@ export default function AddPlantScreen() {
     if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
   };
 
+  const onIdentify = async () => {
+    if (!photoUri) {
+      Alert.alert('Photo needed', 'Add a plant photo first, then run AI identify.');
+      return;
+    }
+    if (!canUseAi) {
+      Alert.alert('AI limit reached', 'Upgrade to Premium for unlimited AI assists.');
+      return;
+    }
+    setIdentifying(true);
+    setAiHint(null);
+    try {
+      const quota = await consumeAiUse();
+      if (!quota.ok) {
+        Alert.alert('AI limit', quota.reason);
+        return;
+      }
+      const result = await identifyPlantFromPhoto(photoUri);
+      if (!name.trim()) setName(result.commonName);
+      setSpecies(result.scientificName);
+      setCategory(result.category);
+      setWaterDays(String(result.waterIntervalDays));
+      setFertDays(String(result.fertilizeIntervalDays));
+      if (result.careSummary) {
+        setNotes((prev) =>
+          prev.trim()
+            ? `${prev.trim()}\n\nAI: ${result.careSummary}`
+            : `AI: ${result.careSummary}`
+        );
+      }
+      setAiHint(
+        `${result.confidence} confidence · ${result.commonName}${
+          result.scientificName ? ` (${result.scientificName})` : ''
+        }`
+      );
+    } catch (e) {
+      Alert.alert('AI identify failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setIdentifying(false);
+    }
+  };
+
   const onSave = async () => {
     if (!canAddPlant) {
       Alert.alert('Plant limit', 'Upgrade to Premium for unlimited plants.');
@@ -95,7 +141,7 @@ export default function AddPlantScreen() {
       species: species.trim(),
       category,
       photoUri,
-      acquiredDate: acquiredDate.trim() || format(new Date(), 'yyyy-MM-dd'),
+      acquiredDate: acquiredDate || format(new Date(), 'yyyy-MM-dd'),
       location: location.trim(),
       waterIntervalDays: Math.max(1, parseInt(waterDays, 10) || intervals.water),
       fertilizeIntervalDays: Math.max(1, parseInt(fertDays, 10) || intervals.fertilize),
@@ -151,6 +197,26 @@ export default function AddPlantScreen() {
           <PrimaryButton label="Camera" variant="secondary" onPress={takePhoto} style={styles.half} />
         </View>
 
+        <PrimaryButton
+          label={
+            identifying
+              ? 'Identifying…'
+              : `✨ AI identify plant${aiUsesLeft === 'unlimited' ? '' : ` (${aiUsesLeft} left)`}`
+          }
+          variant="secondary"
+          onPress={onIdentify}
+          loading={identifying}
+          disabled={!photoUri || identifying}
+          style={{ marginBottom: 8 }}
+        />
+        {aiHint ? (
+          <Text style={[Type.meta, { color: c.tint, marginBottom: 12 }]}>{aiHint}</Text>
+        ) : (
+          <Text style={[Type.meta, { color: c.textMuted, marginBottom: 12 }]}>
+            AI fills name, species, category, and intervals from your photo. Assistive only.
+          </Text>
+        )}
+
         <Field label="Name" color={c.textMuted}>
           <TextInput
             value={name}
@@ -190,10 +256,7 @@ export default function AddPlantScreen() {
                   <Text
                     style={[
                       Type.meta,
-                      {
-                        color: active ? c.background : c.text,
-                        fontFamily: Fonts.bodySemi,
-                      },
+                      { color: active ? c.background : c.text, fontFamily: Fonts.bodySemi },
                     ]}
                   >
                     {cat}
@@ -214,16 +277,7 @@ export default function AddPlantScreen() {
           />
         </Field>
 
-        <Field label="Acquired date (YYYY-MM-DD)" color={c.textMuted}>
-          <TextInput
-            value={acquiredDate}
-            onChangeText={setAcquiredDate}
-            placeholder="2026-07-11"
-            placeholderTextColor={c.textMuted}
-            autoCapitalize="none"
-            style={inputStyle}
-          />
-        </Field>
+        <DateField label="Acquired date" value={acquiredDate} onChange={setAcquiredDate} />
 
         <View style={styles.row2}>
           <View style={styles.half}>
@@ -290,7 +344,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1.5,
-    borderStyle: 'dashed',
     marginBottom: 10,
   },
   photoImg: { width: '100%', height: '100%' },
@@ -300,7 +353,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  photoActions: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  photoActions: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   field: { marginBottom: 12, gap: 6 },
   input: {
     borderWidth: StyleSheet.hairlineWidth,

@@ -111,6 +111,15 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen
+          name="plant/edit"
+          options={{
+            title: 'Edit plant',
+            presentation: 'modal',
+            headerShadowVisible: false,
+            headerStyle: { backgroundColor: c.background },
+          }}
+        />
+        <Stack.Screen
           name="plant/[id]"
           options={{
             title: 'Plant',

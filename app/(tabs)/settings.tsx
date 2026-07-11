@@ -1,4 +1,13 @@
-import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Colors, { APP_NAME, APP_VERSION, FREE_PLANT_LIMIT } from '@/constants/Colors';
@@ -7,12 +16,13 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ensureNotificationPermissions } from '@/lib/notifications';
 import { usePlants } from '@/lib/PlantContext';
+import { clearOpenRouterKey, getOpenRouterKey, setOpenRouterKey } from '@/lib/secrets';
+import { FREE_AI_USES_PER_MONTH } from '@/lib/types';
 
 type Benefit = {
   label: string;
   free: string;
   premium: string;
-  /** true = premium feature is live in the app today */
   live: boolean;
 };
 
@@ -20,6 +30,18 @@ const BENEFITS: Benefit[] = [
   {
     label: 'Plants in your collection',
     free: `Up to ${FREE_PLANT_LIMIT}`,
+    premium: 'Unlimited',
+    live: true,
+  },
+  {
+    label: 'AI plant identify',
+    free: `${FREE_AI_USES_PER_MONTH}/mo shared`,
+    premium: 'Unlimited',
+    live: true,
+  },
+  {
+    label: 'AI care guide & coach',
+    free: `${FREE_AI_USES_PER_MONTH}/mo shared`,
     premium: 'Unlimited',
     live: true,
   },
@@ -36,27 +58,9 @@ const BENEFITS: Benefit[] = [
     live: true,
   },
   {
-    label: 'Full care history & stats',
-    free: 'Basic log only',
-    premium: 'Charts, streaks, insights',
-    live: false,
-  },
-  {
-    label: 'Species care guides',
-    free: '—',
-    premium: 'Rare plant & orchid guides',
-    live: false,
-  },
-  {
     label: 'Family sharing',
     free: '—',
-    premium: 'Share a household garden',
-    live: false,
-  },
-  {
-    label: 'Premium plant profiles',
-    free: '—',
-    premium: 'One-time expert profiles',
+    premium: 'Coming soon',
     live: false,
   },
 ];
@@ -65,8 +69,48 @@ export default function SettingsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const insets = useSafeAreaInsets();
-  const { plants, settings, setPremium, setNotificationsEnabled } = usePlants();
+  const { plants, settings, setPremium, setNotificationsEnabled, aiUsesLeft } =
+    usePlants();
   const isPremium = settings.isPremium;
+
+  const [apiKey, setApiKey] = useState('');
+  const [hasKey, setHasKey] = useState(false);
+  const [keySaving, setKeySaving] = useState(false);
+
+  useEffect(() => {
+    getOpenRouterKey().then((k) => {
+      setHasKey(!!k);
+      // Don't prefill full secret; leave empty for re-entry
+      setApiKey('');
+    });
+  }, []);
+
+  const saveKey = async () => {
+    setKeySaving(true);
+    try {
+      await setOpenRouterKey(apiKey);
+      const k = await getOpenRouterKey();
+      setHasKey(!!k);
+      setApiKey('');
+      Alert.alert(
+        k ? 'API key saved' : 'API key cleared',
+        k
+          ? 'Stored securely on this device. AI identify, guides, and coach are ready.'
+          : 'OpenRouter key removed.'
+      );
+    } catch (e) {
+      Alert.alert('Could not save key', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setKeySaving(false);
+    }
+  };
+
+  const clearKey = async () => {
+    await clearOpenRouterKey();
+    setHasKey(false);
+    setApiKey('');
+    Alert.alert('API key removed');
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
@@ -81,6 +125,57 @@ export default function SettingsScreen() {
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
             {plants.length} of {isPremium ? '∞' : FREE_PLANT_LIMIT} plants ·{' '}
             {isPremium ? 'Premium' : 'Free'} plan
+          </Text>
+        </View>
+
+        {/* AI / OpenRouter */}
+        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <Text style={[Type.title, { color: c.text }]}>AI assistant (OpenRouter)</Text>
+          <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
+            Status: {hasKey ? 'Key on device' : 'No key yet'} · AI left this month:{' '}
+            {aiUsesLeft === 'unlimited' ? 'Unlimited' : aiUsesLeft}
+          </Text>
+          <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 6 }]}>
+            Paste your OpenRouter API key (sk-or-…). Used for plant identify, care guides, and
+            coach. Stored in the device keychain — not uploaded to Verdant servers.
+          </Text>
+          <TextInput
+            value={apiKey}
+            onChangeText={setApiKey}
+            placeholder={hasKey ? 'Enter new key to replace…' : 'sk-or-v1-…'}
+            placeholderTextColor={c.textMuted}
+            autoCapitalize="none"
+            autoCorrect={false}
+            secureTextEntry
+            style={[
+              styles.keyInput,
+              {
+                color: c.text,
+                backgroundColor: c.surfaceAlt,
+                borderColor: c.border,
+                fontFamily: Fonts.body,
+              },
+            ]}
+          />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <PrimaryButton
+              label={keySaving ? 'Saving…' : 'Save key'}
+              onPress={saveKey}
+              loading={keySaving}
+              style={{ flex: 1 }}
+            />
+            {hasKey ? (
+              <PrimaryButton
+                label="Clear"
+                variant="secondary"
+                onPress={clearKey}
+                style={{ flex: 0.6 }}
+              />
+            ) : null}
+          </View>
+          <Text style={[Type.meta, { color: c.textMuted, marginTop: 10 }]}>
+            Get a key at openrouter.ai · Free: {FREE_AI_USES_PER_MONTH} AI uses/month · Premium:
+            unlimited
           </Text>
         </View>
 
@@ -111,17 +206,11 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Premium comparison — what you get */}
         <View style={[styles.card, { backgroundColor: c.night, borderColor: c.night }]}>
           <Text style={[Type.micro, { color: c.growth }]}>
             {isPremium ? 'Your plan' : 'Plans'}
           </Text>
-          <Text
-            style={[
-              Type.displayM,
-              { color: '#EEF3EF', marginTop: 6, fontSize: 22 },
-            ]}
-          >
+          <Text style={[Type.displayM, { color: '#EEF3EF', marginTop: 6, fontSize: 22 }]}>
             {isPremium ? 'Premium active' : 'What Premium unlocks'}
           </Text>
           <Text
@@ -130,17 +219,14 @@ export default function SettingsScreen() {
               { color: 'rgba(232,239,233,0.7)', marginTop: 6, marginBottom: 16 },
             ]}
           >
-            Free is for a small collection. Premium is for collectors who want no
-            plant cap and deeper tools.
+            Free is for a small collection with limited AI. Premium removes caps.
           </Text>
 
           <View style={styles.compareHeader}>
             <Text style={[styles.compareLabel, { color: 'rgba(232,239,233,0.45)' }]}>
               Feature
             </Text>
-            <Text style={[styles.compareCol, { color: 'rgba(232,239,233,0.45)' }]}>
-              Free
-            </Text>
+            <Text style={[styles.compareCol, { color: 'rgba(232,239,233,0.45)' }]}>Free</Text>
             <Text style={[styles.compareCol, { color: c.growth }]}>Premium</Text>
           </View>
 
@@ -159,48 +245,31 @@ export default function SettingsScreen() {
                 <Text style={[Type.meta, { color: '#EEF3EF', fontFamily: Fonts.bodyMedium }]}>
                   {b.label}
                 </Text>
-                {!b.live && b.premium !== 'Included' && b.premium !== '—' ? (
-                  <Text style={[Type.meta, { color: 'rgba(232,239,233,0.4)', fontSize: 10, marginTop: 2 }]}>
+                {!b.live ? (
+                  <Text
+                    style={[
+                      Type.meta,
+                      { color: 'rgba(232,239,233,0.4)', fontSize: 10, marginTop: 2 },
+                    ]}
+                  >
                     Coming soon
                   </Text>
                 ) : null}
               </View>
-              <Text
-                style={[
-                  styles.compareCol,
-                  Type.meta,
-                  { color: 'rgba(232,239,233,0.55)' },
-                ]}
-              >
+              <Text style={[styles.compareCol, Type.meta, { color: 'rgba(232,239,233,0.55)' }]}>
                 {b.free}
               </Text>
               <Text
                 style={[
                   styles.compareCol,
                   Type.meta,
-                  {
-                    color: b.live ? c.growth : 'rgba(198,212,90,0.55)',
-                    fontFamily: Fonts.bodySemi,
-                  },
+                  { color: c.growth, fontFamily: Fonts.bodySemi },
                 ]}
               >
                 {b.premium}
               </Text>
             </View>
           ))}
-
-          <View style={[styles.liveNote, { borderColor: 'rgba(198,212,90,0.25)' }]}>
-            <Text style={[Type.meta, { color: c.growth }]}>Works today</Text>
-            <Text
-              style={[
-                Type.bodySmall,
-                { color: 'rgba(232,239,233,0.75)', marginTop: 4 },
-              ]}
-            >
-              Right now Premium only removes the {FREE_PLANT_LIMIT}-plant limit.
-              Guides, stats, and family sharing are listed as “Coming soon.”
-            </Text>
-          </View>
 
           <PrimaryButton
             label={isPremium ? 'Switch to Free (demo)' : 'Try Premium (demo)'}
@@ -210,14 +279,10 @@ export default function SettingsScreen() {
           <Text
             style={[
               Type.meta,
-              {
-                color: 'rgba(232,239,233,0.4)',
-                textAlign: 'center',
-                marginTop: 10,
-              },
+              { color: 'rgba(232,239,233,0.4)', textAlign: 'center', marginTop: 10 },
             ]}
           >
-            Demo toggle — real App Store / Play billing not connected yet
+            Demo plan toggle — store billing not connected yet
           </Text>
         </View>
 
@@ -225,7 +290,7 @@ export default function SettingsScreen() {
           <Text style={[Type.title, { color: c.text }]}>About</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
             {APP_NAME} v{APP_VERSION}{'\n'}
-            Photos and data stay on your device.
+            Photos stay on device. AI calls go to OpenRouter with your key.
           </Text>
         </View>
       </ScrollView>
@@ -243,6 +308,15 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  keyInput: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    marginTop: 12,
+    marginBottom: 10,
+    fontSize: 14,
+  },
   compareHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -254,19 +328,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingVertical: 10,
   },
-  compareLabel: {
-    flex: 1.4,
-    paddingRight: 6,
-  },
-  compareCol: {
-    flex: 1,
-    textAlign: 'left',
-  },
-  liveNote: {
-    marginTop: 14,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(198,212,90,0.08)',
-  },
+  compareLabel: { flex: 1.4, paddingRight: 6 },
+  compareCol: { flex: 1, textAlign: 'left' },
 });

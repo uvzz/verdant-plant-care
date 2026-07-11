@@ -7,6 +7,7 @@ import React, {
   useState,
 } from 'react';
 import { FREE_PLANT_LIMIT } from '@/constants/Colors';
+import { persistPhoto } from './photos';
 import {
   createId,
   loadCareLogs,
@@ -17,6 +18,7 @@ import {
   saveSettings,
 } from './storage';
 import type { AppSettings, CareLog, CareLogType, Plant } from './types';
+import { FREE_AI_USES_PER_MONTH } from './types';
 
 interface PlantContextValue {
   plants: Plant[];
@@ -25,6 +27,8 @@ interface PlantContextValue {
   loading: boolean;
   canAddPlant: boolean;
   freeLimit: number;
+  canUseAi: boolean;
+  aiUsesLeft: number | 'unlimited';
   addPlant: (
     input: Omit<Plant, 'id' | 'createdAt' | 'updatedAt'>
   ) => Promise<{ ok: true; plant: Plant } | { ok: false; reason: string }>;
@@ -39,6 +43,8 @@ interface PlantContextValue {
   deleteCareLog: (id: string) => Promise<void>;
   setPremium: (value: boolean) => Promise<void>;
   setNotificationsEnabled: (value: boolean) => Promise<void>;
+  /** Consume one free AI use (premium unlimited). Returns false if blocked. */
+  consumeAiUse: () => Promise<{ ok: true } | { ok: false; reason: string }>;
   getPlant: (id: string) => Plant | undefined;
   refresh: () => Promise<void>;
 }
@@ -51,6 +57,8 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>({
     isPremium: false,
     notificationsEnabled: true,
+    aiFreeUsesRemaining: FREE_AI_USES_PER_MONTH,
+    aiQuotaMonth: '',
   });
   const [loading, setLoading] = useState(true);
 
@@ -63,6 +71,8 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     setPlants(p);
     setLogs(l);
     setSettings(s);
+    // Persist quota reset if month rolled
+    await saveSettings(s);
   }, []);
 
   useEffect(() => {
@@ -73,6 +83,10 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const canAddPlant = settings.isPremium || plants.length < FREE_PLANT_LIMIT;
+  const canUseAi = settings.isPremium || settings.aiFreeUsesRemaining > 0;
+  const aiUsesLeft: number | 'unlimited' = settings.isPremium
+    ? 'unlimited'
+    : settings.aiFreeUsesRemaining;
 
   const addPlant = useCallback(
     async (input: Omit<Plant, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -82,9 +96,11 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
           reason: `Free plan includes up to ${FREE_PLANT_LIMIT} plants. Upgrade for unlimited plants.`,
         };
       }
+      const photoUri = await persistPhoto(input.photoUri);
       const now = new Date().toISOString();
       const plant: Plant = {
         ...input,
+        photoUri,
         id: createId(),
         createdAt: now,
         updatedAt: now,
@@ -99,9 +115,13 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
 
   const updatePlant = useCallback(
     async (id: string, patch: Partial<Plant>) => {
+      let nextPatch = { ...patch };
+      if (patch.photoUri !== undefined) {
+        nextPatch.photoUri = await persistPhoto(patch.photoUri);
+      }
       const next = plants.map((p) =>
         p.id === id
-          ? { ...p, ...patch, id: p.id, updatedAt: new Date().toISOString() }
+          ? { ...p, ...nextPatch, id: p.id, updatedAt: new Date().toISOString() }
           : p
       );
       setPlants(next);
@@ -128,12 +148,13 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       note?: string;
       photoUri?: string | null;
     }) => {
+      const photoUri = await persistPhoto(input.photoUri);
       const entry: CareLog = {
         id: createId(),
         plantId: input.plantId,
         type: input.type,
         note: input.note ?? '',
-        photoUri: input.photoUri ?? null,
+        photoUri,
         createdAt: new Date().toISOString(),
       };
       const next = [entry, ...logs];
@@ -172,6 +193,23 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     [settings]
   );
 
+  const consumeAiUse = useCallback(async () => {
+    if (settings.isPremium) return { ok: true as const };
+    if (settings.aiFreeUsesRemaining <= 0) {
+      return {
+        ok: false as const,
+        reason: `Free plan includes ${FREE_AI_USES_PER_MONTH} AI assists per month. Upgrade to Premium for unlimited AI, or wait until next month.`,
+      };
+    }
+    const next = {
+      ...settings,
+      aiFreeUsesRemaining: settings.aiFreeUsesRemaining - 1,
+    };
+    setSettings(next);
+    await saveSettings(next);
+    return { ok: true as const };
+  }, [settings]);
+
   const getPlant = useCallback(
     (id: string) => plants.find((p) => p.id === id),
     [plants]
@@ -185,6 +223,8 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       loading,
       canAddPlant,
       freeLimit: FREE_PLANT_LIMIT,
+      canUseAi,
+      aiUsesLeft,
       addPlant,
       updatePlant,
       deletePlant,
@@ -192,6 +232,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       deleteCareLog,
       setPremium,
       setNotificationsEnabled,
+      consumeAiUse,
       getPlant,
       refresh,
     }),
@@ -201,6 +242,8 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       settings,
       loading,
       canAddPlant,
+      canUseAi,
+      aiUsesLeft,
       addPlant,
       updatePlant,
       deletePlant,
@@ -208,6 +251,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       deleteCareLog,
       setPremium,
       setNotificationsEnabled,
+      consumeAiUse,
       getPlant,
       refresh,
     ]
