@@ -138,6 +138,22 @@ function RootLayoutNav() {
             headerStyle: { backgroundColor: c.background },
           }}
         />
+        <Stack.Screen
+          name="legal/privacy"
+          options={{
+            title: 'Privacy policy',
+            headerShadowVisible: false,
+            headerStyle: { backgroundColor: c.background },
+          }}
+        />
+        <Stack.Screen
+          name="legal/terms"
+          options={{
+            title: 'Terms of use',
+            headerShadowVisible: false,
+            headerStyle: { backgroundColor: c.background },
+          }}
+        />
       </Stack>
     </ThemeProvider>
   );

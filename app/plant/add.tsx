@@ -122,6 +122,8 @@ export default function AddPlantScreen() {
       setCategory(result.category);
       setWaterDays(String(result.waterIntervalDays));
       setFertDays(String(result.fertilizeIntervalDays));
+      setLightLevel(result.lightLevel);
+      setPetToxicity(result.petToxicity);
       if (result.careSummary) {
         setNotes((prev) =>
           prev.trim()
@@ -132,7 +134,7 @@ export default function AddPlantScreen() {
       setAiHint(
         `${result.confidence} confidence · ${result.commonName}${
           result.scientificName ? ` (${result.scientificName})` : ''
-        }`
+        } · light ${result.lightLevel} · pets ${result.petToxicity}`
       );
     } catch (e) {
       Alert.alert('AI identify failed', e instanceof Error ? e.message : 'Unknown error');

@@ -1,11 +1,21 @@
 # EAS production builds
 
-## Prerequisites
+**You must run account steps** — see `scripts/you-must-run.sh` and the checklist below.
+
+## Prerequisites (your accounts)
 
 1. Expo account: https://expo.dev
 2. Apple Developer + App Store Connect (iOS)
 3. Google Play Console (Android)
 4. Install CLI: `npm i -g eas-cli` then `eas login`
+
+## What’s already done in the repo
+
+- `eas.json` profiles (development / preview / production)
+- `app.config.js` — injects `EAS_PROJECT_ID` / privacy + terms URLs
+- `expo-iap` wired in `lib/billing.ts` (works in EAS builds; demo unlock in Expo Go / __DEV__)
+- Privacy & Terms: in-app screens + `docs/legal/*` for store URLs
+- Store listing copy: `docs/STORE_LISTING.md`
 
 ## First-time project link
 

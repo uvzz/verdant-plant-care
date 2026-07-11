@@ -87,13 +87,13 @@ GitHub Actions runs typecheck + vitest on every push to `main` (`.github/workflo
 ## EAS production builds
 
 ```bash
-eas login
-eas init
+npm run you-must-run   # checklist for YOUR accounts
+eas login && eas init
 npm run eas:build:preview
 npm run eas:build:production
 ```
 
-See [`docs/EAS.md`](./docs/EAS.md) for secrets, store SKUs, and submit.
+See [`docs/EAS.md`](./docs/EAS.md), [`docs/STORE_LISTING.md`](./docs/STORE_LISTING.md), privacy/terms in [`docs/legal/`](./docs/legal/).
 
 ## License
 

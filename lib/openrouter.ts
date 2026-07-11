@@ -1,7 +1,19 @@
 import { getAiProxyUrl, getPremiumAccessToken } from './aiConfig';
 import { photoToBase64 } from './photos';
-import type { CareLog, Plant, PlantCategory } from './types';
-import { PLANT_CATEGORIES } from './types';
+import type {
+  CareLog,
+  LightLevel,
+  PetToxicity,
+  Plant,
+  PlantCategory,
+} from './types';
+import { LIGHT_LEVELS, PET_TOXICITY, PLANT_CATEGORIES } from './types';
+import {
+  normalizeCategory,
+  normalizeLight,
+  normalizePetToxicity,
+  parseJsonLoose,
+} from './aiParse';
 
 /**
  * OpenRouter models (key lives on Worker only).
@@ -20,6 +32,10 @@ export type PlantIdResult = {
   waterIntervalDays: number;
   fertilizeIntervalDays: number;
   notes: string;
+  /** Suggested ambient light for typical indoor placement */
+  lightLevel: LightLevel;
+  /** Pet toxicity hint (educational; verify for your region) */
+  petToxicity: PetToxicity;
 };
 
 export type CareGuideResult = {
@@ -90,29 +106,6 @@ async function chat(
   return content;
 }
 
-function parseJson<T>(raw: string): T {
-  const cleaned = raw.replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
-  return JSON.parse(cleaned) as T;
-}
-
-function normalizeCategory(raw: string): PlantCategory {
-  const hit = PLANT_CATEGORIES.find(
-    (c) => c.toLowerCase() === raw.toLowerCase().trim()
-  );
-  if (hit) return hit;
-  const map: Record<string, PlantCategory> = {
-    houseplant: 'Houseplant',
-    orchid: 'Orchid',
-    succulent: 'Succulent',
-    cactus: 'Cactus',
-    fern: 'Fern',
-    herb: 'Herb',
-    aroid: 'Houseplant',
-    tropical: 'Houseplant',
-  };
-  return map[raw.toLowerCase().trim()] ?? 'Other';
-}
-
 /** Identify plant from a photo (vision) — Premium only */
 export async function identifyPlantFromPhoto(
   photoUri: string
@@ -122,12 +115,14 @@ export async function identifyPlantFromPhoto(
 
   const system = `You are a horticulture assistant for a plant care app.
 Return ONLY valid JSON with keys:
-commonName, scientificName, category, confidence, careSummary, waterIntervalDays, fertilizeIntervalDays, notes.
+commonName, scientificName, category, confidence, careSummary, waterIntervalDays, fertilizeIntervalDays, notes, lightLevel, petToxicity.
 category must be one of: ${PLANT_CATEGORIES.join(', ')}.
 confidence: high | medium | low.
+lightLevel must be one of: ${LIGHT_LEVELS.join(', ')} (typical home placement for this species).
+petToxicity must be one of: ${PET_TOXICITY.join(', ')} (cats/dogs; educational only — prefer "unknown" if unsure).
 waterIntervalDays and fertilizeIntervalDays are positive integers (typical home care).
 Be honest if unsure; never invent rare species with certainty.
-This is educational assistance, not a definitive botanical identification.`;
+This is educational assistance, not a definitive botanical identification or veterinary advice.`;
 
   const raw = await chat(
     [
@@ -137,7 +132,7 @@ This is educational assistance, not a definitive botanical identification.`;
         content: [
           {
             type: 'text',
-            text: 'Identify this plant for a care journal. Suggest a friendly common name if unknown variety.',
+            text: 'Identify this plant for a care journal. Suggest a friendly common name if unknown variety. Include light preference and pet safety if known.',
           },
           {
             type: 'image_url',
@@ -151,7 +146,7 @@ This is educational assistance, not a definitive botanical identification.`;
     { model: VISION_MODEL, json: true }
   );
 
-  const parsed = parseJson<{
+  const parsed = parseJsonLoose<{
     commonName?: string;
     scientificName?: string;
     category?: string;
@@ -160,6 +155,8 @@ This is educational assistance, not a definitive botanical identification.`;
     waterIntervalDays?: number;
     fertilizeIntervalDays?: number;
     notes?: string;
+    lightLevel?: string;
+    petToxicity?: string;
   }>(raw);
 
   const conf = (parsed.confidence || 'medium').toLowerCase();
@@ -172,6 +169,8 @@ This is educational assistance, not a definitive botanical identification.`;
     waterIntervalDays: Math.max(1, Number(parsed.waterIntervalDays) || 7),
     fertilizeIntervalDays: Math.max(1, Number(parsed.fertilizeIntervalDays) || 30),
     notes: parsed.notes?.trim() || '',
+    lightLevel: normalizeLight(parsed.lightLevel),
+    petToxicity: normalizePetToxicity(parsed.petToxicity),
   };
 }
 
@@ -197,7 +196,7 @@ Notes: ${plant.notes || 'none'}`,
     { json: true }
   );
 
-  const parsed = parseJson<Partial<CareGuideResult>>(raw);
+  const parsed = parseJsonLoose<Partial<CareGuideResult>>(raw);
   return {
     title: parsed.title?.trim() || `Care for ${plant.name}`,
     light: parsed.light?.trim() || 'Bright, indirect light is usually safest.',
@@ -258,7 +257,7 @@ Question: ${input.question || 'How is this plant doing and what should I do next
     { model: input.photoUri ? VISION_MODEL : TEXT_MODEL, json: true }
   );
 
-  const parsed = parseJson<Partial<CareCoachResult>>(raw);
+  const parsed = parseJsonLoose<Partial<CareCoachResult>>(raw);
   const u = (parsed.urgency || 'watch').toLowerCase();
   return {
     assessment: parsed.assessment?.trim() || 'Could not form a clear assessment.',

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
+  Linking,
   ScrollView,
   StyleSheet,
   Switch,
@@ -8,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Colors, { APP_NAME, APP_VERSION, FREE_PLANT_LIMIT } from '@/constants/Colors';
@@ -18,12 +20,15 @@ import { ensureNotificationPermissions } from '@/lib/notifications';
 import { usePlants } from '@/lib/PlantContext';
 import { getAiProxyUrl } from '@/lib/aiConfig';
 import { exportCollectionBackup } from '@/lib/export';
+import { pickBackupJsonFile } from '@/lib/backupFile';
 import {
+  fetchStoreProducts,
   PREMIUM_DISPLAY,
   PREMIUM_PRODUCT_IDS,
   premiumSourceLabel,
   purchasePremium,
   restorePurchases,
+  type StoreProductInfo,
 } from '@/lib/billing';
 import { getCareDueItems } from '@/lib/care';
 import { shareCareSheet, shareFamilyInvite } from '@/lib/family';
@@ -72,6 +77,7 @@ export default function SettingsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const {
     plants,
     logs,
@@ -93,6 +99,15 @@ export default function SettingsScreen() {
     settings.householdName ?? ''
   );
   const [importJson, setImportJson] = useState('');
+  const [storeProducts, setStoreProducts] = useState<StoreProductInfo[]>([]);
+
+  useEffect(() => {
+    fetchStoreProducts().then(setStoreProducts).catch(() => {});
+  }, []);
+
+  const yearlyPrice =
+    storeProducts.find((p) => p.id === PREMIUM_PRODUCT_IDS.yearly)?.price ||
+    PREMIUM_DISPLAY.yearlyPriceHint;
 
   const onExport = async () => {
     setExporting(true);
@@ -170,32 +185,53 @@ export default function SettingsScreen() {
     setMemberName('');
   };
 
-  const onImport = async (mode: 'merge' | 'replace') => {
-    if (!importJson.trim()) {
-      Alert.alert('Paste backup', 'Paste the JSON backup into the field first.');
+  const runImport = async (raw: string, mode: 'merge' | 'replace') => {
+    const result = await importBackup(raw.trim(), mode);
+    if (!result.ok) {
+      Alert.alert('Import failed', result.reason);
       return;
     }
-    const run = async () => {
-      const result = await importBackup(importJson.trim(), mode);
-      if (!result.ok) {
-        Alert.alert('Import failed', result.reason);
-        return;
-      }
-      setImportJson('');
-      Alert.alert('Import complete', result.message);
-    };
+    setImportJson('');
+    Alert.alert('Import complete', result.message);
+  };
+
+  const onImport = async (mode: 'merge' | 'replace') => {
+    if (!importJson.trim()) {
+      Alert.alert(
+        'No backup text',
+        'Pick a JSON file or paste the backup into the field first.'
+      );
+      return;
+    }
     if (mode === 'replace') {
       Alert.alert(
         'Replace collection?',
         'This overwrites plants and care logs on this device.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Replace', style: 'destructive', onPress: run },
+          {
+            text: 'Replace',
+            style: 'destructive',
+            onPress: () => runImport(importJson, mode),
+          },
         ]
       );
     } else {
-      await run();
+      await runImport(importJson, mode);
     }
+  };
+
+  const onPickBackupFile = async () => {
+    const picked = await pickBackupJsonFile();
+    if (!picked.ok) {
+      if (!picked.cancelled) Alert.alert('Could not open file', picked.reason);
+      return;
+    }
+    setImportJson(picked.text);
+    Alert.alert(
+      'Backup loaded',
+      `${picked.name} · choose Merge or Replace to apply.`
+    );
   };
 
   const inputStyle = [
@@ -293,7 +329,7 @@ export default function SettingsScreen() {
           {!isPremium ? (
             <>
               <PrimaryButton
-                label={`${PREMIUM_DISPLAY.yearlyLabel} · ${PREMIUM_DISPLAY.yearlyPriceHint}`}
+                label={`${PREMIUM_DISPLAY.yearlyLabel} · ${yearlyPrice}`}
                 onPress={onBuy}
                 loading={buying}
                 style={{ marginTop: 16 }}
@@ -420,13 +456,19 @@ export default function SettingsScreen() {
           <Text style={[Type.micro, { color: c.textMuted, marginTop: 16 }]}>
             Import shared backup
           </Text>
+          <PrimaryButton
+            label="Choose backup file…"
+            variant="secondary"
+            onPress={onPickBackupFile}
+            style={{ marginTop: 8 }}
+          />
           <TextInput
             value={importJson}
             onChangeText={setImportJson}
-            placeholder="Paste Verdant backup JSON…"
+            placeholder="Or paste Verdant backup JSON…"
             placeholderTextColor={c.textMuted}
             multiline
-            style={[inputStyle, styles.importBox, { marginTop: 6 }]}
+            style={[inputStyle, styles.importBox, { marginTop: 8 }]}
           />
           <View style={styles.memberAdd}>
             <PrimaryButton
@@ -489,6 +531,26 @@ export default function SettingsScreen() {
             {APP_NAME} v{APP_VERSION}{'\n'}
             Local-first plant journal · branded icon · EAS-ready builds.
           </Text>
+          <PrimaryButton
+            label="Privacy policy"
+            variant="ghost"
+            onPress={() => router.push('/legal/privacy')}
+            style={{ marginTop: 10 }}
+          />
+          <PrimaryButton
+            label="Terms of use"
+            variant="ghost"
+            onPress={() => router.push('/legal/terms')}
+          />
+          <PrimaryButton
+            label="Open privacy (web)"
+            variant="ghost"
+            onPress={() =>
+              Linking.openURL(
+                'https://github.com/uvzz/verdant-plant-care/blob/main/docs/legal/PRIVACY.md'
+              )
+            }
+          />
         </View>
       </ScrollView>
     </View>

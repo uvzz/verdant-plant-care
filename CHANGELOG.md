@@ -23,10 +23,16 @@ That script bumps versions, prepends a CHANGELOG entry, commits, tags, and pushe
 
 ### Planned
 
-- Native StoreKit / Play Billing module (wire into `lib/billing.ts` when SKUs go live)
 - Cloud family sync (beyond local household + backup merge)
+- You: `eas init`, store products, production submit (see `scripts/you-must-run.sh`)
 
 ---
+
+## [0.7.0] - 2026-07-11
+
+### Notes
+
+- Ship nice-to-haves: IAP, file restore, AI light/pets, legal, store pack, tests
 
 ## [0.6.0] - 2026-07-11
 

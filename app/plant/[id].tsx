@@ -246,6 +246,8 @@ export default function PlantDetailScreen() {
         category: result.category,
         waterIntervalDays: result.waterIntervalDays,
         fertilizeIntervalDays: result.fertilizeIntervalDays,
+        lightLevel: result.lightLevel,
+        petToxicity: result.petToxicity,
         aiIdentityConfidence: result.confidence,
         notes: result.careSummary
           ? plant.notes.includes(result.careSummary)
@@ -255,7 +257,7 @@ export default function PlantDetailScreen() {
       });
       Alert.alert(
         'Updated from AI',
-        `${result.commonName}${result.scientificName ? ` · ${result.scientificName}` : ''}\nConfidence: ${result.confidence}`
+        `${result.commonName}${result.scientificName ? ` · ${result.scientificName}` : ''}\nConfidence: ${result.confidence}\nLight: ${result.lightLevel} · Pets: ${result.petToxicity}`
       );
     } catch (e) {
       Alert.alert('Identify failed', e instanceof Error ? e.message : 'Unknown error');

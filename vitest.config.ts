@@ -14,6 +14,14 @@ export default defineConfig({
         __dirname,
         'lib/__tests__/mocks/react-native.ts'
       ),
+      'expo-constants': path.resolve(
+        __dirname,
+        'lib/__tests__/mocks/expo-constants.ts'
+      ),
+      'expo-document-picker': path.resolve(
+        __dirname,
+        'lib/__tests__/mocks/expo-document-picker.ts'
+      ),
     },
   },
 });
