@@ -9,6 +9,29 @@ export type PlantCategory =
 
 export type CareLogType = 'water' | 'fertilize' | 'note' | 'photo';
 
+export type AiUrgency = 'none' | 'watch' | 'soon' | 'urgent';
+
+export interface StoredCareGuide {
+  title: string;
+  light: string;
+  water: string;
+  humidity: string;
+  soil: string;
+  tips: string[];
+  disclaimer: string;
+  generatedAt: string;
+}
+
+export interface StoredCoachEntry {
+  id: string;
+  question: string;
+  assessment: string;
+  recommendations: string[];
+  urgency: AiUrgency;
+  disclaimer: string;
+  createdAt: string;
+}
+
 export interface Plant {
   id: string;
   name: string;
@@ -22,6 +45,12 @@ export interface Plant {
   notes: string;
   createdAt: string;
   updatedAt: string;
+  /** Cached AI care guide */
+  aiGuide?: StoredCareGuide | null;
+  /** Recent AI coach Q&A (newest first, max ~10) */
+  aiCoachHistory?: StoredCoachEntry[];
+  /** Last AI identification confidence if any */
+  aiIdentityConfidence?: 'high' | 'medium' | 'low' | null;
 }
 
 export interface CareLog {
@@ -43,6 +72,7 @@ export interface AppSettings {
 }
 
 export const FREE_AI_USES_PER_MONTH = 5;
+export const MAX_COACH_HISTORY = 10;
 
 export interface CareDueItem {
   plant: Plant;

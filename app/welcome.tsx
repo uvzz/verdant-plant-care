@@ -32,7 +32,8 @@ export default function WelcomeScreen() {
         Care you can{'\n'}see grow.
       </Text>
       <Text style={[Type.body, styles.sub, { color: '#A8B5AE' }]}>
-        A photo-first journal for every plant in your collection — rare or ordinary.
+        A photo-first journal for every plant in your collection — with AI identify,
+        care guides, and a gentle coach when you need a second eye.
       </Text>
 
       <View style={styles.preview}>

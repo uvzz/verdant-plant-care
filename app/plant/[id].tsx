@@ -18,6 +18,7 @@ import Colors from '@/constants/Colors';
 import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { CareLogRow } from '@/components/CareLogRow';
+import { PhotoLightbox } from '@/components/PhotoLightbox';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import {
   formatRelativeCare,
@@ -25,13 +26,17 @@ import {
   getProgressPhotos,
   nextDueDate,
 } from '@/lib/care';
+import { createId } from '@/lib/storage';
 import {
   askCareCoach,
   generateCareGuide,
+  identifyPlantFromPhoto,
   type CareCoachResult,
   type CareGuideResult,
 } from '@/lib/openrouter';
 import { usePlants } from '@/lib/PlantContext';
+import { MAX_COACH_HISTORY, type StoredCoachEntry } from '@/lib/types';
+import { plantAgeDays } from '@/lib/stats';
 
 const { width } = Dimensions.get('window');
 
@@ -46,17 +51,23 @@ export default function PlantDetailScreen() {
     logs,
     deletePlant,
     deleteCareLog,
+    updatePlant,
     consumeAiUse,
     canUseAi,
     aiUsesLeft,
   } = usePlants();
   const plant = getPlant(id);
   const [tab, setTab] = useState<'log' | 'gallery' | 'ai'>('log');
-  const [question, setQuestion] = useState('How is this plant doing? What should I do next?');
+  const [question, setQuestion] = useState(
+    'How is this plant doing? What should I do next?'
+  );
   const [coachLoading, setCoachLoading] = useState(false);
   const [guideLoading, setGuideLoading] = useState(false);
+  const [idLoading, setIdLoading] = useState(false);
   const [coach, setCoach] = useState<CareCoachResult | null>(null);
-  const [guide, setGuide] = useState<CareGuideResult | null>(null);
+  const [lightbox, setLightbox] = useState<{ uri: string; label: string } | null>(
+    null
+  );
 
   const plantLogs = useMemo(
     () => (plant ? getPlantLogs(logs, plant.id) : []),
@@ -117,11 +128,24 @@ export default function PlantDetailScreen() {
     );
   }
 
+  const guide: CareGuideResult | null = plant.aiGuide
+    ? {
+        title: plant.aiGuide.title,
+        light: plant.aiGuide.light,
+        water: plant.aiGuide.water,
+        humidity: plant.aiGuide.humidity,
+        soil: plant.aiGuide.soil,
+        tips: plant.aiGuide.tips,
+        disclaimer: plant.aiGuide.disclaimer,
+      }
+    : null;
+
   const waterDue = nextDueDate(plant, logs, 'water');
   const fertDue = nextDueDate(plant, logs, 'fertilize');
   const today = startOfDay(new Date());
   const waterDays = differenceInCalendarDays(waterDue, today);
   const fertDays = differenceInCalendarDays(fertDue, today);
+  const ageDays = plantAgeDays(plant);
 
   const galleryUris = [
     ...(plant.photoUri ? [{ uri: plant.photoUri, key: 'hero', label: 'Portrait' }] : []),
@@ -134,18 +158,23 @@ export default function PlantDetailScreen() {
       })),
   ];
 
-  const runCoach = async () => {
+  const ensureAiQuota = async () => {
     if (!canUseAi) {
       Alert.alert('AI limit reached', 'Upgrade to Premium for unlimited AI assists.');
-      return;
+      return false;
     }
+    const quota = await consumeAiUse();
+    if (!quota.ok) {
+      Alert.alert('AI limit', quota.reason);
+      return false;
+    }
+    return true;
+  };
+
+  const runCoach = async () => {
     setCoachLoading(true);
     try {
-      const quota = await consumeAiUse();
-      if (!quota.ok) {
-        Alert.alert('AI limit', quota.reason);
-        return;
-      }
+      if (!(await ensureAiQuota())) return;
       const result = await askCareCoach({
         plant,
         logs: plantLogs,
@@ -153,6 +182,20 @@ export default function PlantDetailScreen() {
         photoUri: plant.photoUri,
       });
       setCoach(result);
+      const entry: StoredCoachEntry = {
+        id: createId(),
+        question: question.trim() || 'How is this plant doing?',
+        assessment: result.assessment,
+        recommendations: result.recommendations,
+        urgency: result.urgency,
+        disclaimer: result.disclaimer,
+        createdAt: new Date().toISOString(),
+      };
+      const history = [entry, ...(plant.aiCoachHistory ?? [])].slice(
+        0,
+        MAX_COACH_HISTORY
+      );
+      await updatePlant(plant.id, { aiCoachHistory: history });
     } catch (e) {
       Alert.alert('Care coach failed', e instanceof Error ? e.message : 'Unknown error');
     } finally {
@@ -161,23 +204,52 @@ export default function PlantDetailScreen() {
   };
 
   const runGuide = async () => {
-    if (!canUseAi) {
-      Alert.alert('AI limit reached', 'Upgrade to Premium for unlimited AI assists.');
-      return;
-    }
     setGuideLoading(true);
     try {
-      const quota = await consumeAiUse();
-      if (!quota.ok) {
-        Alert.alert('AI limit', quota.reason);
-        return;
-      }
+      if (!(await ensureAiQuota())) return;
       const result = await generateCareGuide(plant);
-      setGuide(result);
+      await updatePlant(plant.id, {
+        aiGuide: {
+          ...result,
+          generatedAt: new Date().toISOString(),
+        },
+      });
     } catch (e) {
       Alert.alert('Care guide failed', e instanceof Error ? e.message : 'Unknown error');
     } finally {
       setGuideLoading(false);
+    }
+  };
+
+  const runReIdentify = async () => {
+    if (!plant.photoUri) {
+      Alert.alert('Photo needed', 'Add a plant photo first (Edit).');
+      return;
+    }
+    setIdLoading(true);
+    try {
+      if (!(await ensureAiQuota())) return;
+      const result = await identifyPlantFromPhoto(plant.photoUri);
+      await updatePlant(plant.id, {
+        species: result.scientificName || plant.species,
+        category: result.category,
+        waterIntervalDays: result.waterIntervalDays,
+        fertilizeIntervalDays: result.fertilizeIntervalDays,
+        aiIdentityConfidence: result.confidence,
+        notes: result.careSummary
+          ? plant.notes.includes(result.careSummary)
+            ? plant.notes
+            : `${plant.notes ? plant.notes + '\n\n' : ''}AI: ${result.careSummary}`
+          : plant.notes,
+      });
+      Alert.alert(
+        'Updated from AI',
+        `${result.commonName}${result.scientificName ? ` · ${result.scientificName}` : ''}\nConfidence: ${result.confidence}`
+      );
+    } catch (e) {
+      Alert.alert('Identify failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setIdLoading(false);
     }
   };
 
@@ -189,27 +261,35 @@ export default function PlantDetailScreen() {
         contentContainerStyle={{ paddingBottom: 48 }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.heroWrap}>
-          {plant.photoUri ? (
-            <Image source={{ uri: plant.photoUri }} style={styles.hero} contentFit="cover" />
-          ) : (
-            <View style={[styles.hero, styles.heroEmpty, { backgroundColor: c.surfaceAlt }]}>
-              <Text style={{ fontSize: 64 }}>🪴</Text>
+        <Pressable
+          onPress={() =>
+            plant.photoUri &&
+            setLightbox({ uri: plant.photoUri, label: plant.name })
+          }
+        >
+          <View style={styles.heroWrap}>
+            {plant.photoUri ? (
+              <Image source={{ uri: plant.photoUri }} style={styles.hero} contentFit="cover" />
+            ) : (
+              <View style={[styles.hero, styles.heroEmpty, { backgroundColor: c.surfaceAlt }]}>
+                <Text style={{ fontSize: 64 }}>🪴</Text>
+              </View>
+            )}
+            <View style={styles.heroOverlay}>
+              <Text style={[Type.micro, { color: 'rgba(255,255,255,0.8)' }]}>
+                {plant.category}
+                {plant.location ? ` · ${plant.location}` : ''}
+                {ageDays > 0 ? ` · ${ageDays}d with you` : ''}
+              </Text>
+              <Text style={[Type.displayM, { color: '#fff', fontSize: 28, marginTop: 4 }]}>
+                {plant.name}
+              </Text>
+              <Text style={[Type.latin, { color: 'rgba(255,255,255,0.9)', marginTop: 2 }]}>
+                {plant.species || plant.category}
+              </Text>
             </View>
-          )}
-          <View style={styles.heroOverlay}>
-            <Text style={[Type.micro, { color: 'rgba(255,255,255,0.8)' }]}>
-              {plant.category}
-              {plant.location ? ` · ${plant.location}` : ''}
-            </Text>
-            <Text style={[Type.displayM, { color: '#fff', fontSize: 28, marginTop: 4 }]}>
-              {plant.name}
-            </Text>
-            <Text style={[Type.latin, { color: 'rgba(255,255,255,0.9)', marginTop: 2 }]}>
-              {plant.species || plant.category}
-            </Text>
           </View>
-        </View>
+        </Pressable>
 
         <View style={styles.body}>
           <View style={styles.dueRow}>
@@ -305,7 +385,11 @@ export default function PlantDetailScreen() {
             ) : (
               <View style={styles.gallery}>
                 {galleryUris.map((item) => (
-                  <View key={item.key} style={styles.galleryItem}>
+                  <Pressable
+                    key={item.key}
+                    style={styles.galleryItem}
+                    onPress={() => setLightbox({ uri: item.uri, label: item.label })}
+                  >
                     <Image
                       source={{ uri: item.uri }}
                       style={styles.galleryImage}
@@ -314,7 +398,7 @@ export default function PlantDetailScreen() {
                     <Text style={[Type.meta, { color: c.textMuted, marginTop: 6, marginLeft: 2 }]}>
                       {item.label}
                     </Text>
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             )
@@ -323,17 +407,42 @@ export default function PlantDetailScreen() {
           {tab === 'ai' ? (
             <View style={{ gap: 12, marginTop: 8 }}>
               <Text style={[Type.meta, { color: c.textMuted }]}>
-                AI assists left: {aiUsesLeft === 'unlimited' ? 'Unlimited (Premium)' : aiUsesLeft} ·
+                AI left: {aiUsesLeft === 'unlimited' ? 'Unlimited (Premium)' : aiUsesLeft} ·
                 Educational only
               </Text>
 
               <View style={[styles.aiCard, { backgroundColor: c.surface, borderColor: c.border }]}>
-                <Text style={[Type.title, { color: c.text }]}>Species care guide</Text>
+                <Text style={[Type.title, { color: c.text }]}>Re-identify from photo</Text>
                 <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4, marginBottom: 10 }]}>
-                  Light, water, humidity, and tips for this plant.
+                  Update species, category, and intervals using the current portrait.
+                  {plant.aiIdentityConfidence
+                    ? ` Last confidence: ${plant.aiIdentityConfidence}.`
+                    : ''}
                 </Text>
                 <PrimaryButton
-                  label={guideLoading ? 'Writing…' : '✨ Generate care guide'}
+                  label={idLoading ? 'Identifying…' : '✨ AI re-identify'}
+                  onPress={runReIdentify}
+                  loading={idLoading}
+                  variant="secondary"
+                />
+              </View>
+
+              <View style={[styles.aiCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+                <Text style={[Type.title, { color: c.text }]}>Species care guide</Text>
+                <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4, marginBottom: 10 }]}>
+                  Saved on this plant after generation.
+                  {plant.aiGuide?.generatedAt
+                    ? ` Last: ${format(parseISO(plant.aiGuide.generatedAt), 'MMM d, yyyy')}.`
+                    : ''}
+                </Text>
+                <PrimaryButton
+                  label={
+                    guideLoading
+                      ? 'Writing…'
+                      : guide
+                        ? '✨ Refresh care guide'
+                        : '✨ Generate care guide'
+                  }
                   onPress={runGuide}
                   loading={guideLoading}
                   variant="secondary"
@@ -361,7 +470,7 @@ export default function PlantDetailScreen() {
               <View style={[styles.aiCard, { backgroundColor: c.surface, borderColor: c.border }]}>
                 <Text style={[Type.title, { color: c.text }]}>Care coach</Text>
                 <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4, marginBottom: 8 }]}>
-                  Uses this plant’s log history and portrait photo when available.
+                  Uses log history and portrait. Answers are saved on this plant.
                 </Text>
                 <TextInput
                   value={question}
@@ -384,18 +493,34 @@ export default function PlantDetailScreen() {
                   onPress={runCoach}
                   loading={coachLoading}
                 />
-                {coach ? (
-                  <View style={{ marginTop: 12, gap: 8 }}>
-                    <Text style={[Type.micro, { color: urgencyColor(coach.urgency, c) }]}>
-                      Urgency · {coach.urgency}
-                    </Text>
-                    <Text style={[Type.body, { color: c.text }]}>{coach.assessment}</Text>
-                    {coach.recommendations.map((r, i) => (
-                      <Text key={i} style={[Type.bodySmall, { color: c.text }]}>
-                        • {r}
-                      </Text>
+                {coach ? <CoachBlock result={coach} c={c} isLatest /> : null}
+                {(plant.aiCoachHistory?.length ?? 0) > 0 ? (
+                  <View style={{ marginTop: 16, gap: 10 }}>
+                    <Text style={[Type.micro, { color: c.textMuted }]}>Saved answers</Text>
+                    {plant.aiCoachHistory!.map((h) => (
+                      <View
+                        key={h.id}
+                        style={[
+                          styles.historyItem,
+                          { borderColor: c.border, backgroundColor: c.surfaceAlt },
+                        ]}
+                      >
+                        <Text style={[Type.meta, { color: c.textMuted }]}>
+                          {format(parseISO(h.createdAt), 'MMM d · h:mm a')} · {h.urgency}
+                        </Text>
+                        <Text style={[Type.title, { color: c.text, fontSize: 14, marginTop: 4 }]}>
+                          {h.question}
+                        </Text>
+                        <Text style={[Type.bodySmall, { color: c.text, marginTop: 6 }]}>
+                          {h.assessment}
+                        </Text>
+                        {h.recommendations.map((r, i) => (
+                          <Text key={i} style={[Type.bodySmall, { color: c.text, marginTop: 2 }]}>
+                            • {r}
+                          </Text>
+                        ))}
+                      </View>
                     ))}
-                    <Text style={[Type.meta, { color: c.textMuted }]}>{coach.disclaimer}</Text>
                   </View>
                 ) : null}
               </View>
@@ -403,7 +528,41 @@ export default function PlantDetailScreen() {
           ) : null}
         </View>
       </ScrollView>
+
+      <PhotoLightbox
+        uri={lightbox?.uri ?? null}
+        label={lightbox?.label}
+        visible={!!lightbox}
+        onClose={() => setLightbox(null)}
+      />
     </>
+  );
+}
+
+function CoachBlock({
+  result,
+  c,
+  isLatest,
+}: {
+  result: CareCoachResult;
+  c: (typeof Colors)['light'];
+  isLatest?: boolean;
+}) {
+  return (
+    <View style={{ marginTop: 12, gap: 8 }}>
+      {isLatest ? (
+        <Text style={[Type.micro, { color: urgencyColor(result.urgency, c) }]}>
+          Urgency · {result.urgency}
+        </Text>
+      ) : null}
+      <Text style={[Type.body, { color: c.text }]}>{result.assessment}</Text>
+      {result.recommendations.map((r, i) => (
+        <Text key={i} style={[Type.bodySmall, { color: c.text }]}>
+          • {r}
+        </Text>
+      ))}
+      <Text style={[Type.meta, { color: c.textMuted }]}>{result.disclaimer}</Text>
+    </View>
   );
 }
 
@@ -529,5 +688,10 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     marginBottom: 10,
     fontSize: 15,
+  },
+  historyItem: {
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 12,
   },
 });

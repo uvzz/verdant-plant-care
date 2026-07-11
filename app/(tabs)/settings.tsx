@@ -46,6 +46,12 @@ const BENEFITS: Benefit[] = [
     live: true,
   },
   {
+    label: 'Collection insights & stats',
+    free: 'Included',
+    premium: 'Included + AI insight',
+    live: true,
+  },
+  {
     label: 'Photo care logs & gallery',
     free: 'Included',
     premium: 'Included',

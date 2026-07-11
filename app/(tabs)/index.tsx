@@ -1,22 +1,25 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Colors, { APP_NAME } from '@/constants/Colors';
-import { Type } from '@/constants/Typography';
+import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { EmptyState } from '@/components/EmptyState';
 import { PlantCard } from '@/components/PlantCard';
 import { formatRelativeCare, getCareDueItems } from '@/lib/care';
 import { usePlants } from '@/lib/PlantContext';
+import type { PlantCategory } from '@/lib/types';
+import { PLANT_CATEGORIES } from '@/lib/types';
 
 export default function MyPlantsScreen() {
   const scheme = useColorScheme() ?? 'light';
@@ -24,6 +27,8 @@ export default function MyPlantsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { plants, logs, loading, canAddPlant, freeLimit, settings } = usePlants();
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<PlantCategory | 'All'>('All');
 
   const dueMap = useMemo(() => {
     const items = getCareDueItems(plants, logs);
@@ -52,6 +57,20 @@ export default function MyPlantsScreen() {
     return map;
   }, [plants, logs]);
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return plants.filter((p) => {
+      if (category !== 'All' && p.category !== category) return false;
+      if (!q) return true;
+      return (
+        p.name.toLowerCase().includes(q) ||
+        p.species.toLowerCase().includes(q) ||
+        p.location.toLowerCase().includes(q) ||
+        p.notes.toLowerCase().includes(q)
+      );
+    });
+  }, [plants, query, category]);
+
   if (loading) {
     return (
       <View style={[styles.center, { backgroundColor: c.background }]}>
@@ -69,6 +88,7 @@ export default function MyPlantsScreen() {
           <Text style={[Type.meta, { color: c.textMuted, marginTop: 4 }]}>
             {plants.length} plant{plants.length === 1 ? '' : 's'}
             {!settings.isPremium ? ` · Free up to ${freeLimit}` : ' · Premium'}
+            {filtered.length !== plants.length ? ` · showing ${filtered.length}` : ''}
           </Text>
         </View>
         <Pressable
@@ -88,12 +108,68 @@ export default function MyPlantsScreen() {
         </Pressable>
       </View>
 
+      {plants.length > 0 ? (
+        <View style={styles.searchWrap}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search name, species, location…"
+            placeholderTextColor={c.textMuted}
+            style={[
+              styles.search,
+              {
+                color: c.text,
+                backgroundColor: c.surface,
+                borderColor: c.border,
+                fontFamily: Fonts.body,
+              },
+            ]}
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+          />
+          <FlatList
+            horizontal
+            data={['All', ...PLANT_CATEGORIES] as const}
+            keyExtractor={(item) => item}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chips}
+            renderItem={({ item }) => {
+              const active = item === category;
+              return (
+                <Pressable
+                  onPress={() => setCategory(item)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: active ? c.night : c.surface,
+                      borderColor: active ? c.night : c.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      Type.meta,
+                      {
+                        color: active ? c.background : c.text,
+                        fontFamily: Fonts.bodySemi,
+                      },
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </Pressable>
+              );
+            }}
+          />
+        </View>
+      ) : null}
+
       {plants.length === 0 ? (
         <>
           <EmptyState
             emoji="🌿"
             title="Your glasshouse is quiet"
-            body="Add a plant with a portrait. Care logs and progress photos will live here."
+            body="Add a plant with a portrait. Use AI identify to fill species and care intervals."
           />
           <View style={styles.emptyCta}>
             <Pressable
@@ -107,9 +183,15 @@ export default function MyPlantsScreen() {
             </Pressable>
           </View>
         </>
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          emoji="🔎"
+          title="No matches"
+          body="Try another search or category filter."
+        />
       ) : (
         <FlatList
-          data={plants}
+          data={filtered}
           keyExtractor={(item) => item.id}
           numColumns={2}
           columnWrapperStyle={styles.row}
@@ -138,13 +220,16 @@ export default function MyPlantsScreen() {
             !canAddPlant ? (
               <Link href="/(tabs)/settings" asChild>
                 <Pressable
-                  style={[styles.upgradeBanner, { backgroundColor: c.surface, borderColor: c.border }]}
+                  style={[
+                    styles.upgradeBanner,
+                    { backgroundColor: c.surface, borderColor: c.border },
+                  ]}
                 >
                   <Text style={[Type.title, { color: c.text, fontSize: 15 }]}>
                     Plant limit reached
                   </Text>
                   <Text style={[Type.meta, { color: c.textMuted, marginTop: 4 }]}>
-                    Upgrade to Premium for unlimited plants, deeper history, and care guides.
+                    Upgrade to Premium for unlimited plants and AI assists.
                   </Text>
                 </Pressable>
               </Link>
@@ -161,7 +246,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: {
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
@@ -173,6 +258,21 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  searchWrap: { paddingHorizontal: 16, marginBottom: 8, gap: 8 },
+  search: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    height: 42,
+    paddingHorizontal: 14,
+    fontSize: 15,
+  },
+  chips: { gap: 8, paddingVertical: 2, paddingRight: 8 },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   list: { paddingHorizontal: 14, paddingBottom: 40 },
   row: { gap: 10, marginBottom: 10 },

@@ -57,6 +57,23 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="insights"
+        options={{
+          title: 'Insights',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{
+                ios: 'chart.bar.fill',
+                android: 'bar_chart',
+                web: 'bar_chart',
+              }}
+              tintColor={color}
+              size={24}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
