@@ -71,12 +71,31 @@ lib/               # Types, storage, care math, context, notifications
 
 Local-first on device via AsyncStorage. No cloud account required for MVP.
 
-## Versioning
+## Versioning & changelog
 
-Git is the source of truth. Project milestones and release notes are tracked in Notion:
+**After every big change:** bump version, update notes, commit, tag, and push.
 
-- **Hub:** Verdant — Plant Care Tracker (Project Hub)
-- **DB:** Verdant Version Logs
+```bash
+# patch 0.2.1 → 0.2.2
+npm run release -- patch "Short description of what changed"
+
+# minor 0.2.x → 0.3.0
+npm run release -- minor "New feature summary"
+
+# major → 1.0.0
+npm run release -- major "Breaking or 1.0 ship"
+
+# exact version
+npm run release -- 0.3.0 "Named release notes"
+```
+
+This updates `package.json`, `app.json`, `APP_VERSION`, **`CHANGELOG.md`**, creates git tag `vX.Y.Z`, and pushes to GitHub.
+
+- Human-readable history: [`CHANGELOG.md`](./CHANGELOG.md)
+- Semantic versioning: MAJOR.MINOR.PATCH
+- Notion (optional ops): Project Hub + Version Logs
+
+`SKIP_PUSH=1 npm run release -- patch "…"` commits/tags locally only.
 
 ## License
 

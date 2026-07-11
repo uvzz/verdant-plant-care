@@ -1,7 +1,7 @@
 {
   "name": "verdant-plant-care",
   "main": "expo-router/entry",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "dependencies": {
     "@expo-google-fonts/fraunces": "^0.4.1",
     "@expo-google-fonts/outfit": "^0.4.3",
@@ -41,7 +41,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "release": "node scripts/release.mjs"
   },
   "private": true
 }
