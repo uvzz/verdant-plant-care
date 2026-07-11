@@ -1,4 +1,10 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  ViewStyle,
+} from 'react-native';
 import Colors from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -10,6 +16,9 @@ interface Props {
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
+  /** Optional override for screen readers */
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 export function PrimaryButton({
@@ -19,6 +28,8 @@ export function PrimaryButton({
   disabled,
   loading,
   style,
+  accessibilityLabel,
+  accessibilityHint,
 }: Props) {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
@@ -44,6 +55,11 @@ export function PrimaryButton({
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: !!(disabled || loading), busy: !!loading }}
+      hitSlop={6}
       style={({ pressed }) => [
         styles.btn,
         {
@@ -55,9 +71,16 @@ export function PrimaryButton({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={fg} />
+        <>
+          <ActivityIndicator color={fg} style={{ marginRight: 8 }} />
+          <Text style={[Type.button, { color: fg, opacity: 0.85 }]} numberOfLines={1}>
+            {label}
+          </Text>
+        </>
       ) : (
-        <Text style={[Type.button, { color: fg }]}>{label}</Text>
+        <Text style={[Type.button, { color: fg }]} numberOfLines={2}>
+          {label}
+        </Text>
       )}
     </Pressable>
   );
@@ -65,11 +88,13 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   btn: {
-    minHeight: 52,
+    minHeight: 48,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 18,
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderWidth: StyleSheet.hairlineWidth,
   },
 });

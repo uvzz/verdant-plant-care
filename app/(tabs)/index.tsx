@@ -228,6 +228,12 @@ export default function MyPlantsScreen() {
           emoji="🔎"
           title="No matches"
           body="Try another search, category, or room filter."
+          actionLabel="Clear filters"
+          onAction={() => {
+            setQuery('');
+            setCategory('All');
+            setRoom('All');
+          }}
         />
       ) : (
         <FlatList
@@ -237,7 +243,7 @@ export default function MyPlantsScreen() {
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const due = dueMap.get(item.id);
             const filamentColor =
               due?.colorKey === 'late'
@@ -245,8 +251,11 @@ export default function MyPlantsScreen() {
                 : due?.colorKey === 'today'
                   ? c.growth
                   : c.tint;
+            // Odd last item: keep half-width so it doesn't stretch full row
+            const isOddLast =
+              filtered.length % 2 === 1 && index === filtered.length - 1;
             return (
-              <View style={styles.cardWrap}>
+              <View style={[styles.cardWrap, isOddLast && styles.cardWrapHalf]}>
                 <PlantCard
                   plant={item}
                   subtitle={due?.label}
@@ -260,6 +269,8 @@ export default function MyPlantsScreen() {
             !canAddPlant ? (
               <Link href="/(tabs)/settings" asChild>
                 <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Upgrade to Premium for unlimited plants"
                   style={[
                     styles.upgradeBanner,
                     { backgroundColor: c.surface, borderColor: c.border },
@@ -316,7 +327,8 @@ const styles = StyleSheet.create({
   },
   list: { paddingHorizontal: 14, paddingBottom: 40 },
   row: { gap: 10, marginBottom: 10 },
-  cardWrap: { flex: 1 },
+  cardWrap: { flex: 1, maxWidth: '50%' },
+  cardWrapHalf: { maxWidth: '48%', flexGrow: 0 },
   emptyCta: { padding: 24, marginTop: 'auto' },
   cta: {
     borderRadius: 14,

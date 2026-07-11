@@ -105,6 +105,11 @@ export default function SettingsScreen() {
     fetchStoreProducts().then(setStoreProducts).catch(() => {});
   }, []);
 
+  // Keep draft in sync when settings hydrate from storage
+  useEffect(() => {
+    setHouseholdDraft(settings.householdName ?? '');
+  }, [settings.householdName]);
+
   const yearlyPrice =
     storeProducts.find((p) => p.id === PREMIUM_PRODUCT_IDS.yearly)?.price ||
     PREMIUM_DISPLAY.yearlyPriceHint;

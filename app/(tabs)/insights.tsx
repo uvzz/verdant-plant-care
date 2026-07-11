@@ -1,12 +1,6 @@
 import { useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Colors, { APP_NAME } from '@/constants/Colors';
@@ -22,12 +16,13 @@ export default function InsightsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const insets = useSafeAreaInsets();
-  const { plants, logs, settings, consumeAiUse, canUseAi } = usePlants();
+  const router = useRouter();
+  const { plants, logs, settings, consumeAiUse, canUseAi, aiUsesLeft } = usePlants();
   const stats = useMemo(() => computeCollectionStats(plants, logs), [plants, logs]);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const maxDay = Math.max(1, ...stats.byDayLast14.map((d) => d.count));
+  const maxDay = Math.max(1, ...stats.byDayLast14.map((d) => d.count), 1);
 
   const runCollectionInsight = async () => {
     if (plants.length === 0) {
@@ -37,7 +32,11 @@ export default function InsightsScreen() {
     if (!canUseAi) {
       Alert.alert(
         'Premium required',
-        'AI collection insights are included with Premium. Unlock Premium in Settings.'
+        'AI collection insights are included with Premium.',
+        [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => router.push('/(tabs)/settings') },
+        ]
       );
       return;
     }
@@ -45,7 +44,7 @@ export default function InsightsScreen() {
     try {
       const quota = await consumeAiUse();
       if (!quota.ok) {
-        Alert.alert('Premium required', quota.reason);
+        Alert.alert('AI limit', quota.reason);
         return;
       }
       const text = await generateCollectionInsight(
@@ -89,6 +88,8 @@ export default function InsightsScreen() {
             emoji="📊"
             title="No data yet"
             body="Add plants and log care to unlock stats and AI insights."
+            actionLabel="Add a plant"
+            onAction={() => router.push('/plant/add')}
           />
         ) : (
           <>
@@ -96,7 +97,17 @@ export default function InsightsScreen() {
               <StatTile label="Plants" value={String(stats.plantCount)} c={c} />
               <StatTile label="Care logs" value={String(stats.totalLogs)} c={c} />
               <StatTile label="Streak" value={`${stats.careStreakDays}d`} c={c} />
-              <StatTile label="Overdue" value={String(stats.overdueCount)} c={c} danger={stats.overdueCount > 0} />
+              <StatTile
+                label="Overdue"
+                value={String(stats.overdueCount)}
+                c={c}
+                danger={stats.overdueCount > 0}
+                onPress={
+                  stats.overdueCount > 0
+                    ? () => router.push('/(tabs)/calendar')
+                    : undefined
+                }
+              />
             </View>
 
             <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
@@ -154,16 +165,29 @@ export default function InsightsScreen() {
                   { color: 'rgba(232,239,233,0.7)', marginTop: 4, marginBottom: 12 },
                 ]}
               >
-                A short coach note based on your stats. Uses one AI credit on free plan.
+                {canUseAi
+                  ? `A short coach note from your stats. Premium AI · ~${aiUsesLeft === 'unlimited' ? '∞' : aiUsesLeft} soft uses left today on this device.`
+                  : 'Premium only — unlock in Settings for a calm coach note on your collection.'}
               </Text>
-              <PrimaryButton
-                label={loading ? 'Thinking…' : '✨ Generate insight'}
-                onPress={runCollectionInsight}
-                loading={loading}
-              />
-              {loading ? <ActivityIndicator color={c.growth} style={{ marginTop: 12 }} /> : null}
+              {canUseAi ? (
+                <PrimaryButton
+                  label={loading ? 'Thinking…' : '✨ Generate insight'}
+                  onPress={runCollectionInsight}
+                  loading={loading}
+                  accessibilityHint="Uses Premium AI for a short collection note"
+                />
+              ) : (
+                <PrimaryButton
+                  label="Unlock Premium for AI"
+                  onPress={() => router.push('/(tabs)/settings')}
+                  accessibilityHint="Opens Settings to unlock Premium"
+                />
+              )}
               {aiSummary ? (
-                <Text style={[Type.body, { color: '#EEF3EF', marginTop: 14, lineHeight: 22 }]}>
+                <Text
+                  style={[Type.body, { color: '#EEF3EF', marginTop: 14, lineHeight: 22 }]}
+                  accessibilityLiveRegion="polite"
+                >
                   {aiSummary}
                 </Text>
               ) : null}
@@ -180,18 +204,45 @@ function StatTile({
   value,
   c,
   danger,
+  onPress,
 }: {
   label: string;
   value: string;
   c: (typeof Colors)['light'];
   danger?: boolean;
+  onPress?: () => void;
 }) {
-  return (
-    <View style={[styles.tile, { backgroundColor: c.surface, borderColor: c.border }]}>
+  const body = (
+    <>
       <Text style={[Type.displayM, { color: danger ? c.danger : c.text, fontSize: 26 }]}>
         {value}
       </Text>
       <Text style={[Type.meta, { color: c.textMuted, marginTop: 4 }]}>{label}</Text>
+      {onPress && danger ? (
+        <Text style={[Type.meta, { color: c.tint, marginTop: 4, fontSize: 10 }]}>
+          Tap for care list
+        </Text>
+      ) : null}
+    </>
+  );
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${label}: ${value}`}
+        style={[styles.tile, { backgroundColor: c.surface, borderColor: c.border }]}
+      >
+        {body}
+      </Pressable>
+    );
+  }
+  return (
+    <View
+      accessibilityLabel={`${label}: ${value}`}
+      style={[styles.tile, { backgroundColor: c.surface, borderColor: c.border }]}
+    >
+      {body}
     </View>
   );
 }

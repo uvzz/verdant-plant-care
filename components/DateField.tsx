@@ -44,21 +44,42 @@ export function DateField({
         <Text style={{ color: c.textMuted }}>📅</Text>
       </Pressable>
       {open ? (
-        <DateTimePicker
-          value={date}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(_, selected) => {
-            if (Platform.OS === 'android') setOpen(false);
-            if (selected) onChange(format(selected, 'yyyy-MM-dd'));
-          }}
-          themeVariant={scheme === 'dark' ? 'dark' : 'light'}
-        />
-      ) : null}
-      {open && Platform.OS === 'ios' ? (
-        <Pressable onPress={() => setOpen(false)} style={styles.done}>
-          <Text style={[Type.meta, { color: c.tint, fontFamily: Fonts.bodySemi }]}>Done</Text>
-        </Pressable>
+        <View
+          style={[
+            styles.pickerWrap,
+            Platform.OS === 'ios' && {
+              backgroundColor: c.surface,
+              borderColor: c.border,
+            },
+          ]}
+        >
+          {Platform.OS === 'ios' ? (
+            <View style={styles.iosBar}>
+              <Text style={[Type.meta, { color: c.textMuted }]}>Pick a date</Text>
+              <Pressable
+                onPress={() => setOpen(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Done choosing date"
+                hitSlop={10}
+              >
+                <Text style={[Type.meta, { color: c.tint, fontFamily: Fonts.bodySemi }]}>
+                  Done
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            maximumDate={new Date()}
+            onChange={(_, selected) => {
+              if (Platform.OS === 'android') setOpen(false);
+              if (selected) onChange(format(selected, 'yyyy-MM-dd'));
+            }}
+            themeVariant={scheme === 'dark' ? 'dark' : 'light'}
+          />
+        </View>
       ) : null}
     </View>
   );
@@ -75,5 +96,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  done: { alignSelf: 'flex-end', paddingVertical: 6, paddingHorizontal: 4 },
+  pickerWrap: {
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+    marginTop: 4,
+  },
+  iosBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
 });

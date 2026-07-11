@@ -24,6 +24,7 @@ export default function CalendarScreen() {
   const router = useRouter();
   const { plants, logs, settings, addCareLog } = usePlants();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const dueItems = useMemo(() => getCareDueItems(plants, logs), [plants, logs]);
   const overdue = dueItems.filter((d) => d.overdue);
@@ -34,6 +35,11 @@ export default function CalendarScreen() {
     scheduleGentleReminders(dueItems, settings.notificationsEnabled).catch(() => {});
   }, [dueItems, settings.notificationsEnabled]);
 
+  const flash = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2400);
+  };
+
   const onWatered = async (item: CareDueItem) => {
     const key = `${item.plant.id}-${item.type}`;
     setBusyId(key);
@@ -43,6 +49,13 @@ export default function CalendarScreen() {
         type: item.type,
         note: item.type === 'water' ? 'Logged from calendar' : 'Fertilized from calendar',
       });
+      flash(
+        item.type === 'water'
+          ? `Watered ${item.plant.name}`
+          : `Fed ${item.plant.name}`
+      );
+    } catch {
+      flash('Could not save — try again');
     } finally {
       setBusyId(null);
     }
@@ -58,6 +71,9 @@ export default function CalendarScreen() {
         type: 'check',
         note: `Still moist — snoozed ${MOISTURE_SNOOZE_DAYS} days (check before water)`,
       });
+      flash(`${item.plant.name} · snoozed ${MOISTURE_SNOOZE_DAYS}d`);
+    } catch {
+      flash('Could not save — try again');
     } finally {
       setBusyId(null);
     }
@@ -84,7 +100,13 @@ export default function CalendarScreen() {
         key={`${item.plant.id}-${item.type}-${sectionKey}`}
         style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
       >
-        <Pressable onPress={() => openLog(item)} style={styles.cardTop}>
+        <Pressable
+          onPress={() => openLog(item)}
+          onLongPress={() => router.push(`/plant/${item.plant.id}`)}
+          accessibilityRole="button"
+          accessibilityLabel={`${item.plant.name}, ${item.type}, ${formatRelativeCare(item.daysUntil)}. Tap to log, long-press for plant.`}
+          style={styles.cardTop}
+        >
           <View style={[styles.dot, { backgroundColor: tint }]} />
           <View style={styles.rowBody}>
             <Text style={[Type.title, { color: c.text, fontSize: 15 }]}>
@@ -148,11 +170,24 @@ export default function CalendarScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {toast ? (
+          <View
+            style={[styles.toast, { backgroundColor: c.night }]}
+            accessibilityLiveRegion="polite"
+          >
+            <Text style={[Type.meta, { color: c.growth, fontFamily: Fonts.bodySemi }]}>
+              {toast}
+            </Text>
+          </View>
+        ) : null}
+
         {plants.length === 0 ? (
           <EmptyState
             emoji="📅"
             title="Nothing scheduled yet"
             body="Add plants with water and fertilize intervals to build a calm care calendar."
+            actionLabel="Add a plant"
+            onAction={() => router.push('/plant/add')}
           />
         ) : (
           <>
@@ -208,6 +243,10 @@ function ActionChip({
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
+      hitSlop={4}
       style={({ pressed }) => [
         styles.chip,
         {
@@ -254,6 +293,12 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 20, paddingBottom: 8 },
   scroll: { paddingHorizontal: 16, paddingBottom: 40 },
+  toast: {
+    marginTop: 8,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
   philosophy: {
     marginTop: 12,
     padding: 14,
@@ -282,9 +327,11 @@ const styles = StyleSheet.create({
   },
   chip: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    minHeight: 40,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'center',
   },
   dot: { width: 10, height: 10, borderRadius: 5 },
   rowBody: { flex: 1 },

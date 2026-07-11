@@ -76,6 +76,13 @@ export default function PlantDetailScreen() {
   const [lightbox, setLightbox] = useState<{ uri: string; label: string } | null>(
     null
   );
+  const [toast, setToast] = useState<string | null>(null);
+  const [moistBusy, setMoistBusy] = useState(false);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2800);
+  };
 
   const plantLogs = useMemo(
     () => (plant ? getPlantLogs(logs, plant.id) : []),
@@ -288,16 +295,23 @@ export default function PlantDetailScreen() {
                 <Text style={{ fontSize: 64 }}>🪴</Text>
               </View>
             )}
+            <View style={styles.heroScrim} />
             <View style={styles.heroOverlay}>
-              <Text style={[Type.micro, { color: 'rgba(255,255,255,0.8)' }]}>
+              <Text style={[Type.micro, { color: 'rgba(255,255,255,0.85)' }]}>
                 {plant.category}
                 {plant.location ? ` · ${plant.location}` : ''}
                 {ageDays > 0 ? ` · ${ageDays}d with you` : ''}
               </Text>
-              <Text style={[Type.displayM, { color: '#fff', fontSize: 28, marginTop: 4 }]}>
+              <Text
+                style={[Type.displayM, { color: '#fff', fontSize: 28, marginTop: 4 }]}
+                numberOfLines={2}
+              >
                 {plant.name}
               </Text>
-              <Text style={[Type.latin, { color: 'rgba(255,255,255,0.9)', marginTop: 2 }]}>
+              <Text
+                style={[Type.latin, { color: 'rgba(255,255,255,0.9)', marginTop: 2 }]}
+                numberOfLines={1}
+              >
                 {plant.species || plant.category}
               </Text>
             </View>
@@ -305,6 +319,15 @@ export default function PlantDetailScreen() {
         </Pressable>
 
         <View style={styles.body}>
+          {toast ? (
+            <View
+              style={[styles.toast, { backgroundColor: c.night }]}
+              accessibilityLiveRegion="polite"
+            >
+              <Text style={[Type.meta, { color: c.growth }]}>{toast}</Text>
+            </View>
+          ) : null}
+
           <View style={styles.profileChips}>
             <MetaChip
               label={LIGHT_LABELS[plant.lightLevel ?? 'medium']}
@@ -369,22 +392,30 @@ export default function PlantDetailScreen() {
                 })
               }
               style={styles.actionBtn}
+              accessibilityHint="Opens care log to record watering"
             />
             <PrimaryButton
-              label="🖐️ Still moist"
+              label={moistBusy ? 'Saving…' : '🖐️ Still moist'}
               variant="secondary"
+              loading={moistBusy}
               onPress={async () => {
-                await addCareLog({
-                  plantId: plant.id,
-                  type: 'check',
-                  note: `Still moist — snoozed ${MOISTURE_SNOOZE_DAYS} days`,
-                });
-                Alert.alert(
-                  'Snoozed',
-                  `Water reminder pushed ~${MOISTURE_SNOOZE_DAYS} days. Check soil again then — don't water on autopilot.`
-                );
+                if (moistBusy) return;
+                setMoistBusy(true);
+                try {
+                  await addCareLog({
+                    plantId: plant.id,
+                    type: 'check',
+                    note: `Still moist — snoozed ${MOISTURE_SNOOZE_DAYS} days`,
+                  });
+                  showToast(`Snoozed ~${MOISTURE_SNOOZE_DAYS} days · check soil again later`);
+                } catch {
+                  Alert.alert('Could not save', 'Try again in a moment.');
+                } finally {
+                  setMoistBusy(false);
+                }
               }}
               style={styles.actionBtn}
+              accessibilityHint="Logs a soil check and delays the water reminder"
             />
           </View>
           <View style={styles.actions}>
@@ -412,18 +443,38 @@ export default function PlantDetailScreen() {
             />
           </View>
 
-          <View style={[styles.tabs, { backgroundColor: c.surfaceAlt }]}>
-            {(['log', 'gallery', 'ai'] as const).map((t) => (
-              <Pressable
-                key={t}
-                onPress={() => setTab(t)}
-                style={[styles.tab, tab === t && { backgroundColor: c.surface }]}
-              >
-                <Text style={[Type.meta, { color: c.text, fontFamily: Fonts.bodySemi }]}>
-                  {t === 'log' ? 'Care log' : t === 'gallery' ? 'Progress' : 'AI assist'}
-                </Text>
-              </Pressable>
-            ))}
+          <View
+            style={[styles.tabs, { backgroundColor: c.surfaceAlt }]}
+            accessibilityRole="tablist"
+          >
+            {(['log', 'gallery', 'ai'] as const).map((t) => {
+              const label =
+                t === 'log' ? 'Care log' : t === 'gallery' ? 'Progress' : 'AI assist';
+              const selected = tab === t;
+              return (
+                <Pressable
+                  key={t}
+                  onPress={() => setTab(t)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={label}
+                  style={[styles.tab, selected && { backgroundColor: c.surface }]}
+                >
+                  <Text
+                    style={[
+                      Type.meta,
+                      {
+                        color: c.text,
+                        fontFamily: Fonts.bodySemi,
+                        opacity: selected ? 1 : 0.7,
+                      },
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
           {tab === 'log' ? (
@@ -704,6 +755,14 @@ const styles = StyleSheet.create({
   },
   hero: { width: '100%', height: '100%' },
   heroEmpty: { alignItems: 'center', justifyContent: 'center' },
+  heroScrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '48%',
+    backgroundColor: 'rgba(15,22,18,0.72)',
+  },
   heroOverlay: {
     position: 'absolute',
     left: 0,
@@ -711,9 +770,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: 20,
     paddingVertical: 20,
-    backgroundColor: 'rgba(15,22,18,0.55)',
   },
   body: { padding: 16, gap: 12 },
+  toast: {
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
   profileChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   metaChip: {
     paddingHorizontal: 10,
@@ -728,7 +791,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   actions: { flexDirection: 'row', gap: 10 },
-  actionBtn: { flex: 1, minHeight: 44 },
+  actionBtn: { flex: 1, minHeight: 48 },
   tabs: {
     flexDirection: 'row',
     borderRadius: 12,
@@ -738,7 +801,7 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 10,
   },
   gallery: {

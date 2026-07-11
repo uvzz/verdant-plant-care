@@ -24,8 +24,10 @@ export default function TabLayout() {
           backgroundColor: c.surface,
           borderTopColor: c.border,
           borderTopWidth: StyleSheetHairline,
-          height: Platform.OS === 'ios' ? 88 : 64,
+          // Let safe area handle home indicator — avoid clipping labels
+          height: Platform.OS === 'ios' ? undefined : 64,
           paddingTop: 6,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
         },
         headerShown: false,
       }}
@@ -34,6 +36,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Plants',
+          tabBarAccessibilityLabel: 'My plants',
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{ ios: 'leaf.fill', android: 'spa', web: 'spa' }}
@@ -47,6 +50,7 @@ export default function TabLayout() {
         name="calendar"
         options={{
           title: 'Care',
+          tabBarAccessibilityLabel: 'Care calendar',
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{ ios: 'calendar', android: 'calendar_today', web: 'calendar_today' }}
@@ -60,6 +64,7 @@ export default function TabLayout() {
         name="insights"
         options={{
           title: 'Insights',
+          tabBarAccessibilityLabel: 'Collection insights',
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{
@@ -77,6 +82,7 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: 'Settings',
+          tabBarAccessibilityLabel: 'Settings',
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{ ios: 'gearshape.fill', android: 'settings', web: 'settings' }}

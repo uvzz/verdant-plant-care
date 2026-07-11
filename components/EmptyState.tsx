@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Colors from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -7,21 +7,44 @@ interface Props {
   emoji?: string;
   title: string;
   body: string;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
-export function EmptyState({ emoji = '🌱', title, body }: Props) {
+export function EmptyState({
+  emoji = '🌱',
+  title,
+  body,
+  actionLabel,
+  onAction,
+}: Props) {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
 
   return (
-    <View style={styles.wrap}>
+    <View style={styles.wrap} accessibilityRole="summary">
       <View style={[styles.orb, { backgroundColor: c.tint, shadowColor: c.tint }]}>
-        <Text style={styles.emoji}>{emoji}</Text>
+        <Text style={styles.emoji} accessibilityLabel="">
+          {emoji}
+        </Text>
       </View>
       <Text style={[Type.displayM, { color: c.text, textAlign: 'center' }]}>{title}</Text>
-      <Text style={[Type.bodySmall, { color: c.textMuted, textAlign: 'center', maxWidth: 280 }]}>
+      <Text style={[Type.bodySmall, { color: c.textMuted, textAlign: 'center', maxWidth: 300 }]}>
         {body}
       </Text>
+      {actionLabel && onAction ? (
+        <Pressable
+          onPress={onAction}
+          accessibilityRole="button"
+          accessibilityLabel={actionLabel}
+          style={({ pressed }) => [
+            styles.cta,
+            { backgroundColor: c.growth, opacity: pressed ? 0.9 : 1 },
+          ]}
+        >
+          <Text style={[Type.button, { color: c.growthInk }]}>{actionLabel}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -47,4 +70,12 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   emoji: { fontSize: 36 },
+  cta: {
+    marginTop: 16,
+    minHeight: 48,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
