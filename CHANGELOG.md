@@ -31,6 +31,12 @@ That script bumps versions, prepends a CHANGELOG entry, commits, tags, and pushe
 
 ---
 
+## [0.5.0] - 2026-07-11
+
+### Notes
+
+- Competitive edge: check-before-water, pot/light schedules, rooms, pet safety, export
+
 ## [0.4.0] - 2026-07-11
 
 ### Notes

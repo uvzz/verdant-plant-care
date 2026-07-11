@@ -66,7 +66,7 @@ export default {
 
 export const FREE_PLANT_LIMIT = 5;
 export const APP_NAME = 'Verdant';
-export const APP_VERSION = '0.4.0';
+export const APP_VERSION = '0.5.0';
 
 /** Specimen / glasshouse raw palette for one-off use */
 export const Specimen = palette;
