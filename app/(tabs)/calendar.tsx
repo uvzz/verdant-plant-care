@@ -8,6 +8,9 @@ import Colors from '@/constants/Colors';
 import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { EmptyState } from '@/components/EmptyState';
+import { WeekStrip } from '@/components/WeekStrip';
+import { CareIcon } from '@/components/CareIcon';
+import { tapLight, tapSuccess } from '@/lib/haptics';
 import {
   effectiveWaterIntervalDays,
   formatRelativeCare,
@@ -49,6 +52,7 @@ export default function CalendarScreen() {
         type: item.type,
         note: item.type === 'water' ? 'Logged from calendar' : 'Fertilized from calendar',
       });
+      tapSuccess();
       flash(
         item.type === 'water'
           ? `Watered ${item.plant.name}`
@@ -71,6 +75,7 @@ export default function CalendarScreen() {
         type: 'check',
         note: `Still moist — snoozed ${MOISTURE_SNOOZE_DAYS} days (check before water)`,
       });
+      tapSuccess();
       flash(`${item.plant.name} · snoozed ${MOISTURE_SNOOZE_DAYS}d`);
     } catch {
       flash('Could not save — try again');
@@ -112,11 +117,14 @@ export default function CalendarScreen() {
             <Text style={[Type.title, { color: c.text, fontSize: 15 }]}>
               {item.plant.name}
             </Text>
-            <Text style={[Type.meta, { color: c.textMuted, marginTop: 2 }]}>
-              {item.type === 'water' ? '💧 Water' : '🌿 Fertilize'} ·{' '}
-              {formatRelativeCare(item.daysUntil)}
-              {item.plant.location ? ` · ${item.plant.location}` : ''}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+              <CareIcon type={item.type} color={tint} size={13} />
+              <Text style={[Type.meta, { color: c.textMuted }]}>
+                {item.type === 'water' ? 'Water' : 'Fertilize'} ·{' '}
+                {formatRelativeCare(item.daysUntil)}
+                {item.plant.location ? ` · ${item.plant.location}` : ''}
+              </Text>
+            </View>
             <Text style={[Type.meta, { color: c.textMuted, marginTop: 2, fontSize: 10 }]}>
               {intervalHint}
               {checkFirst ? ' · check soil first' : ''}
@@ -164,9 +172,11 @@ export default function CalendarScreen() {
         <Text style={[Type.micro, { color: c.tint }]}>Care calendar</Text>
         <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>Gentle reminders</Text>
         <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 6, maxWidth: 340 }]}>
-          Soft nudges to check your plants — not orders to water. Unlike Planta-style
-          blind schedules, “Still moist” snoozes without overwatering.
+          Soft nudges to check your plants — not orders to water.
         </Text>
+        {plants.length > 0 ? (
+          <WeekStrip dueDates={dueItems.map((d) => d.dueDate)} />
+        ) : null}
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -241,7 +251,10 @@ function ActionChip({
 }) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        tapLight();
+        onPress();
+      }}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
@@ -253,6 +266,7 @@ function ActionChip({
           backgroundColor: bg,
           borderColor: border ?? bg,
           opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
+          transform: [{ scale: pressed ? 0.96 : 1 }],
         },
       ]}
     >

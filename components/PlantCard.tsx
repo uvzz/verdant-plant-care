@@ -1,28 +1,38 @@
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { PawPrint, Sprout } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
-import { PET_LABELS, type Plant } from '@/lib/types';
+import { CareIcon } from '@/components/CareIcon';
+import { WaterRing } from '@/components/WaterRing';
+import { PET_LABELS, type CareLogType, type Plant } from '@/lib/types';
 
 interface Props {
   plant: Plant;
   subtitle?: string;
+  /** Care type behind the subtitle (drives the small icon). */
+  dueType?: CareLogType;
+  /** 0 = just cared for, 1 = due/overdue. Drives the photo water ring. */
+  dueProgress?: number;
+  overdue?: boolean;
   filamentColor?: string;
-  filamentWidth?: `${number}%`;
 }
 
 export function PlantCard({
   plant,
   subtitle,
+  dueType,
+  dueProgress,
+  overdue,
   filamentColor,
-  filamentWidth = '70%',
 }: Props) {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const track = filamentColor ?? c.tint;
-  const tox = plant.petToxicity && plant.petToxicity !== 'unknown' ? plant.petToxicity : null;
+  const tox =
+    plant.petToxicity && plant.petToxicity !== 'unknown' ? plant.petToxicity : null;
 
   return (
     <Link href={`/plant/${plant.id}`} asChild>
@@ -32,7 +42,8 @@ export function PlantCard({
           {
             backgroundColor: c.surface,
             borderColor: c.border,
-            opacity: pressed ? 0.92 : 1,
+            opacity: pressed ? 0.94 : 1,
+            transform: [{ scale: pressed ? 0.98 : 1 }],
             shadowColor: c.cardShadow,
           },
         ]}
@@ -42,7 +53,7 @@ export function PlantCard({
             <Image source={{ uri: plant.photoUri }} style={styles.image} contentFit="cover" />
           ) : (
             <View style={[styles.placeholder, { backgroundColor: c.surfaceAlt }]}>
-              <Text style={styles.placeholderEmoji}>🪴</Text>
+              <Sprout color={c.tint} size={40} strokeWidth={1.8} />
             </View>
           )}
           {tox ? (
@@ -55,9 +66,21 @@ export function PlantCard({
                 },
               ]}
             >
-              <Text style={styles.petBadgeText}>
-                {tox === 'toxic' ? '🐾!' : tox === 'caution' ? '🐾?' : '🐾'}
-              </Text>
+              <PawPrint
+                color={tox === 'safe' ? c.growthInk : '#FFFFFF'}
+                size={12}
+                strokeWidth={2.4}
+              />
+            </View>
+          ) : null}
+          {typeof dueProgress === 'number' ? (
+            <View style={styles.ring}>
+              <WaterRing progress={dueProgress} color={overdue ? '#E8927C' : c.growth} />
+            </View>
+          ) : null}
+          {overdue ? (
+            <View style={[styles.overdueBadge, { backgroundColor: c.danger }]}>
+              <Text style={styles.overdueText}>Due</Text>
             </View>
           ) : null}
         </View>
@@ -71,22 +94,22 @@ export function PlantCard({
           <Text style={[Type.latin, { color: c.textMuted, fontSize: 12 }]} numberOfLines={1}>
             {plant.species || plant.category}
           </Text>
-          <View style={[styles.filamentTrack, { backgroundColor: c.surfaceAlt }]}>
-            <View
-              style={[
-                styles.filamentFill,
-                { backgroundColor: track, width: filamentWidth },
-              ]}
-            />
+          <View style={styles.subtitleRow}>
+            {subtitle && dueType ? (
+              <CareIcon type={dueType} color={track} size={12} />
+            ) : null}
+            <Text
+              style={[Type.meta, { color: subtitle ? track : c.textMuted, fontSize: 11 }]}
+              numberOfLines={1}
+            >
+              {subtitle || plant.location || plant.category}
+            </Text>
           </View>
-          <Text
-            style={[Type.meta, { color: subtitle ? track : c.textMuted, fontSize: 11, marginTop: 6 }]}
-            numberOfLines={1}
-          >
-            {subtitle || plant.location || plant.category}
-          </Text>
           {tox ? (
-            <Text style={[Type.meta, { color: c.textMuted, fontSize: 10, marginTop: 2 }]} numberOfLines={1}>
+            <Text
+              style={[Type.meta, { color: c.textMuted, fontSize: 10, marginTop: 2 }]}
+              numberOfLines={1}
+            >
               {PET_LABELS[tox]}
             </Text>
           ) : null}
@@ -110,16 +133,28 @@ const styles = StyleSheet.create({
   imageWrap: { aspectRatio: 1, width: '100%' },
   image: { width: '100%', height: '100%' },
   placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  placeholderEmoji: { fontSize: 40 },
   petBadge: {
     position: 'absolute',
     top: 8,
     right: 8,
     borderRadius: 999,
-    paddingHorizontal: 6,
+    padding: 5,
+  },
+  ring: { position: 'absolute', bottom: 8, right: 8 },
+  overdueBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    borderRadius: 999,
+    paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  petBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  overdueText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
   specimen: {
     paddingHorizontal: 12,
     paddingTop: 10,
@@ -129,14 +164,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     letterSpacing: -0.3,
   },
-  filamentTrack: {
-    height: 2,
-    borderRadius: 2,
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     marginTop: 8,
-    overflow: 'hidden',
-  },
-  filamentFill: {
-    height: '100%',
-    borderRadius: 2,
   },
 });

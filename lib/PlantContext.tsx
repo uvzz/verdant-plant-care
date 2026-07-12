@@ -7,9 +7,11 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { AppState } from 'react-native';
 import { FREE_PLANT_LIMIT } from '@/constants/Colors';
 import { persistPhoto } from './photos';
 import {
+  addTombstone,
   createId,
   DEFAULT_SETTINGS,
   loadCareLogs,
@@ -18,7 +20,9 @@ import {
   saveCareLogs,
   savePlants,
   saveSettings,
+  saveTombstones,
 } from './storage';
+import { syncNow as runCloudSync, type SyncResult } from './sync';
 import type {
   AppSettings,
   CareLog,
@@ -69,6 +73,10 @@ interface PlantContextValue {
   consumeAiUse: () => Promise<{ ok: true } | { ok: false; reason: string }>;
   getPlant: (id: string) => Plant | undefined;
   refresh: () => Promise<void>;
+  /** Cloud sync (Premium): run a full pull-merge-push pass now. */
+  syncNow: () => Promise<SyncResult>;
+  setSyncEnabled: (value: boolean) => Promise<void>;
+  syncing: boolean;
 }
 
 const PlantContext = createContext<PlantContextValue | null>(null);
@@ -184,7 +192,11 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     logsRef.current = nextLogs;
     setPlants(nextPlants);
     setLogs(nextLogs);
-    await Promise.all([savePlants(nextPlants), saveCareLogs(nextLogs)]);
+    await Promise.all([
+      savePlants(nextPlants),
+      saveCareLogs(nextLogs),
+      addTombstone('plants', id),
+    ]);
   }, []);
 
   const addCareLog = useCallback(
@@ -225,7 +237,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     const next = logsRef.current.filter((l) => l.id !== id);
     logsRef.current = next;
     setLogs(next);
-    await saveCareLogs(next);
+    await Promise.all([saveCareLogs(next), addTombstone('logs', id)]);
   }, []);
 
   const setPremium = useCallback(
@@ -303,6 +315,9 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
         await Promise.all([
           savePlants(incomingPlants),
           saveCareLogs(incomingLogs),
+          // Replace is an explicit restore — old deletions must not shadow
+          // re-imported records on the next cloud sync.
+          saveTombstones({ plants: {}, logs: {} }),
         ]);
         if (backup.familyMembers?.length) {
           const next = {
@@ -389,6 +404,53 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     [plants]
   );
 
+  const [syncing, setSyncing] = useState(false);
+
+  const syncNow = useCallback(async (): Promise<SyncResult> => {
+    if (!settingsRef.current.isPremium) {
+      return { ok: false, reason: 'Cloud sync is a Premium feature.' };
+    }
+    setSyncing(true);
+    try {
+      const result = await runCloudSync();
+      if (result.ok) await refresh();
+      return result;
+    } finally {
+      setSyncing(false);
+    }
+  }, [refresh]);
+
+  const setSyncEnabled = useCallback(
+    async (value: boolean) => {
+      const next = { ...settingsRef.current, syncEnabled: value };
+      settingsRef.current = next;
+      setSettings(next);
+      await saveSettings(next);
+      if (value) void syncNow();
+    },
+    [syncNow]
+  );
+
+  // Auto-sync: once after hydration, then on each return to foreground
+  // (min 5 minutes apart). Failures are silent — next pass reconciles.
+  const lastAutoSyncRef = useRef(0);
+  useEffect(() => {
+    const maybeSync = () => {
+      if (loading) return;
+      const s = settingsRef.current;
+      if (!s.isPremium || !s.syncEnabled) return;
+      const now = Date.now();
+      if (now - lastAutoSyncRef.current < 5 * 60_000) return;
+      lastAutoSyncRef.current = now;
+      void syncNow();
+    };
+    maybeSync();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') maybeSync();
+    });
+    return () => sub.remove();
+  }, [loading, syncNow]);
+
   const value = useMemo(
     () => ({
       plants,
@@ -414,6 +476,9 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       consumeAiUse,
       getPlant,
       refresh,
+      syncNow,
+      setSyncEnabled,
+      syncing,
     }),
     [
       plants,
@@ -438,6 +503,9 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       consumeAiUse,
       getPlant,
       refresh,
+      syncNow,
+      setSyncEnabled,
+      syncing,
     ]
   );
 

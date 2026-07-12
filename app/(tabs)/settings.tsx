@@ -71,6 +71,12 @@ const BENEFITS: Benefit[] = [
     premium: 'Included',
     live: true,
   },
+  {
+    label: 'Cloud backup & device sync',
+    free: '—',
+    premium: 'Included',
+    live: true,
+  },
 ];
 
 export default function SettingsScreen() {
@@ -89,6 +95,9 @@ export default function SettingsScreen() {
     removeFamilyMember,
     importBackup,
     familyMembers,
+    syncNow,
+    setSyncEnabled,
+    syncing,
   } = usePlants();
   const isPremium = settings.isPremium;
   const aiUrl = getAiProxyUrl();
@@ -100,6 +109,8 @@ export default function SettingsScreen() {
   );
   const [importJson, setImportJson] = useState('');
   const [storeProducts, setStoreProducts] = useState<StoreProductInfo[]>([]);
+  const [syncCode, setSyncCode] = useState<string | null>(null);
+  const [linkCode, setLinkCode] = useState('');
 
   useEffect(() => {
     fetchStoreProducts().then(setStoreProducts).catch(() => {});
@@ -498,13 +509,129 @@ export default function SettingsScreen() {
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
           <Text style={[Type.title, { color: c.text }]}>AI assistant</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
-            Premium AI via DeepSeek V4 Flash (server-side OpenRouter key). Photos for ID use a
-            vision model.
+            Identify plants from photos and get calm care coaching. AI runs on
+            Verdant’s servers — no keys or accounts on your device.
           </Text>
           <Text style={[Type.meta, { color: c.textMuted, marginTop: 10 }]}>
             Status: {isPremium ? 'Premium · AI unlocked' : 'Free · upgrade for AI'}
             {__DEV__ ? `\nEndpoint: ${aiUrl}` : ''}
           </Text>
+        </View>
+
+        {/* Cloud sync */}
+        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={[Type.title, { color: c.text }]}>Cloud sync</Text>
+              <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
+                {isPremium
+                  ? 'Encrypted-in-transit backup and multi-device sync, including photos. Off by default — your data stays local until you opt in.'
+                  : 'Premium: back up your collection and sync it across devices.'}
+              </Text>
+            </View>
+            <Switch
+              value={!!settings.syncEnabled}
+              disabled={!isPremium}
+              onValueChange={async (v) => {
+                await setSyncEnabled(v);
+              }}
+              trackColor={{ true: c.tint, false: c.border }}
+            />
+          </View>
+          {isPremium && settings.syncEnabled ? (
+            <>
+              <Text style={[Type.meta, { color: c.textMuted, marginTop: 10 }]}>
+                {settings.lastSyncAt
+                  ? `Last synced ${new Date(settings.lastSyncAt).toLocaleString()}`
+                  : 'Not synced yet.'}
+              </Text>
+              <PrimaryButton
+                label={syncing ? 'Syncing…' : 'Sync now'}
+                variant="secondary"
+                loading={syncing}
+                onPress={async () => {
+                  const r = await syncNow();
+                  Alert.alert(
+                    r.ok ? 'Synced' : 'Sync failed',
+                    r.ok
+                      ? `Collection is up to date (rev ${r.rev}).`
+                      : r.reason
+                  );
+                }}
+                style={{ marginTop: 10 }}
+              />
+              <PrimaryButton
+                label={syncCode ? 'Hide sync code' : 'Show sync code'}
+                variant="ghost"
+                onPress={async () => {
+                  if (syncCode) {
+                    setSyncCode(null);
+                    return;
+                  }
+                  const { getOrCreateSyncId } = await import('@/lib/sync');
+                  setSyncCode(await getOrCreateSyncId());
+                }}
+                style={{ marginTop: 6 }}
+              />
+              {syncCode ? (
+                <>
+                  <Text
+                    selectable
+                    style={[
+                      Type.meta,
+                      {
+                        color: c.text,
+                        marginTop: 8,
+                        fontFamily: Fonts.bodySemi,
+                        letterSpacing: 0.5,
+                      },
+                    ]}
+                  >
+                    {syncCode}
+                  </Text>
+                  <Text style={[Type.meta, { color: c.textMuted, marginTop: 4 }]}>
+                    Enter this code on another device to share one collection.
+                    Treat it like a password.
+                  </Text>
+                </>
+              ) : null}
+              <Text style={[Type.micro, { color: c.textMuted, marginTop: 14 }]}>
+                Link this device to an existing collection
+              </Text>
+              <View style={styles.memberAdd}>
+                <TextInput
+                  value={linkCode}
+                  onChangeText={setLinkCode}
+                  placeholder="Paste sync code…"
+                  placeholderTextColor={c.textMuted}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  style={[inputStyle, { flex: 1 }]}
+                />
+                <PrimaryButton
+                  label="Link"
+                  onPress={async () => {
+                    const { adoptSyncId } = await import('@/lib/sync');
+                    const r = await adoptSyncId(linkCode);
+                    if (!r.ok) {
+                      Alert.alert('Invalid code', r.reason);
+                      return;
+                    }
+                    setLinkCode('');
+                    setSyncCode(null);
+                    const s = await syncNow();
+                    Alert.alert(
+                      s.ok ? 'Device linked' : 'Linked, but sync failed',
+                      s.ok
+                        ? `Now sharing a collection (${s.pulledPlants} plants).`
+                        : s.reason
+                    );
+                  }}
+                  style={{ minWidth: 72 }}
+                />
+              </View>
+            </>
+          ) : null}
         </View>
 
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
@@ -538,7 +665,8 @@ export default function SettingsScreen() {
           <Text style={[Type.title, { color: c.text }]}>About</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
             {APP_NAME} v{APP_VERSION}{'\n'}
-            Local-first plant journal · branded icon · EAS-ready builds.
+            A calm, photo-first plant journal. Local-first — cloud sync is
+            optional and off by default.
           </Text>
           <PrimaryButton
             label="Privacy policy"

@@ -1,13 +1,23 @@
-import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState, type ReactNode } from 'react';
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Camera, Droplet, NotebookPen, Sparkles, Sprout } from 'lucide-react-native';
 
 import Colors, { APP_NAME } from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { EmptyState } from '@/components/EmptyState';
+import { AreaSparkline } from '@/components/AreaSparkline';
 import { computeCollectionStats } from '@/lib/stats';
 import { usePlants } from '@/lib/PlantContext';
 import { generateCollectionInsight } from '@/lib/openrouter';
@@ -18,11 +28,11 @@ export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { plants, logs, settings, consumeAiUse, canUseAi, aiUsesLeft } = usePlants();
+  const { width: windowWidth } = useWindowDimensions();
+  const chartWidth = windowWidth - 64;
   const stats = useMemo(() => computeCollectionStats(plants, logs), [plants, logs]);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const maxDay = Math.max(1, ...stats.byDayLast14.map((d) => d.count), 1);
 
   const runCollectionInsight = async () => {
     if (plants.length === 0) {
@@ -112,20 +122,13 @@ export default function InsightsScreen() {
 
             <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
               <Text style={[Type.title, { color: c.text }]}>Activity (14 days)</Text>
-              <View style={styles.bars}>
-                {stats.byDayLast14.map((d) => (
-                  <View key={d.date} style={styles.barCol}>
-                    <View
-                      style={[
-                        styles.bar,
-                        {
-                          height: 8 + (d.count / maxDay) * 56,
-                          backgroundColor: d.count ? c.growth : c.surfaceAlt,
-                        },
-                      ]}
-                    />
-                  </View>
-                ))}
+              <View style={{ marginTop: 12 }}>
+                <AreaSparkline
+                  values={stats.byDayLast14.map((d) => d.count)}
+                  width={chartWidth}
+                  height={72}
+                  color={c.growth}
+                />
               </View>
               <Text style={[Type.meta, { color: c.textMuted, marginTop: 8 }]}>
                 Last 7 days: {stats.logsLast7Days} · Last 30 days: {stats.logsLast30Days}
@@ -134,10 +137,32 @@ export default function InsightsScreen() {
 
             <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
               <Text style={[Type.title, { color: c.text }]}>Breakdown</Text>
-              <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 6 }]}>
-                💧 {stats.waters} water · 🌿 {stats.fertilizes} feed · 📝 {stats.notes} notes · 📷{' '}
-                {stats.photos} photos
-              </Text>
+              <View style={styles.breakdownRow}>
+                <BreakdownStat
+                  icon={<Droplet color={c.tint} size={14} strokeWidth={2.2} />}
+                  value={stats.waters}
+                  label="water"
+                  c={c}
+                />
+                <BreakdownStat
+                  icon={<Sprout color={c.tint} size={14} strokeWidth={2.2} />}
+                  value={stats.fertilizes}
+                  label="feed"
+                  c={c}
+                />
+                <BreakdownStat
+                  icon={<NotebookPen color={c.tint} size={14} strokeWidth={2.2} />}
+                  value={stats.notes}
+                  label="notes"
+                  c={c}
+                />
+                <BreakdownStat
+                  icon={<Camera color={c.tint} size={14} strokeWidth={2.2} />}
+                  value={stats.photos}
+                  label="photos"
+                  c={c}
+                />
+              </View>
               {stats.mostActivePlant ? (
                 <Text style={[Type.bodySmall, { color: c.text, marginTop: 8 }]}>
                   Most active: {stats.mostActivePlant.name} ({stats.mostActivePlant.count} logs)
@@ -171,7 +196,8 @@ export default function InsightsScreen() {
               </Text>
               {canUseAi ? (
                 <PrimaryButton
-                  label={loading ? 'Thinking…' : '✨ Generate insight'}
+                  label={loading ? 'Thinking…' : 'Generate insight'}
+                  icon={<Sparkles color={c.growthInk} size={16} strokeWidth={2.2} />}
                   onPress={runCollectionInsight}
                   loading={loading}
                   accessibilityHint="Uses Premium AI for a short collection note"
@@ -195,6 +221,27 @@ export default function InsightsScreen() {
           </>
         )}
       </ScrollView>
+    </View>
+  );
+}
+
+function BreakdownStat({
+  icon,
+  value,
+  label,
+  c,
+}: {
+  icon: ReactNode;
+  value: number;
+  label: string;
+  c: (typeof Colors)['light'];
+}) {
+  return (
+    <View style={styles.breakdownStat}>
+      {icon}
+      <Text style={[Type.bodySmall, { color: c.text }]}>
+        {value} <Text style={{ color: c.textMuted }}>{label}</Text>
+      </Text>
     </View>
   );
 }
@@ -264,13 +311,11 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     padding: 16,
   },
-  bars: {
+  breakdownRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 4,
-    height: 72,
-    marginTop: 12,
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 10,
   },
-  barCol: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
-  bar: { width: '100%', borderRadius: 4, minHeight: 8 },
+  breakdownStat: { flexDirection: 'row', alignItems: 'center', gap: 5 },
 });

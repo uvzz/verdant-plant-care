@@ -9,6 +9,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { CameraView, useCameraPermissions, type CameraType, type FlashMode } from 'expo-camera';
+import { Leaf, SwitchCamera, Zap, ZapOff } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -233,7 +234,7 @@ export default function CameraScreen() {
           leafStyle,
         ]}
       >
-        <Text style={{ fontSize: 40 }}>🌿</Text>
+        <Leaf color="rgba(198,212,90,0.55)" size={40} strokeWidth={1.6} />
       </Animated.View>
 
       {/* Flash overlay */}
@@ -269,9 +270,15 @@ export default function CameraScreen() {
             accessibilityLabel={`Flash ${flash}`}
             style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.7 : 1 }]}
           >
-            <Text style={styles.iconBtnText}>
-              {flash === 'off' ? '⚡️' : flash === 'on' ? '💡' : '✨'}
-            </Text>
+            {flash === 'off' ? (
+              <ZapOff color="#EEF3EF" size={20} strokeWidth={2} />
+            ) : (
+              <Zap
+                color={flash === 'on' ? '#C6D45A' : '#EEF3EF'}
+                size={20}
+                strokeWidth={2}
+              />
+            )}
           </Pressable>
         ) : (
           <View style={styles.iconBtn} />
@@ -343,7 +350,7 @@ export default function CameraScreen() {
               accessibilityRole="button"
               accessibilityLabel="Flip camera"
             >
-              <Text style={{ fontSize: 22 }}>🔄</Text>
+              <SwitchCamera color="#EEF3EF" size={22} strokeWidth={2} />
               <Text style={[Type.meta, { color: 'rgba(238,243,239,0.75)', marginTop: 2 }]}>
                 Flip
               </Text>

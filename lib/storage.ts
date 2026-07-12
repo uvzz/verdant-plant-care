@@ -6,6 +6,7 @@ const KEYS = {
   plants: '@verdant/plants',
   logs: '@verdant/care_logs',
   settings: '@verdant/settings',
+  tombstones: '@verdant/tombstones',
 } as const;
 
 function currentMonth(): string {
@@ -22,6 +23,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   premiumProductId: null,
   householdName: '',
   familyMembers: [],
+  syncEnabled: false,
+  lastSyncAt: null,
 };
 
 export function normalizeSettings(raw: Partial<AppSettings> | null): AppSettings {
@@ -99,6 +102,36 @@ export async function loadSettings(): Promise<AppSettings> {
 
 export async function saveSettings(settings: AppSettings): Promise<void> {
   await AsyncStorage.setItem(KEYS.settings, JSON.stringify(settings));
+}
+
+export type Tombstones = {
+  plants: Record<string, string>;
+  logs: Record<string, string>;
+};
+
+export async function loadTombstones(): Promise<Tombstones> {
+  const raw = await AsyncStorage.getItem(KEYS.tombstones);
+  if (!raw) return { plants: {}, logs: {} };
+  try {
+    const parsed = JSON.parse(raw) as Partial<Tombstones>;
+    return { plants: parsed.plants ?? {}, logs: parsed.logs ?? {} };
+  } catch {
+    return { plants: {}, logs: {} };
+  }
+}
+
+export async function saveTombstones(t: Tombstones): Promise<void> {
+  await AsyncStorage.setItem(KEYS.tombstones, JSON.stringify(t));
+}
+
+/** Record a deletion so cloud sync replicates it instead of resurrecting. */
+export async function addTombstone(
+  kind: 'plants' | 'logs',
+  id: string
+): Promise<void> {
+  const t = await loadTombstones();
+  t[kind][id] = new Date().toISOString();
+  await saveTombstones(t);
 }
 
 export function createId(): string {

@@ -1,13 +1,16 @@
+import React from 'react';
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
+  View,
   ViewStyle,
 } from 'react-native';
 import Colors from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
+import { tapLight } from '@/lib/haptics';
 
 interface Props {
   label: string;
@@ -16,6 +19,8 @@ interface Props {
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
+  /** Optional leading icon (pass a lucide icon element sized ~16-18). */
+  icon?: React.ReactNode;
   /** Optional override for screen readers */
   accessibilityLabel?: string;
   accessibilityHint?: string;
@@ -28,6 +33,7 @@ export function PrimaryButton({
   disabled,
   loading,
   style,
+  icon,
   accessibilityLabel,
   accessibilityHint,
 }: Props) {
@@ -53,7 +59,10 @@ export function PrimaryButton({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        tapLight();
+        onPress();
+      }}
       disabled={disabled || loading}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
@@ -65,7 +74,8 @@ export function PrimaryButton({
         {
           backgroundColor: bg,
           borderColor: border,
-          opacity: disabled ? 0.45 : pressed ? 0.88 : 1,
+          opacity: disabled ? 0.45 : pressed ? 0.92 : 1,
+          transform: [{ scale: pressed ? 0.97 : 1 }],
         },
         style,
       ]}
@@ -78,9 +88,12 @@ export function PrimaryButton({
           </Text>
         </>
       ) : (
-        <Text style={[Type.button, { color: fg }]} numberOfLines={2}>
-          {label}
-        </Text>
+        <>
+          {icon ? <View style={styles.icon}>{icon}</View> : null}
+          <Text style={[Type.button, { color: fg }]} numberOfLines={2}>
+            {label}
+          </Text>
+        </>
       )}
     </Pressable>
   );
@@ -97,4 +110,5 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderWidth: StyleSheet.hairlineWidth,
   },
+  icon: { marginRight: 7, marginTop: 1 },
 });

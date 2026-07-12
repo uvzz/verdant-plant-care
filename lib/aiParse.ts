@@ -33,6 +33,15 @@ export function normalizeCommonName(
   return cleaned.slice(0, 80);
 }
 
+/**
+ * Merge an AI care summary into user notes, replacing any previous
+ * "AI: …" block so repeated identifies don't stack duplicates.
+ */
+export function mergeAiNote(notes: string, careSummary: string): string {
+  const own = (notes || '').replace(/(^|\n\n)AI: [\s\S]*$/, '').trim();
+  return own ? `${own}\n\nAI: ${careSummary}` : `AI: ${careSummary}`;
+}
+
 export function normalizeCategory(raw: string): PlantCategory {
   const hit = PLANT_CATEGORIES.find(
     (c) => c.toLowerCase() === raw.toLowerCase().trim()

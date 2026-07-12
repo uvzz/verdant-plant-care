@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Plus } from 'lucide-react-native';
 
 import Colors, { APP_NAME } from '@/constants/Colors';
 import { Fonts, Type } from '@/constants/Typography';
@@ -37,23 +38,26 @@ export default function MyPlantsScreen() {
     const items = getCareDueItems(plants, logs);
     const map = new Map<
       string,
-      { label: string; colorKey: 'ok' | 'today' | 'late'; width: `${number}%` }
+      {
+        label: string;
+        colorKey: 'ok' | 'today' | 'late';
+        progress: number;
+        type: 'water' | 'fertilize';
+      }
     >();
     for (const item of items) {
       if (!map.has(item.plant.id)) {
-        const prefix = item.type === 'water' ? '💧' : '🌿';
         const colorKey =
           item.daysUntil < 0 ? 'late' : item.daysUntil === 0 ? 'today' : 'ok';
-        const width: `${number}%` =
-          item.daysUntil < 0
-            ? '100%'
-            : item.daysUntil === 0
-              ? '95%'
-              : (`${Math.max(20, 100 - item.daysUntil * 8)}%` as `${number}%`);
+        const progress =
+          item.daysUntil <= 0
+            ? 1
+            : Math.min(1, Math.max(0.12, 1 - item.daysUntil / 14));
         map.set(item.plant.id, {
-          label: `${prefix} ${formatRelativeCare(item.daysUntil)}`,
+          label: formatRelativeCare(item.daysUntil),
           colorKey,
-          width,
+          progress,
+          type: item.type,
         });
       }
     }
@@ -105,10 +109,14 @@ export default function MyPlantsScreen() {
           }}
           style={({ pressed }) => [
             styles.fab,
-            { backgroundColor: c.growth, opacity: pressed ? 0.85 : 1 },
+            {
+              backgroundColor: c.growth,
+              opacity: pressed ? 0.85 : 1,
+              transform: [{ scale: pressed ? 0.94 : 1 }],
+            },
           ]}
         >
-          <Text style={{ color: c.growthInk, fontSize: 28, marginTop: -2 }}>＋</Text>
+          <Plus color={c.growthInk} size={26} strokeWidth={2.4} />
         </Pressable>
       </View>
 
@@ -259,14 +267,35 @@ export default function MyPlantsScreen() {
                 <PlantCard
                   plant={item}
                   subtitle={due?.label}
+                  dueType={due?.type}
+                  dueProgress={due?.progress}
+                  overdue={due?.colorKey === 'late'}
                   filamentColor={filamentColor}
-                  filamentWidth={due?.width ?? '60%'}
                 />
               </View>
             );
           }}
           ListFooterComponent={
-            !canAddPlant ? (
+            canAddPlant && filtered.length === plants.length ? (
+              <Pressable
+                onPress={() => router.push('/plant/add')}
+                accessibilityRole="button"
+                accessibilityLabel="Add a plant"
+                style={({ pressed }) => [
+                  styles.ghostAdd,
+                  {
+                    borderColor: c.border,
+                    backgroundColor: c.surface,
+                    opacity: pressed ? 0.8 : 1,
+                  },
+                ]}
+              >
+                <Plus color={c.tint} size={20} strokeWidth={2.2} />
+                <Text style={[Type.meta, { color: c.textMuted, marginTop: 6 }]}>
+                  Add a plant
+                </Text>
+              </Pressable>
+            ) : !canAddPlant ? (
               <Link href="/(tabs)/settings" asChild>
                 <Pressable
                   accessibilityRole="button"
@@ -342,5 +371,15 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
+  },
+  ghostAdd: {
+    marginTop: 2,
+    marginBottom: 24,
+    borderRadius: 18,
+    borderWidth: 1.2,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 22,
   },
 });

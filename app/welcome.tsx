@@ -1,6 +1,8 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Leaf } from 'lucide-react-native';
 
 import Colors, { APP_NAME } from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
@@ -40,7 +42,14 @@ export default function WelcomeScreen() {
       </Text>
 
       <View style={styles.preview}>
-        <View style={styles.thumb} />
+        <LinearGradient
+          colors={['#3D5C48', '#22352A']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.thumb}
+        >
+          <Leaf color={c.growth} size={26} strokeWidth={1.8} />
+        </LinearGradient>
         <View style={{ flex: 1 }}>
           <Text style={[Type.title, { color: '#EEF3EF', fontFamily: 'Fraunces_600SemiBold', fontSize: 16 }]}>
             Moonlight
@@ -127,7 +136,8 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 12,
-    backgroundColor: '#3D5C48',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actions: {
     marginTop: 'auto',

@@ -46,6 +46,16 @@ import {
 } from '@/lib/types';
 import { plantAgeDays } from '@/lib/stats';
 import { firstParam } from '@/lib/routeParams';
+import { mergeAiNote } from '@/lib/aiParse';
+import { LinearGradient } from 'expo-linear-gradient';
+import {
+  Droplet,
+  Hand,
+  NotebookPen,
+  Sparkles,
+  Sprout,
+} from 'lucide-react-native';
+import { tapSuccess } from '@/lib/haptics';
 
 const { width } = Dimensions.get('window');
 
@@ -99,7 +109,17 @@ export default function PlantDetailScreen() {
     navigation.setOptions({
       headerRight: () =>
         plant ? (
-          <View style={{ flexDirection: 'row', gap: 14, marginRight: 4 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: 16,
+              marginRight: 4,
+              backgroundColor: 'rgba(15,22,18,0.45)',
+              borderRadius: 999,
+              paddingHorizontal: 14,
+              paddingVertical: 7,
+            }}
+          >
             <Pressable
               onPress={() =>
                 router.push({ pathname: '/plant/edit', params: { plantId: plant.id } })
@@ -259,9 +279,7 @@ export default function PlantDetailScreen() {
         petToxicity: result.petToxicity,
         aiIdentityConfidence: result.confidence,
         notes: result.careSummary
-          ? plant.notes.includes(result.careSummary)
-            ? plant.notes
-            : `${plant.notes ? plant.notes + '\n\n' : ''}AI: ${result.careSummary}`
+          ? mergeAiNote(plant.notes, result.careSummary)
           : plant.notes,
       });
       Alert.alert(
@@ -297,7 +315,16 @@ export default function PlantDetailScreen() {
                 <Text style={{ fontSize: 64 }}>🪴</Text>
               </View>
             )}
-            <View style={styles.heroScrim} />
+            <LinearGradient
+              colors={[
+                'rgba(15,22,18,0.30)',
+                'rgba(15,22,18,0.0)',
+                'rgba(15,22,18,0.15)',
+                'rgba(15,22,18,0.78)',
+              ]}
+              locations={[0, 0.28, 0.55, 1]}
+              style={StyleSheet.absoluteFill}
+            />
             <View style={styles.heroOverlay}>
               <Text style={[Type.micro, { color: 'rgba(255,255,255,0.85)' }]}>
                 {plant.category}
@@ -361,7 +388,7 @@ export default function PlantDetailScreen() {
 
           <View style={styles.dueRow}>
             <DueCard
-              emoji="💧"
+              icon={<Droplet color={c.tint} size={18} strokeWidth={2.2} />}
               title="Water"
               value={formatRelativeCare(waterDays)}
               accent={waterDays < 0 ? c.danger : waterDays === 0 ? c.growth : c.tint}
@@ -370,7 +397,7 @@ export default function PlantDetailScreen() {
               muted={c.textMuted}
             />
             <DueCard
-              emoji="🌿"
+              icon={<Sprout color={c.tint} size={18} strokeWidth={2.2} />}
               title="Fertilize"
               value={formatRelativeCare(fertDays)}
               accent={fertDays < 0 ? c.danger : c.text}
@@ -386,7 +413,8 @@ export default function PlantDetailScreen() {
 
           <View style={styles.actions}>
             <PrimaryButton
-              label="💧 Watered"
+              label="Watered"
+              icon={<Droplet color={c.growthInk} size={17} strokeWidth={2.2} />}
               onPress={() =>
                 router.push({
                   pathname: '/plant/log',
@@ -397,7 +425,8 @@ export default function PlantDetailScreen() {
               accessibilityHint="Opens care log to record watering"
             />
             <PrimaryButton
-              label={moistBusy ? 'Saving…' : '🖐️ Still moist'}
+              label={moistBusy ? 'Saving…' : 'Still moist'}
+              icon={<Hand color={c.text} size={17} strokeWidth={2.2} />}
               variant="secondary"
               loading={moistBusy}
               onPress={async () => {
@@ -409,6 +438,7 @@ export default function PlantDetailScreen() {
                     type: 'check',
                     note: `Still moist — snoozed ${MOISTURE_SNOOZE_DAYS} days`,
                   });
+                  tapSuccess();
                   showToast(`Snoozed ~${MOISTURE_SNOOZE_DAYS} days · check soil again later`);
                 } catch {
                   Alert.alert('Could not save', 'Try again in a moment.');
@@ -422,7 +452,8 @@ export default function PlantDetailScreen() {
           </View>
           <View style={styles.actions}>
             <PrimaryButton
-              label="🌿 Fed"
+              label="Fed"
+              icon={<Sprout color={c.text} size={17} strokeWidth={2.2} />}
               variant="secondary"
               onPress={() =>
                 router.push({
@@ -434,6 +465,7 @@ export default function PlantDetailScreen() {
             />
             <PrimaryButton
               label="Note / photo"
+              icon={<NotebookPen color={c.text} size={17} strokeWidth={2.2} />}
               variant="ghost"
               onPress={() =>
                 router.push({
@@ -535,7 +567,8 @@ export default function PlantDetailScreen() {
                     : ''}
                 </Text>
                 <PrimaryButton
-                  label={idLoading ? 'Identifying…' : '✨ AI re-identify'}
+                  label={idLoading ? 'Identifying…' : 'AI re-identify'}
+                  icon={<Sparkles color={c.text} size={16} strokeWidth={2.2} />}
                   onPress={runReIdentify}
                   loading={idLoading}
                   variant="secondary"
@@ -555,9 +588,10 @@ export default function PlantDetailScreen() {
                     guideLoading
                       ? 'Writing…'
                       : guide
-                        ? '✨ Refresh care guide'
-                        : '✨ Generate care guide'
+                        ? 'Refresh care guide'
+                        : 'Generate care guide'
                   }
+                  icon={<Sparkles color={c.text} size={16} strokeWidth={2.2} />}
                   onPress={runGuide}
                   loading={guideLoading}
                   variant="secondary"
@@ -604,7 +638,8 @@ export default function PlantDetailScreen() {
                   ]}
                 />
                 <PrimaryButton
-                  label={coachLoading ? 'Thinking…' : '✨ Ask care coach'}
+                  label={coachLoading ? 'Thinking…' : 'Ask care coach'}
+                  icon={<Sparkles color={c.growthInk} size={16} strokeWidth={2.2} />}
                   onPress={runCoach}
                   loading={coachLoading}
                 />
@@ -721,7 +756,7 @@ function MetaChip({ label, bg, fg }: { label: string; bg: string; fg: string }) 
 }
 
 function DueCard({
-  emoji,
+  icon,
   title,
   value,
   bg,
@@ -729,7 +764,7 @@ function DueCard({
   muted,
   accent,
 }: {
-  emoji: string;
+  icon: React.ReactNode;
   title: string;
   value: string;
   bg: string;
@@ -739,7 +774,7 @@ function DueCard({
 }) {
   return (
     <View style={[styles.dueCard, { backgroundColor: bg, borderColor: border }]}>
-      <Text style={{ fontSize: 16 }}>{emoji}</Text>
+      {icon}
       <Text style={[Type.micro, { color: muted, marginTop: 2, letterSpacing: 0.8 }]}>
         {title}
       </Text>
@@ -757,14 +792,6 @@ const styles = StyleSheet.create({
   },
   hero: { width: '100%', height: '100%' },
   heroEmpty: { alignItems: 'center', justifyContent: 'center' },
-  heroScrim: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '48%',
-    backgroundColor: 'rgba(15,22,18,0.72)',
-  },
   heroOverlay: {
     position: 'absolute',
     left: 0,

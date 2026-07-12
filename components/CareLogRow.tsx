@@ -4,7 +4,8 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import Colors from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
-import { CARE_TYPE_EMOJI, CARE_TYPE_LABELS, type CareLog } from '@/lib/types';
+import { CareIcon } from '@/components/CareIcon';
+import { CARE_TYPE_LABELS, type CareLog } from '@/lib/types';
 
 export function CareLogRow({
   log,
@@ -34,9 +35,7 @@ export function CareLogRow({
       style={[styles.row, { backgroundColor: c.surface, borderColor: c.border }]}
     >
       <View style={[styles.badge, { backgroundColor: c.surfaceAlt }]}>
-        <Text style={styles.emoji}>
-          {CARE_TYPE_EMOJI[log.type] ?? '📝'}
-        </Text>
+        <CareIcon type={log.type} color={c.tint} size={17} />
       </View>
       <View style={styles.content}>
         <Text style={[Type.title, { color: c.text, fontSize: 15 }]}>
@@ -80,7 +79,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emoji: { fontSize: 15 },
   content: { flex: 1, gap: 2 },
   thumb: { width: 44, height: 44, borderRadius: 8 },
 });

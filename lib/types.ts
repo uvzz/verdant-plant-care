@@ -111,6 +111,10 @@ export interface AppSettings {
   householdName?: string;
   /** Family members who share this glasshouse */
   familyMembers?: FamilyMember[];
+  /** Cloud sync opt-in (Premium) */
+  syncEnabled?: boolean;
+  /** Last successful cloud sync (ISO) */
+  lastSyncAt?: string | null;
 }
 
 export const FREE_AI_USES_PER_MONTH = 5;
@@ -182,14 +186,6 @@ export const CARE_TYPE_LABELS: Record<CareLogType, string> = {
   note: 'Note',
   photo: 'Photo',
   check: 'Soil check',
-};
-
-export const CARE_TYPE_EMOJI: Record<CareLogType, string> = {
-  water: '💧',
-  fertilize: '🌿',
-  note: '📝',
-  photo: '📷',
-  check: '🖐️',
 };
 
 const VALID_CARE_TYPES: CareLogType[] = [

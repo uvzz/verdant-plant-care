@@ -95,6 +95,8 @@ function RootLayoutNav() {
             fontFamily: 'Outfit_600SemiBold',
             fontSize: 17,
           },
+          // Chevron only — never the raw previous route name like "(tabs)"
+          headerBackButtonDisplayMode: 'minimal',
           contentStyle: { backgroundColor: c.background },
         }}
       >

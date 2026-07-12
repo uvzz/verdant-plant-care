@@ -19,12 +19,9 @@ import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { usePlants } from '@/lib/PlantContext';
-import {
-  CARE_TYPE_EMOJI,
-  CARE_TYPE_LABELS,
-  type CareLogType,
-} from '@/lib/types';
+import { CARE_TYPE_LABELS, type CareLogType } from '@/lib/types';
 import { firstParam } from '@/lib/routeParams';
+import { CareIcon } from '@/components/CareIcon';
 
 const TYPES: CareLogType[] = ['water', 'fertilize', 'check', 'note', 'photo'];
 
@@ -140,7 +137,13 @@ export default function LogCareScreen() {
                   },
                 ]}
               >
-                <Text style={{ fontSize: 18, marginBottom: 4 }}>{CARE_TYPE_EMOJI[t]}</Text>
+                <View style={{ marginBottom: 6 }}>
+                  <CareIcon
+                    type={t}
+                    color={active ? c.growth : c.tint}
+                    size={19}
+                  />
+                </View>
                 <Text
                   style={[
                     Type.meta,
@@ -199,7 +202,8 @@ export default function LogCareScreen() {
         </View>
 
         <PrimaryButton
-          label={`Save · ${CARE_TYPE_EMOJI[type]} ${CARE_TYPE_LABELS[type]}`}
+          label={`Save · ${CARE_TYPE_LABELS[type]}`}
+          icon={<CareIcon type={type} color={c.growthInk} size={17} />}
           onPress={onSave}
           loading={saving}
         />

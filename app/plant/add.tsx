@@ -14,6 +14,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { format } from 'date-fns';
+import { ImagePlus, Sparkles } from 'lucide-react-native';
 
 import Colors from '@/constants/Colors';
 import { Fonts, Type } from '@/constants/Typography';
@@ -21,6 +22,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { DateField } from '@/components/DateField';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { identifyPlantFromPhoto } from '@/lib/openrouter';
+import { mergeAiNote } from '@/lib/aiParse';
 import { usePlants } from '@/lib/PlantContext';
 import {
   DEFAULT_INTERVALS,
@@ -119,11 +121,7 @@ export default function AddPlantScreen() {
       setLightLevel(result.lightLevel);
       setPetToxicity(result.petToxicity);
       if (result.careSummary) {
-        setNotes((prev) =>
-          prev.trim()
-            ? `${prev.trim()}\n\nAI: ${result.careSummary}`
-            : `AI: ${result.careSummary}`
-        );
+        setNotes((prev) => mergeAiNote(prev, result.careSummary));
       }
       setAiHint(
         `${result.confidence} confidence · ${result.commonName}${
@@ -201,7 +199,7 @@ export default function AddPlantScreen() {
             <Image source={{ uri: photoUri }} style={styles.photoImg} contentFit="cover" />
           ) : (
             <View style={styles.photoPlaceholder}>
-              <Text style={{ fontSize: 28 }}>📷</Text>
+              <ImagePlus color={c.tint} size={30} strokeWidth={1.8} />
               <Text style={[Type.meta, { color: c.textMuted }]}>Tap to choose a photo</Text>
             </View>
           )}
@@ -217,9 +215,10 @@ export default function AddPlantScreen() {
             identifying
               ? 'Identifying…'
               : canUseAi
-                ? '✨ AI identify plant (Premium)'
-                : '✨ AI identify (Premium only)'
+                ? 'AI identify plant (Premium)'
+                : 'AI identify (Premium only)'
           }
+          icon={<Sparkles color={c.text} size={16} strokeWidth={2.2} />}
           variant="secondary"
           onPress={onIdentify}
           loading={identifying}
@@ -476,7 +475,7 @@ const styles = StyleSheet.create({
     height: 44,
   },
   multiline: { minHeight: 90, height: undefined, textAlignVertical: 'top' },
-  chips: { gap: 8, paddingVertical: 2 },
+  chips: { gap: 8, paddingVertical: 2, paddingRight: 28 },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 10,

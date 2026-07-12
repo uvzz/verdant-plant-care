@@ -9,6 +9,18 @@
  * - Payload / message / max_tokens caps
  */
 
+import {
+  SYNC_LIMITS,
+  getCollection,
+  getPhoto,
+  putCollection,
+  putPhoto,
+  validPhotoName,
+  validSyncId,
+  type D1Like,
+  type KVLike,
+} from './sync';
+
 export interface Env {
   OPENROUTER_API_KEY: string;
   PREMIUM_ACCESS_TOKEN: string;
@@ -16,6 +28,9 @@ export interface Env {
   RATE_LIMIT_PER_MINUTE?: string;
   RATE_LIMIT_PER_HOUR?: string;
   RATE_LIMIT_PER_DAY?: string;
+  /** Cloud sync bindings */
+  DB: D1Like;
+  PHOTOS_KV: KVLike;
 }
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -45,8 +60,9 @@ Educational only — not veterinary, medical, or lab diagnosis.`;
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Verdant-Client',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+  'Access-Control-Allow-Headers':
+    'Content-Type, Authorization, X-Verdant-Client, X-Sync-Id',
   'Access-Control-Expose-Headers': 'X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After',
 };
 
@@ -348,8 +364,104 @@ export default {
         premium: 'required',
         openrouterConfigured: Boolean(env.OPENROUTER_API_KEY),
         rateLimited: true,
+        sync: Boolean(env.DB && env.PHOTOS_KV),
         models: [...ALLOWED_MODELS],
       });
+    }
+
+    // ---------- Cloud sync ----------
+    if (url.pathname === '/v1/sync' || url.pathname.startsWith('/v1/photos/')) {
+      if (!env.PREMIUM_ACCESS_TOKEN) {
+        return json({ error: 'Server misconfigured: missing PREMIUM_ACCESS_TOKEN' }, 500);
+      }
+      if (!env.DB || !env.PHOTOS_KV) {
+        return json({ error: 'Sync is not configured on this server' }, 500);
+      }
+
+      const token = extractBearer(request);
+      if (!token || !timingSafeEqual(token, env.PREMIUM_ACCESS_TOKEN)) {
+        return json({ error: 'Premium required for cloud sync.' }, 403);
+      }
+
+      const syncId = request.headers.get('X-Sync-Id');
+      if (!validSyncId(syncId)) {
+        return json({ error: 'Missing or invalid X-Sync-Id' }, 400);
+      }
+
+      // Rate limit per sync id (photos get a higher per-minute budget)
+      const isPhoto = url.pathname.startsWith('/v1/photos/');
+      const sidFp = (await sha256Hex(syncId)).slice(0, 16);
+      const limits: Array<{ key: string; limit: number; ms: number }> = [
+        {
+          key: `sync:m:${sidFp}${isPhoto ? ':p' : ''}`,
+          limit: isPhoto ? SYNC_LIMITS.photoPerMinute : SYNC_LIMITS.perMinute,
+          ms: 60_000,
+        },
+        { key: `sync:d:${sidFp}`, limit: SYNC_LIMITS.perDay, ms: 86_400_000 },
+      ];
+      for (const w of limits) {
+        const r = await consumeRate(w.key, w.limit, w.ms);
+        if (!r.ok) {
+          const retry = Math.max(1, Math.ceil((r.resetAt - Date.now()) / 1000));
+          return json(
+            { error: 'Sync rate limit exceeded.', retryAfterSec: retry },
+            429,
+            { 'Retry-After': String(retry) }
+          );
+        }
+      }
+
+      if (url.pathname === '/v1/sync' && request.method === 'GET') {
+        const row = await getCollection(env.DB, syncId);
+        if (!row) return json({ rev: 0, payload: null });
+        return json({ rev: row.rev, payload: row.payload, updatedAt: row.updated_at });
+      }
+
+      if (url.pathname === '/v1/sync' && request.method === 'PUT') {
+        let body: { baseRev?: number; payload?: string };
+        try {
+          body = await request.json();
+        } catch {
+          return json({ error: 'Invalid JSON body' }, 400);
+        }
+        const baseRev = Number(body.baseRev);
+        if (!Number.isInteger(baseRev) || baseRev < 0) {
+          return json({ error: 'baseRev must be a non-negative integer' }, 400);
+        }
+        if (typeof body.payload !== 'string' || !body.payload) {
+          return json({ error: 'payload (JSON string) required' }, 400);
+        }
+        const result = await putCollection(env.DB, syncId, baseRev, body.payload);
+        if (result.ok) return json({ rev: result.rev });
+        if ('conflict' in result && result.conflict) {
+          return json({ error: 'Revision conflict', rev: result.rev, payload: result.payload }, 409);
+        }
+        return json({ error: (result as { error: string }).error }, 400);
+      }
+
+      if (isPhoto) {
+        const name = decodeURIComponent(url.pathname.slice('/v1/photos/'.length));
+        if (!validPhotoName(name)) {
+          return json({ error: 'Invalid photo name' }, 400);
+        }
+        if (request.method === 'GET') {
+          const buf = await getPhoto(env.PHOTOS_KV, syncId, name);
+          if (!buf) return json({ error: 'Photo not found' }, 404);
+          return new Response(buf, {
+            status: 200,
+            headers: { 'Content-Type': 'image/jpeg', ...corsHeaders },
+          });
+        }
+        if (request.method === 'PUT') {
+          const contentType = (request.headers.get('Content-Type') || '').split(';')[0].trim();
+          const body = await request.arrayBuffer();
+          const put = await putPhoto(env.PHOTOS_KV, syncId, name, body, contentType);
+          if (!put.ok) return json({ error: put.error }, 400);
+          return json({ ok: true });
+        }
+      }
+
+      return json({ error: 'Method not allowed' }, 405);
     }
 
     if (request.method === 'POST' && url.pathname === '/v1/chat') {

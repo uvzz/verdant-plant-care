@@ -7,5 +7,20 @@
   "workers_dev": true,
   "observability": {
     "enabled": true
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "verdant-sync",
+      "database_id": "ca9bb767-d2ad-4d64-a05f-fd43ea4eb3ce"
+    }
+  ],
+  // Photo store: KV for now (R2 not enabled on this account — code 10042).
+  // Swap to an r2_buckets binding when R2 is enabled in the dashboard.
+  "kv_namespaces": [
+    {
+      "binding": "PHOTOS_KV",
+      "id": "ec73678f9e4f478e9d9d7db91259d8c6"
+    }
+  ]
 }
