@@ -10,6 +10,7 @@ import type {
 import { LIGHT_LEVELS, PET_TOXICITY, PLANT_CATEGORIES } from './types';
 import {
   normalizeCategory,
+  normalizeCommonName,
   normalizeLight,
   normalizePetToxicity,
   parseJsonLoose,
@@ -217,7 +218,7 @@ Be honest if unsure. Educational only — not definitive botanical ID or veterin
 
   const conf = (parsed.confidence || 'medium').toLowerCase();
   return {
-    commonName: sanitizeUserText(parsed.commonName || 'Mystery plant', 80),
+    commonName: normalizeCommonName(sanitizeUserText(parsed.commonName || '', 80)),
     scientificName: sanitizeUserText(parsed.scientificName || '', 120),
     category: normalizeCategory(parsed.category || 'Other'),
     confidence: conf === 'high' || conf === 'low' ? conf : 'medium',

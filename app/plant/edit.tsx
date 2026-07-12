@@ -36,9 +36,11 @@ import {
   type PotSize,
 } from '@/lib/types';
 import { effectiveWaterIntervalDays } from '@/lib/care';
+import { firstParam } from '@/lib/routeParams';
 
 export default function EditPlantScreen() {
-  const { plantId } = useLocalSearchParams<{ plantId: string }>();
+  const { plantId: plantIdParam } = useLocalSearchParams<{ plantId: string }>();
+  const plantId = firstParam(plantIdParam);
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const router = useRouter();
@@ -113,8 +115,11 @@ export default function EditPlantScreen() {
   };
 
   const onSave = async () => {
-    if (!name.trim()) {
-      Alert.alert('Name required', 'Give your plant a name.');
+    const trimmedName = name.trim();
+    // Min length applies only to a *changed* name so legacy plants with short
+    // names can still save other field edits.
+    if (!trimmedName || (trimmedName !== plant.name && trimmedName.length < 2)) {
+      Alert.alert('Name required', 'Give your plant a name (at least 2 characters).');
       return;
     }
     setSaving(true);

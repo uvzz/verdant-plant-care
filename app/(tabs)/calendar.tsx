@@ -151,7 +151,7 @@ export default function CalendarScreen() {
             fg={c.tint}
             border={c.border}
             disabled={busy}
-            onPress={() => openLog(item)}
+            onPress={() => router.push(`/plant/${item.plant.id}`)}
           />
         </View>
       </View>

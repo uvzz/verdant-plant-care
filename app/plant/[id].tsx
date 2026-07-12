@@ -45,11 +45,13 @@ import {
   type StoredCoachEntry,
 } from '@/lib/types';
 import { plantAgeDays } from '@/lib/stats';
+import { firstParam } from '@/lib/routeParams';
 
 const { width } = Dimensions.get('window');
 
 export default function PlantDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id: idParam } = useLocalSearchParams<{ id: string }>();
+  const id = firstParam(idParam);
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const router = useRouter();

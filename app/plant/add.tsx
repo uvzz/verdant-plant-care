@@ -142,8 +142,8 @@ export default function AddPlantScreen() {
       Alert.alert('Plant limit', 'Upgrade to Premium for unlimited plants.');
       return;
     }
-    if (!name.trim()) {
-      Alert.alert('Name required', 'Give your plant a name.');
+    if (name.trim().length < 2) {
+      Alert.alert('Name required', 'Give your plant a name (at least 2 characters).');
       return;
     }
     setSaving(true);

@@ -7,7 +7,9 @@ import { Type } from '@/constants/Typography';
 import { setOnboardingDone } from '@/lib/onboarding';
 
 export default function WelcomeScreen() {
-  const c = Colors.light;
+  // Welcome is a fixed night-mode hero (dark #0F1612 backdrop) regardless of
+  // system scheme — use the dark palette so accents stay legible on it.
+  const c = Colors.dark;
   const insets = useSafeAreaInsets();
   const router = useRouter();
 

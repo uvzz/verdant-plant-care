@@ -6,6 +6,33 @@ export function parseJsonLoose<T>(raw: string): T {
   return JSON.parse(cleaned) as T;
 }
 
+/** Placeholder answers models give when they can't actually name the plant. */
+const NAME_JUNK_RE =
+  /^(unknown|unidentified|unrecognized|uncertain|not\s+sure|no\s+idea|n\/?a|none|null|undefined|error|plant|houseplant)(\s+(plant|species|variety))?[\s.!?…]*$/i;
+
+/**
+ * Validate an AI-suggested common name. Truncated fragments ("As"),
+ * placeholders ("Unknown plant"), and symbol-only strings fall back instead
+ * of becoming the plant's name. Conservative on purpose — the user can still
+ * hand-type any name the guard rejects.
+ */
+export function normalizeCommonName(
+  raw: string | undefined | null,
+  fallback = 'Mystery plant'
+): string {
+  const cleaned = (raw || '')
+    .replace(/^["'`\s]+|["'`\s]+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  // Non-ASCII scripts (CJK etc.) pack a full word into 2 chars; ASCII 2-char
+  // strings are usually truncation artifacts like "As".
+  const minLen = /[^\x00-\x7F]/.test(cleaned) ? 2 : 3;
+  if (cleaned.length < minLen) return fallback;
+  if (!/\p{L}/u.test(cleaned)) return fallback;
+  if (NAME_JUNK_RE.test(cleaned)) return fallback;
+  return cleaned.slice(0, 80);
+}
+
 export function normalizeCategory(raw: string): PlantCategory {
   const hit = PLANT_CATEGORIES.find(
     (c) => c.toLowerCase() === raw.toLowerCase().trim()

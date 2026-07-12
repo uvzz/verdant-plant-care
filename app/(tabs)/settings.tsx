@@ -461,6 +461,10 @@ export default function SettingsScreen() {
           <Text style={[Type.micro, { color: c.textMuted, marginTop: 16 }]}>
             Import shared backup
           </Text>
+          <Text style={[Type.meta, { color: c.textMuted, marginTop: 6 }]}>
+            Backups carry plant data and care logs, not photo files — plants
+            imported from another device appear without photos.
+          </Text>
           <PrimaryButton
             label="Choose backup file…"
             variant="secondary"
@@ -499,7 +503,7 @@ export default function SettingsScreen() {
           </Text>
           <Text style={[Type.meta, { color: c.textMuted, marginTop: 10 }]}>
             Status: {isPremium ? 'Premium · AI unlocked' : 'Free · upgrade for AI'}
-            {'\n'}Endpoint: {aiUrl}
+            {__DEV__ ? `\nEndpoint: ${aiUrl}` : ''}
           </Text>
         </View>
 

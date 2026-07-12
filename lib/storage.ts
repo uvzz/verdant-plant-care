@@ -34,8 +34,18 @@ export function normalizeSettings(raw: Partial<AppSettings> | null): AppSettings
   if (typeof base.aiFreeUsesRemaining !== 'number') {
     base.aiFreeUsesRemaining = FREE_AI_USES_PER_MONTH;
   }
-  if (!base.premiumSource) {
+  // Premium with no purchase trail can only be a dev/demo unlock.
+  if (!base.premiumSource || (base.isPremium && base.premiumSource === 'none')) {
     base.premiumSource = base.isPremium ? 'demo' : 'none';
+  }
+  // Demo Premium is a development convenience only. In release builds any
+  // persisted demo entitlement (e.g. carried over from a dev install) is
+  // revoked on load — store purchases/restore are the only source of truth.
+  const isDevBuild = typeof __DEV__ !== 'undefined' && __DEV__;
+  if (!isDevBuild && base.premiumSource === 'demo') {
+    base.isPremium = false;
+    base.premiumSource = 'none';
+    base.premiumProductId = null;
   }
   if (!Array.isArray(base.familyMembers)) {
     base.familyMembers = [];

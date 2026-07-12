@@ -24,14 +24,17 @@ import {
   CARE_TYPE_LABELS,
   type CareLogType,
 } from '@/lib/types';
+import { firstParam } from '@/lib/routeParams';
 
 const TYPES: CareLogType[] = ['water', 'fertilize', 'check', 'note', 'photo'];
 
 export default function LogCareScreen() {
-  const { plantId, type: typeParam } = useLocalSearchParams<{
+  const { plantId: plantIdRaw, type: typeRaw } = useLocalSearchParams<{
     plantId: string;
     type?: string;
   }>();
+  const plantId = firstParam(plantIdRaw);
+  const typeParam = firstParam(typeRaw);
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const router = useRouter();
