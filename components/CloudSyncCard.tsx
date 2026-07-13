@@ -19,6 +19,7 @@ import {
   type AuthSession,
 } from '@/lib/auth';
 import { adoptSyncId, getOrCreateSyncId } from '@/lib/sync';
+import { syncStatusLabel } from '@/lib/syncSchedule';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -30,7 +31,7 @@ WebBrowser.maybeCompleteAuthSession();
 export function CloudSyncCard() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
-  const { settings, syncNow, setSyncEnabled, syncing } = usePlants();
+  const { settings, syncNow, setSyncEnabled, syncing, syncStatus, lastSyncError } = usePlants();
   const isPremium = settings.isPremium;
 
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -122,12 +123,12 @@ export function CloudSyncCard() {
             {session.email ? ` · ${session.email}` : ''}. Everything syncs
             automatically — after changes, on app open, and when you return.
           </Text>
-          <Text style={[Type.meta, { color: c.textMuted, marginTop: 8 }]}>
-            {syncing
-              ? 'Syncing…'
-              : settings.lastSyncAt
-                ? `Last synced ${new Date(settings.lastSyncAt).toLocaleString()}`
-                : 'First sync pending.'}
+          <Text style={[Type.meta, { color: syncStatus === 'error' ? c.danger : c.textMuted, marginTop: 8 }]}>
+            {syncStatusLabel({
+              status: syncStatus,
+              lastSyncError,
+              lastSyncAt: settings.lastSyncAt ?? null,
+            })}
           </Text>
           <PrimaryButton
             label={syncing ? 'Syncing…' : 'Sync now'}

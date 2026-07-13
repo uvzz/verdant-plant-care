@@ -36,3 +36,18 @@ export function nextBackoffMs(current: number): number {
     current > 0 ? current * 2 : AUTO_SYNC_BASE_BACKOFF_MS
   );
 }
+
+/**
+ * Human-readable status line for the Backup & sync card. Errors stay
+ * unalarming — sync is best-effort and auto-retries in the background.
+ */
+export function syncStatusLabel(input: {
+  status: 'idle' | 'syncing' | 'error';
+  lastSyncError: string | null;
+  lastSyncAt: string | null; // ISO
+}): string {
+  if (input.status === 'syncing') return 'Syncing…';
+  if (input.status === 'error') return 'Couldn’t sync — will retry automatically.';
+  if (input.lastSyncAt) return `Last synced ${new Date(input.lastSyncAt).toLocaleString()}`;
+  return 'First sync pending.';
+}

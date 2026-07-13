@@ -4,6 +4,7 @@ import {
   AUTO_SYNC_MAX_BACKOFF_MS,
   canAutoSyncNow,
   nextBackoffMs,
+  syncStatusLabel,
   type SyncSchedState,
 } from '../syncSchedule';
 
@@ -63,5 +64,38 @@ describe('nextBackoffMs', () => {
     expect(nextBackoffMs(AUTO_SYNC_MAX_BACKOFF_MS * 4)).toBe(
       AUTO_SYNC_MAX_BACKOFF_MS
     );
+  });
+});
+
+describe('syncStatusLabel', () => {
+  it('shows a syncing message while a sync is in progress', () => {
+    expect(
+      syncStatusLabel({ status: 'syncing', lastSyncError: null, lastSyncAt: null })
+    ).toBe('Syncing…');
+  });
+
+  it('shows an unalarming retry message on error', () => {
+    expect(
+      syncStatusLabel({
+        status: 'error',
+        lastSyncError: 'network request failed',
+        lastSyncAt: null,
+      })
+    ).toBe('Couldn’t sync — will retry automatically.');
+  });
+
+  it('shows the last synced time when idle and a prior sync happened', () => {
+    const label = syncStatusLabel({
+      status: 'idle',
+      lastSyncError: null,
+      lastSyncAt: '2026-07-01T12:00:00.000Z',
+    });
+    expect(label).toContain('Last synced');
+  });
+
+  it('shows first-sync-pending when idle with no prior sync', () => {
+    expect(
+      syncStatusLabel({ status: 'idle', lastSyncError: null, lastSyncAt: null })
+    ).toBe('First sync pending.');
   });
 });
