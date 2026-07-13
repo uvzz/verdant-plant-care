@@ -20,11 +20,13 @@ import {
   loadPlants,
   loadSettings,
   loadTombstones,
+  resetLocalCollection,
   saveCareLogs,
   savePlants,
   saveSettings,
   saveTombstones,
 } from './storage';
+import { shouldResetLocalData } from './syncIdentity';
 import {
   emptySyncDoc,
   mergeSyncDocs,
@@ -66,6 +68,10 @@ export async function adoptSyncId(
   const id = raw.trim().toLowerCase();
   if (!SYNC_ID_RE.test(id)) {
     return { ok: false, reason: 'Sync codes are 32–64 hex characters.' };
+  }
+  const current = await getSyncId();
+  if (shouldResetLocalData(current, id)) {
+    await resetLocalCollection();
   }
   await SecureStore.setItemAsync(SYNC_ID_KEY, id);
   await AsyncStorage.removeItem(UPLOADED_KEY);

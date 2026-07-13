@@ -145,4 +145,14 @@ export async function replaceCollection(input: {
   await Promise.all([savePlants(input.plants), saveCareLogs(input.logs)]);
 }
 
+/** Wipe the on-device collection (used when switching accounts). Settings
+ *  are left intact. */
+export async function resetLocalCollection(): Promise<void> {
+  await Promise.all([
+    savePlants([]),
+    saveCareLogs([]),
+    saveTombstones({ plants: {}, logs: {} }),
+  ]);
+}
+
 export type { FamilyMember };
