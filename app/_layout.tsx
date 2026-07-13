@@ -132,6 +132,9 @@ function RootLayoutNav() {
             headerTransparent: true,
             headerTintColor: '#FFFFFF',
             headerTitle: '',
+            // Fade (not slide) so the screen doesn't translate under the
+            // shared-element hero overlay — the overlay carries the motion.
+            animation: 'fade',
           }}
         />
         <Stack.Screen

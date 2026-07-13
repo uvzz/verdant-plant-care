@@ -47,6 +47,8 @@ import {
 import { plantAgeDays } from '@/lib/stats';
 import { firstParam } from '@/lib/routeParams';
 import { mergeAiNote } from '@/lib/aiParse';
+import { HeroTransitionOverlay } from '@/components/HeroTransitionOverlay';
+import { takeHeroOrigin, type HeroOrigin } from '@/lib/heroTransition';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -100,6 +102,10 @@ export default function PlantDetailScreen() {
     null
   );
   const [toast, setToast] = useState<string | null>(null);
+  // Shared-element rise from the tapped card (consumed once, on mount).
+  const [heroRise, setHeroRise] = useState<HeroOrigin | null>(() =>
+    takeHeroOrigin(id, Date.now())
+  );
   const [moistBusy, setMoistBusy] = useState(false);
 
   const showToast = (msg: string) => {
@@ -733,6 +739,15 @@ export default function PlantDetailScreen() {
         visible={!!lightbox}
         onClose={() => setLightbox(null)}
       />
+
+      {heroRise ? (
+        <HeroTransitionOverlay
+          origin={heroRise}
+          targetWidth={width}
+          targetHeight={HERO_HEIGHT}
+          onDone={() => setHeroRise(null)}
+        />
+      ) : null}
     </>
   );
 }
