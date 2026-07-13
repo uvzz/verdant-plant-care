@@ -96,6 +96,21 @@
   .hero .trust { margin-top: 22px; font-size: 13px; color: #8a998f; display: flex; gap: 18px; flex-wrap: wrap; }
   .hero .trust span { display: inline-flex; align-items: center; gap: 7px; }
 
+  /* Stack the hero (and tighten spacing) on tablet/phone */
+  @media (max-width: 860px) {
+    .hero { padding: 76px 0 88px; }
+    .hero .wrap { grid-template-columns: 1fr; gap: 40px; }
+    .hero .sub, .hero .trust { max-width: none; }
+    .phone-stage { order: 2; }
+  }
+  @media (max-width: 560px) {
+    section { padding: 64px 0; }
+    .hero { padding: 52px 0 60px; }
+    .wrap { padding: 0 18px; }
+    .phone { width: 260px; }
+    .section-head { margin-bottom: 36px; }
+  }
+
   .reveal { opacity: 0; transform: translateY(22px); }
   .hero .reveal { animation: rise .9s cubic-bezier(.2,.7,.2,1) forwards; }
   .hero .d1 { animation-delay: .05s; } .hero .d2 { animation-delay: .16s; }
