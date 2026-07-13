@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.verdant.plantcare",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Verdant uses the camera to photograph your plants for care logs and progress galleries.",
         "NSPhotoLibraryUsageDescription": "Verdant uses your photo library to add plant portraits and progress photos.",
@@ -41,6 +42,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-apple-authentication",
       [
         "expo-splash-screen",
         {
