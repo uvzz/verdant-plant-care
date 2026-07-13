@@ -15,6 +15,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { PlantProvider } from '@/lib/PlantContext';
@@ -74,9 +75,11 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <PlantProvider>
-      <RootLayoutNav />
-    </PlantProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <PlantProvider>
+        <RootLayoutNav />
+      </PlantProvider>
+    </GestureHandlerRootView>
   );
 }
 

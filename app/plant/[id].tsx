@@ -47,7 +47,15 @@ import {
 import { plantAgeDays } from '@/lib/stats';
 import { firstParam } from '@/lib/routeParams';
 import { mergeAiNote } from '@/lib/aiParse';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
 import { TextSkeleton } from '@/components/Skeleton';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -60,6 +68,7 @@ import {
 import { tapSuccess } from '@/lib/haptics';
 
 const { width } = Dimensions.get('window');
+const HERO_HEIGHT = width * 0.95;
 
 export default function PlantDetailScreen() {
   const { id: idParam } = useLocalSearchParams<{ id: string }>();
@@ -295,13 +304,41 @@ export default function PlantDetailScreen() {
     }
   };
 
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollY.value = e.contentOffset.y;
+  });
+  const heroStyle = useAnimatedStyle(() => ({
+    transform: [
+      // Zoom + hold the hero as the page scrolls up (parallax).
+      {
+        translateY: interpolate(
+          scrollY.value,
+          [-200, 0, HERO_HEIGHT],
+          [-100, 0, HERO_HEIGHT * 0.4],
+          Extrapolation.CLAMP
+        ),
+      },
+      {
+        scale: interpolate(
+          scrollY.value,
+          [-200, 0],
+          [1.35, 1],
+          Extrapolation.CLAMP
+        ),
+      },
+    ],
+  }));
+
   return (
     <>
       <Stack.Screen options={{ title: plant.name }} />
-      <ScrollView
+      <Animated.ScrollView
         style={{ flex: 1, backgroundColor: c.background }}
         contentContainerStyle={{ paddingBottom: 48 }}
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         <Pressable
           onPress={() =>
@@ -310,6 +347,7 @@ export default function PlantDetailScreen() {
           }
         >
           <View style={styles.heroWrap}>
+            <Animated.View style={[styles.heroFill, heroStyle]}>
             {plant.photoUri ? (
               <Image source={{ uri: plant.photoUri }} style={styles.hero} contentFit="cover" />
             ) : (
@@ -317,6 +355,7 @@ export default function PlantDetailScreen() {
                 <Text style={{ fontSize: 64 }}>🪴</Text>
               </View>
             )}
+            </Animated.View>
             <LinearGradient
               colors={[
                 'rgba(15,22,18,0.30)',
@@ -352,10 +391,11 @@ export default function PlantDetailScreen() {
         <View style={styles.body}>
           {toast ? (
             <Animated.View
-              entering={FadeIn.duration(180)}
-              style={[styles.toast, { backgroundColor: c.heroSurface }]}
+              entering={FadeInDown.springify().damping(13).stiffness(180)}
+              style={[styles.toast, styles.toastRow, { backgroundColor: c.heroSurface }]}
               accessibilityLiveRegion="polite"
             >
+              <Sprout color={c.growth} size={16} strokeWidth={2.4} />
               <Text style={[Type.meta, { color: c.growth }]}>{toast}</Text>
             </Animated.View>
           ) : null}
@@ -685,7 +725,7 @@ export default function PlantDetailScreen() {
             </View>
           ) : null}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       <PhotoLightbox
         uri={lightbox?.uri ?? null}
@@ -795,8 +835,16 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   heroWrap: {
     width: '100%',
-    height: width * 0.95,
+    height: HERO_HEIGHT,
     position: 'relative',
+    overflow: 'hidden',
+  },
+  heroFill: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   hero: { width: '100%', height: '100%' },
   heroEmpty: { alignItems: 'center', justifyContent: 'center' },
@@ -814,6 +862,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
+  toastRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   profileChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   metaChip: {
     paddingHorizontal: 10,

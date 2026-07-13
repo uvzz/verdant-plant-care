@@ -1,7 +1,7 @@
 {
   "name": "verdant-plant-care",
   "main": "expo-router/entry",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "dependencies": {
     "@expo-google-fonts/fraunces": "^0.4.1",
     "@expo-google-fonts/outfit": "^0.4.3",
@@ -36,6 +36,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.0",
+    "react-native-gesture-handler": "~2.32.0",
     "react-native-reanimated": "4.5.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
@@ -46,6 +47,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "sharp": "^0.35.3",
     "typescript": "~6.0.3",
     "vitest": "^3.2.7"
   },

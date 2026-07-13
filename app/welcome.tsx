@@ -1,47 +1,108 @@
-import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import {
+  Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Leaf } from 'lucide-react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { Droplet, Leaf, Lock, Sparkles } from 'lucide-react-native';
 
 import Colors, { APP_NAME } from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
 import { setOnboardingDone } from '@/lib/onboarding';
+import { tapLight } from '@/lib/haptics';
+
+const { width } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
-  // Welcome is a fixed night-mode hero (dark #0F1612 backdrop) regardless of
-  // system scheme — use the dark palette so accents stay legible on it.
+  // Fixed night-mode hero regardless of system scheme — use the dark palette.
   const c = Colors.dark;
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
+  const [page, setPage] = useState(0);
 
-  const finish = async (goAdd: boolean) => {
-    await setOnboardingDone();
-    if (goAdd) {
-      router.replace('/(tabs)');
-      setTimeout(() => router.push('/plant/add'), 80);
-    } else {
-      router.replace('/(tabs)');
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const p = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (p !== page) {
+      tapLight();
+      setPage(p);
     }
   };
 
+  const goToPrivacy = () => {
+    scrollRef.current?.scrollTo({ x: width, animated: true });
+  };
+
   return (
-    <View style={[styles.root, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 20 }]}>
-      {/* Ambient orbs */}
+    <View style={[styles.root, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 16 }]}>
       <View style={[styles.orbA, { backgroundColor: c.growth }]} />
       <View style={[styles.orbB, { backgroundColor: c.tint }]} />
 
-      <Text style={[Type.micro, styles.mark, { color: c.growth }]}>{APP_NAME}</Text>
-      <Text style={[Type.displayHero, styles.headline, { color: '#EEF3EF' }]}>
-        Care you can{'\n'}see grow.
-      </Text>
-      <Text style={[Type.body, styles.sub, { color: '#A8B5AE' }]}>
-        A local-first plant journal that asks you to check soil before watering —
-        not blind schedules. Photos stay on your phone. Premium AI never puts an
-        API key on your device.
-      </Text>
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onScroll}
+        style={styles.flex}
+      >
+        <ValuePane c={c} onContinue={goToPrivacy} />
+        <PrivacyPane c={c} />
+      </ScrollView>
 
-      <View style={styles.preview}>
+      <View style={styles.dots}>
+        {[0, 1].map((i) => (
+          <View
+            key={i}
+            style={[
+              styles.dot,
+              {
+                backgroundColor: i === page ? c.growth : 'rgba(255,255,255,0.25)',
+                width: i === page ? 22 : 7,
+              },
+            ]}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ValuePane({
+  c,
+  onContinue,
+}: {
+  c: (typeof Colors)['dark'];
+  onContinue: () => void;
+}) {
+  return (
+    <View style={styles.pane}>
+      <Animated.Text entering={FadeIn.duration(400)} style={[Type.micro, styles.mark, { color: c.growth }]}>
+        {APP_NAME}
+      </Animated.Text>
+      <Animated.Text
+        entering={FadeInDown.delay(80).duration(500)}
+        style={[Type.displayHero, styles.headline, { color: '#EEF3EF' }]}
+      >
+        Care you can{'\n'}see grow.
+      </Animated.Text>
+      <Animated.Text
+        entering={FadeInDown.delay(180).duration(500)}
+        style={[Type.body, styles.sub, { color: '#A8B5AE' }]}
+      >
+        A calm, photo-first plant journal that asks you to check the soil before
+        watering — never blind schedules.
+      </Animated.Text>
+
+      <Animated.View entering={FadeInDown.delay(280).duration(500)} style={[styles.preview, { borderColor: 'rgba(255,255,255,0.1)' }]}>
         <LinearGradient
           colors={['#3D5C48', '#22352A']}
           start={{ x: 0, y: 0 }}
@@ -57,7 +118,63 @@ export default function WelcomeScreen() {
           <Text style={[Type.latin, { color: '#A8B5AE', marginTop: 2 }]}>
             Philodendron hederaceum
           </Text>
+          <View style={styles.previewMeta}>
+            <Droplet color={c.growth} size={12} strokeWidth={2.4} />
+            <Text style={[Type.meta, { color: '#A8B5AE', fontSize: 11 }]}>
+              Water in 3 days · check soil first
+            </Text>
+          </View>
         </View>
+      </Animated.View>
+
+      <Pressable
+        onPress={onContinue}
+        style={({ pressed }) => [
+          styles.btnPrimary,
+          { backgroundColor: c.growth, opacity: pressed ? 0.9 : 1, marginTop: 'auto' },
+        ]}
+      >
+        <Text style={[Type.button, { color: c.growthInk }]}>Continue</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function PrivacyPane({ c }: { c: (typeof Colors)['dark'] }) {
+  const router = useRouter();
+
+  const finish = async (goAdd: boolean) => {
+    await setOnboardingDone();
+    router.replace('/(tabs)');
+    if (goAdd) setTimeout(() => router.push('/plant/add'), 80);
+  };
+
+  return (
+    <View style={styles.pane}>
+      <Text style={[Type.micro, styles.mark, { color: c.growth }]}>Yours, privately</Text>
+      <Text style={[Type.displayHero, styles.headline, { color: '#EEF3EF', fontSize: 40 }]}>
+        Private by{'\n'}default.
+      </Text>
+
+      <View style={styles.features}>
+        <Feature
+          icon={<Leaf color={c.growth} size={18} strokeWidth={2.2} />}
+          title="Works fully offline"
+          body="Your plants and photos live on your device. No account needed to start."
+          c={c}
+        />
+        <Feature
+          icon={<Lock color={c.growth} size={18} strokeWidth={2.2} />}
+          title="Sign in only to sync"
+          body="Optional Apple or Google sign-in backs up and syncs across your devices."
+          c={c}
+        />
+        <Feature
+          icon={<Sparkles color={c.growth} size={18} strokeWidth={2.2} />}
+          title="Premium AI, safely"
+          body="Plant ID and coaching run on our servers — no API key ever on your phone."
+          c={c}
+        />
       </View>
 
       <View style={styles.actions}>
@@ -72,10 +189,7 @@ export default function WelcomeScreen() {
         </Pressable>
         <Pressable
           onPress={() => finish(false)}
-          style={({ pressed }) => [
-            styles.btnGhost,
-            { opacity: pressed ? 0.7 : 1 },
-          ]}
+          style={({ pressed }) => [styles.btnGhost, { opacity: pressed ? 0.7 : 1 }]}
         >
           <Text style={[Type.button, { color: '#A8B5AE', fontSize: 15 }]}>
             I already have plants
@@ -86,13 +200,32 @@ export default function WelcomeScreen() {
   );
 }
 
+function Feature({
+  icon,
+  title,
+  body,
+  c,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+  c: (typeof Colors)['dark'];
+}) {
+  return (
+    <View style={styles.feature}>
+      <View style={[styles.featureIcon, { backgroundColor: 'rgba(198,212,90,0.12)' }]}>{icon}</View>
+      <View style={{ flex: 1 }}>
+        <Text style={[Type.title, { color: '#EEF3EF', fontSize: 15 }]}>{title}</Text>
+        <Text style={[Type.bodySmall, { color: '#A8B5AE', marginTop: 2 }]}>{body}</Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#0F1612',
-    paddingHorizontal: 20,
-    overflow: 'hidden',
-  },
+  root: { flex: 1, backgroundColor: '#0F1612', overflow: 'hidden' },
+  flex: { flex: 1 },
+  pane: { width, flex: 1, paddingHorizontal: 20 },
   orbA: {
     position: 'absolute',
     width: 220,
@@ -111,16 +244,9 @@ const styles = StyleSheet.create({
     left: -50,
     opacity: 0.35,
   },
-  mark: {
-    marginTop: 12,
-  },
-  headline: {
-    marginTop: 16,
-  },
-  sub: {
-    marginTop: 12,
-    maxWidth: 280,
-  },
+  mark: { marginTop: 12 },
+  headline: { marginTop: 16 },
+  sub: { marginTop: 12, maxWidth: 300 },
   preview: {
     marginTop: 32,
     flexDirection: 'row',
@@ -130,8 +256,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.1)',
   },
+  previewMeta: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
   thumb: {
     width: 56,
     height: 56,
@@ -139,10 +265,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actions: {
-    marginTop: 'auto',
-    gap: 10,
+  features: { marginTop: 28, gap: 18 },
+  feature: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
+  featureIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  actions: { marginTop: 'auto', gap: 10 },
   btnPrimary: {
     height: 52,
     borderRadius: 14,
@@ -157,4 +289,12 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,255,255,0.15)',
   },
+  dots: {
+    flexDirection: 'row',
+    gap: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 14,
+  },
+  dot: { height: 7, borderRadius: 4 },
 });

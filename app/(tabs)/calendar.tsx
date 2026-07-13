@@ -11,6 +11,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { EmptyState } from '@/components/EmptyState';
 import { WeekStrip } from '@/components/WeekStrip';
 import { CareIcon } from '@/components/CareIcon';
+import { SwipeToComplete } from '@/components/SwipeToComplete';
 import { tapLight, tapSuccess } from '@/lib/haptics';
 import {
   effectiveWaterIntervalDays,
@@ -31,6 +32,9 @@ export default function CalendarScreen() {
   const [toast, setToast] = useState<string | null>(null);
 
   const dueItems = useMemo(() => getCareDueItems(plants, logs), [plants, logs]);
+  // Once the user has logged a handful of care actions they know the routine —
+  // collapse the philosophy card to a one-line reminder.
+  const experienced = logs.length >= 5;
   const overdue = dueItems.filter((d) => d.overdue);
   const today = dueItems.filter((d) => d.daysUntil === 0);
   const upcoming = dueItems.filter((d) => d.daysUntil > 0).slice(0, 20);
@@ -105,8 +109,16 @@ export default function CalendarScreen() {
       <Animated.View
         entering={FadeInDown.springify().damping(16)}
         key={`${item.plant.id}-${item.type}-${sectionKey}`}
-        style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
       >
+      <SwipeToComplete
+        onComplete={() => onWatered(item)}
+        label={item.type === 'water' ? 'Watered' : 'Fed'}
+        type={item.type}
+        bg={c.growth}
+        fg={c.growthInk}
+        disabled={busy}
+      >
+      <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
         <Pressable
           onPress={() => openLog(item)}
           onLongPress={() => router.push(`/plant/${item.plant.id}`)}
@@ -164,6 +176,8 @@ export default function CalendarScreen() {
             onPress={() => router.push(`/plant/${item.plant.id}`)}
           />
         </View>
+      </View>
+      </SwipeToComplete>
       </Animated.View>
     );
   };
@@ -204,20 +218,30 @@ export default function CalendarScreen() {
           />
         ) : (
           <>
-            <View
-              style={[
-                styles.philosophy,
-                { backgroundColor: c.surface, borderColor: c.border },
-              ]}
-            >
-              <Text style={[Type.meta, { color: c.tint, fontFamily: Fonts.bodySemi }]}>
-                Check before water
-              </Text>
-              <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
-                Stick a finger in the soil. If it’s still damp, tap Still moist (+
-                {MOISTURE_SNOOZE_DAYS}d). Intervals also adapt to pot size and light.
-              </Text>
-            </View>
+            {experienced ? (
+              <View style={[styles.philosophyChip, { borderColor: c.border }]}>
+                <CareIcon type="check" color={c.tint} size={12} />
+                <Text style={[Type.meta, { color: c.textMuted, fontSize: 11 }]}>
+                  Swipe a card right to log · check soil before watering
+                </Text>
+              </View>
+            ) : (
+              <View
+                style={[
+                  styles.philosophy,
+                  { backgroundColor: c.surface, borderColor: c.border },
+                ]}
+              >
+                <Text style={[Type.meta, { color: c.tint, fontFamily: Fonts.bodySemi }]}>
+                  Check before water
+                </Text>
+                <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
+                  Stick a finger in the soil. If it’s still damp, tap Still moist (+
+                  {MOISTURE_SNOOZE_DAYS}d). Swipe a card right to log watering.
+                  Intervals also adapt to pot size and light.
+                </Text>
+              </View>
+            )}
 
             <Section title="Overdue" color={c.danger} emptyLabel="You're all caught up">
               {overdue.map((item) => renderRow(item, c.danger, 'o'))}
@@ -321,6 +345,17 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
+  },
+  philosophyChip: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignSelf: 'flex-start',
   },
   section: { marginTop: 18, gap: 8 },
   card: {

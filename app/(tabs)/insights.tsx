@@ -14,6 +14,8 @@ import { Camera, Droplet, NotebookPen, Sparkles, Sprout } from 'lucide-react-nat
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { TextSkeleton } from '@/components/Skeleton';
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 import Colors, { APP_NAME } from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -106,13 +108,14 @@ export default function InsightsScreen() {
         ) : (
           <>
             <View style={styles.grid}>
-              <StatTile label="Plants" value={String(stats.plantCount)} c={c} />
-              <StatTile label="Care logs" value={String(stats.totalLogs)} c={c} />
-              <StatTile label="Streak" value={`${stats.careStreakDays}d`} c={c} />
+              <StatTile label="Plants" value={String(stats.plantCount)} c={c} index={0} />
+              <StatTile label="Care logs" value={String(stats.totalLogs)} c={c} index={1} />
+              <StatTile label="Streak" value={`${stats.careStreakDays}d`} c={c} index={2} />
               <StatTile
                 label="Overdue"
                 value={String(stats.overdueCount)}
                 c={c}
+                index={3}
                 danger={stats.overdueCount > 0}
                 onPress={
                   stats.overdueCount > 0
@@ -257,12 +260,14 @@ function StatTile({
   c,
   danger,
   onPress,
+  index = 0,
 }: {
   label: string;
   value: string;
   c: (typeof Colors)['light'];
   danger?: boolean;
   onPress?: () => void;
+  index?: number;
 }) {
   const body = (
     <>
@@ -277,25 +282,30 @@ function StatTile({
       ) : null}
     </>
   );
+  const entering = FadeInDown.delay(index * 70)
+    .springify()
+    .damping(15);
   if (onPress) {
     return (
-      <Pressable
+      <AnimatedPressable
+        entering={entering}
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${value}`}
         style={[styles.tile, { backgroundColor: c.surface, borderColor: c.border }]}
       >
         {body}
-      </Pressable>
+      </AnimatedPressable>
     );
   }
   return (
-    <View
+    <Animated.View
+      entering={entering}
       accessibilityLabel={`${label}: ${value}`}
       style={[styles.tile, { backgroundColor: c.surface, borderColor: c.border }]}
     >
       {body}
-    </View>
+    </Animated.View>
   );
 }
 
