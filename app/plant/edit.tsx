@@ -197,12 +197,12 @@ export default function EditPlantScreen() {
                   style={[
                     styles.chip,
                     {
-                      backgroundColor: active ? c.night : c.surface,
-                      borderColor: active ? c.night : c.border,
+                      backgroundColor: active ? c.emphasis : c.surface,
+                      borderColor: active ? c.emphasis : c.border,
                     },
                   ]}
                 >
-                  <Text style={[Type.meta, { color: active ? c.background : c.text, fontFamily: Fonts.bodySemi }]}>
+                  <Text style={[Type.meta, { color: active ? c.onEmphasis : c.text, fontFamily: Fonts.bodySemi }]}>
                     {cat}
                   </Text>
                 </Pressable>
@@ -226,8 +226,8 @@ export default function EditPlantScreen() {
             options={LIGHT_LEVELS}
             value={lightLevel}
             labels={LIGHT_LABELS}
-            activeBg={c.night}
-            activeFg={c.background}
+            activeBg={c.emphasis}
+            activeFg={c.onEmphasis}
             idleBg={c.surface}
             idleFg={c.text}
             border={c.border}
@@ -239,8 +239,8 @@ export default function EditPlantScreen() {
             options={POT_SIZES}
             value={potSize}
             labels={POT_LABELS}
-            activeBg={c.night}
-            activeFg={c.background}
+            activeBg={c.emphasis}
+            activeFg={c.onEmphasis}
             idleBg={c.surface}
             idleFg={c.text}
             border={c.border}
@@ -252,8 +252,8 @@ export default function EditPlantScreen() {
             options={PET_TOXICITY}
             value={petToxicity}
             labels={PET_LABELS}
-            activeBg={c.night}
-            activeFg={c.background}
+            activeBg={c.emphasis}
+            activeFg={c.onEmphasis}
             idleBg={c.surface}
             idleFg={c.text}
             border={c.border}
@@ -304,8 +304,8 @@ export default function EditPlantScreen() {
                 style={[
                   styles.chip,
                   {
-                    backgroundColor: !caretakerId ? c.night : c.surface,
-                    borderColor: !caretakerId ? c.night : c.border,
+                    backgroundColor: !caretakerId ? c.emphasis : c.surface,
+                    borderColor: !caretakerId ? c.emphasis : c.border,
                   },
                 ]}
               >
@@ -313,7 +313,7 @@ export default function EditPlantScreen() {
                   style={[
                     Type.meta,
                     {
-                      color: !caretakerId ? c.background : c.text,
+                      color: !caretakerId ? c.onEmphasis : c.text,
                       fontFamily: Fonts.bodySemi,
                     },
                   ]}
@@ -330,8 +330,8 @@ export default function EditPlantScreen() {
                     style={[
                       styles.chip,
                       {
-                        backgroundColor: active ? c.night : c.surface,
-                        borderColor: active ? c.night : c.border,
+                        backgroundColor: active ? c.emphasis : c.surface,
+                        borderColor: active ? c.emphasis : c.border,
                       },
                     ]}
                   >
@@ -339,7 +339,7 @@ export default function EditPlantScreen() {
                       style={[
                         Type.meta,
                         {
-                          color: active ? c.background : c.text,
+                          color: active ? c.onEmphasis : c.text,
                           fontFamily: Fonts.bodySemi,
                         },
                       ]}

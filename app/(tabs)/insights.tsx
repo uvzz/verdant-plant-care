@@ -182,7 +182,7 @@ export default function InsightsScreen() {
               </Text>
             </View>
 
-            <View style={[styles.card, { backgroundColor: c.night, borderColor: c.night }]}>
+            <View style={[styles.card, { backgroundColor: c.heroSurface, borderColor: c.heroSurface }]}>
               <Text style={[Type.title, { color: c.growth }]}>AI collection insight</Text>
               <Text
                 style={[

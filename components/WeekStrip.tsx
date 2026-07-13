@@ -26,8 +26,8 @@ export function WeekStrip({ dueDates }: { dueDates: Date[] }) {
             style={[
               styles.pill,
               {
-                backgroundColor: isToday ? c.night : c.surface,
-                borderColor: isToday ? c.night : c.border,
+                backgroundColor: isToday ? c.emphasis : c.surface,
+                borderColor: isToday ? c.emphasis : c.border,
               },
             ]}
             accessibilityLabel={`${format(day, 'EEEE d')}${
@@ -39,7 +39,7 @@ export function WeekStrip({ dueDates }: { dueDates: Date[] }) {
                 Type.meta,
                 {
                   fontSize: 10,
-                  color: isToday ? 'rgba(238,243,239,0.7)' : c.textMuted,
+                  color: isToday ? c.onEmphasis : c.textMuted,
                   fontFamily: Fonts.bodySemi,
                 },
               ]}
@@ -52,7 +52,7 @@ export function WeekStrip({ dueDates }: { dueDates: Date[] }) {
                 {
                   fontSize: 15,
                   marginTop: 2,
-                  color: isToday ? '#EEF3EF' : c.text,
+                  color: isToday ? c.onEmphasis : c.text,
                 },
               ]}
             >

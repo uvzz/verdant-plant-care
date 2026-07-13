@@ -132,8 +132,8 @@ export default function LogCareScreen() {
                 style={[
                   styles.typeCell,
                   {
-                    backgroundColor: active ? c.night : c.surface,
-                    borderColor: active ? c.night : c.border,
+                    backgroundColor: active ? c.emphasis : c.surface,
+                    borderColor: active ? c.emphasis : c.border,
                   },
                 ]}
               >
@@ -148,7 +148,7 @@ export default function LogCareScreen() {
                   style={[
                     Type.meta,
                     {
-                      color: active ? c.background : c.text,
+                      color: active ? c.onEmphasis : c.text,
                       fontFamily: Fonts.bodySemi,
                     },
                   ]}

@@ -1,10 +1,38 @@
 import { describe, expect, it } from 'vitest';
 import {
+  listPhotos,
   putCollection,
+  putPhoto,
   validPhotoName,
   validSyncId,
   type D1Like,
+  type KVLike,
 } from './sync';
+
+/** In-memory KV stand-in implementing just what sync.ts uses. */
+function fakeKv() {
+  const store = new Map<string, ArrayBuffer>();
+  const kv: KVLike = {
+    async get(key) {
+      return store.get(key) ?? null;
+    },
+    async put(key, value) {
+      store.set(key, value);
+    },
+    async delete(key) {
+      store.delete(key);
+    },
+    async list({ prefix }) {
+      const keys = [...store.keys()]
+        .filter((k) => k.startsWith(prefix))
+        .map((name) => ({ name }));
+      return { keys, list_complete: true };
+    },
+  };
+  return { kv, store };
+}
+
+const bytes = (n: number) => new Uint8Array(n).fill(1).buffer;
 
 /** In-memory D1 stand-in implementing just what sync.ts uses. */
 function fakeDb() {
@@ -115,5 +143,35 @@ describe('putCollection CAS', () => {
       blob: 'x'.repeat(2_100_000),
     });
     expect((await putCollection(db, SYNC_ID, 0, huge)).ok).toBe(false);
+  });
+});
+
+describe('photo store + manifest', () => {
+  const OTHER_ID = 'b'.repeat(64);
+
+  it('stores photos and lists only this sync id', async () => {
+    const { kv } = fakeKv();
+    expect((await putPhoto(kv, SYNC_ID, 'a.jpg', bytes(10), 'image/jpeg')).ok).toBe(true);
+    expect((await putPhoto(kv, SYNC_ID, 'b.png', bytes(10), 'image/png')).ok).toBe(true);
+    // A different collection's photo must not leak into the manifest.
+    await putPhoto(kv, OTHER_ID, 'c.jpg', bytes(10), 'image/jpeg');
+
+    const names = await listPhotos(kv, SYNC_ID);
+    expect(names.sort()).toEqual(['a.jpg', 'b.png']);
+    expect(await listPhotos(kv, OTHER_ID)).toEqual(['c.jpg']);
+  });
+
+  it('manifest is empty before any upload (the desync self-heal case)', async () => {
+    const { kv } = fakeKv();
+    expect(await listPhotos(kv, SYNC_ID)).toEqual([]);
+  });
+
+  it('rejects empty, oversized, and wrong-type photos', async () => {
+    const { kv } = fakeKv();
+    expect((await putPhoto(kv, SYNC_ID, 'x.jpg', bytes(0), 'image/jpeg')).ok).toBe(false);
+    expect((await putPhoto(kv, SYNC_ID, 'x.jpg', bytes(4_000_000), 'image/jpeg')).ok).toBe(
+      false
+    );
+    expect((await putPhoto(kv, SYNC_ID, 'x.gif', bytes(10), 'image/gif')).ok).toBe(false);
   });
 });

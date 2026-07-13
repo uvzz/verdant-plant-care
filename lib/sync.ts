@@ -72,19 +72,6 @@ export async function adoptSyncId(
   return { ok: true };
 }
 
-async function loadUploadedSet(): Promise<Set<string>> {
-  try {
-    const raw = await AsyncStorage.getItem(UPLOADED_KEY);
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-async function saveUploadedSet(s: Set<string>): Promise<void> {
-  await AsyncStorage.setItem(UPLOADED_KEY, JSON.stringify([...s]));
-}
-
 function photoName(uri: string | null | undefined): string | null {
   if (!uri || !uri.startsWith('file')) return null;
   const base = uri.split('/').pop() || '';
@@ -219,15 +206,44 @@ export async function syncNow(): Promise<SyncResult> {
   }
 }
 
-/** Upload local photos the server doesn't have; download missing ones. */
+/**
+ * Fetch the set of photo names the server already holds for this sync id.
+ * Returns null if the manifest can't be read (older worker, network error) —
+ * callers treat null as "unknown" and fall back to attempting every upload
+ * (PUT is idempotent, so re-uploading is safe, just wasteful).
+ */
+async function fetchServerPhotos(
+  base: string,
+  headers: Record<string, string>
+): Promise<Set<string> | null> {
+  try {
+    const res = await fetch(`${base}/v1/photos`, { headers });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { photos?: string[] };
+    return new Set(body.photos ?? []);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Upload local photos the server doesn't have; download missing ones.
+ *
+ * The server's photo manifest is the authority for what's already stored —
+ * NOT a device-local cache. A local "already uploaded" cache silently
+ * desyncs (KV wiped, or a name marked uploaded before the PUT landed), which
+ * left KV empty forever. Reconciling against the server each sync self-heals
+ * that and makes cross-device pulls correct.
+ */
 async function syncPhotos(
   base: string,
   headers: Record<string, string>,
   doc: SyncDoc
 ): Promise<number> {
-  const uploaded = await loadUploadedSet();
   let pushed = 0;
-  let docDirty = false;
+
+  // Server truth (null = unknown → upload everything, idempotently).
+  const have = await fetchServerPhotos(base, headers);
 
   const entries: Array<{ uri: string | null | undefined; set: (u: string) => void }> = [
     ...doc.plants.map((p) => ({
@@ -256,33 +272,37 @@ async function syncPhotos(
 
     const info = await FileSystem.getInfoAsync(entry.uri).catch(() => ({ exists: false }));
     if (info.exists) {
-      // Local file — upload if we haven't already. uploadAsync streams the
-      // file natively (RN fetch can't reliably send binary bodies).
-      if (!uploaded.has(name)) {
-        try {
-          const size = 'size' in info ? (info as { size?: number }).size ?? 0 : 0;
-          if (size > 3_000_000) continue; // server cap
-          const res = await FileSystem.uploadAsync(
-            `${base}/v1/photos/${encodeURIComponent(name)}`,
-            entry.uri,
-            {
-              httpMethod: 'PUT',
-              headers: { ...headers, 'Content-Type': mimeFor(name) },
-              uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-            }
-          );
-          if (res.status === 200) {
-            uploaded.add(name);
-            pushed++;
-          } else {
-            console.warn('[sync] photo upload rejected', name, res.status, res.body?.slice(0, 120));
-          }
-        } catch (e) {
-          console.warn('[sync] photo upload failed', name, e);
+      // Local file — upload unless the server already has it. uploadAsync
+      // streams the file natively (RN fetch can't reliably send binary bodies).
+      if (have && have.has(name)) continue;
+      try {
+        const size = 'size' in info ? (info as { size?: number }).size ?? 0 : 0;
+        if (size > 3_000_000) {
+          console.warn('[sync] photo skipped (over 3MB cap)', name, size);
+          continue; // server cap
         }
+        const res = await FileSystem.uploadAsync(
+          `${base}/v1/photos/${encodeURIComponent(name)}`,
+          entry.uri,
+          {
+            httpMethod: 'PUT',
+            headers: { ...headers, 'Content-Type': mimeFor(name) },
+            uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+          }
+        );
+        if (res.status === 200) {
+          have?.add(name);
+          pushed++;
+        } else {
+          console.warn('[sync] photo upload rejected', name, res.status, res.body?.slice(0, 120));
+        }
+      } catch (e) {
+        console.warn('[sync] photo upload failed', name, e);
       }
     } else {
-      // Missing locally (came from another device) — try download
+      // Missing locally (came from another device) — download if the server
+      // has it. If the manifest is unknown, still try; a 404 is handled.
+      if (have && !have.has(name)) continue;
       const local = `${dir}${name}`;
       const localInfo = await FileSystem.getInfoAsync(local).catch(() => ({ exists: false }));
       if (!localInfo.exists) {
@@ -303,13 +323,9 @@ async function syncPhotos(
         }
       }
       entry.set(local);
-      uploaded.add(name); // exists on server by definition
-      docDirty = true;
     }
   }
 
-  await saveUploadedSet(uploaded);
-  void docDirty; // rewritten URIs are persisted by applyDocLocally
   return pushed;
 }
 

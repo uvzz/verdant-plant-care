@@ -13,6 +13,7 @@ import {
   SYNC_LIMITS,
   getCollection,
   getPhoto,
+  listPhotos,
   putCollection,
   putPhoto,
   validPhotoName,
@@ -370,7 +371,11 @@ export default {
     }
 
     // ---------- Cloud sync ----------
-    if (url.pathname === '/v1/sync' || url.pathname.startsWith('/v1/photos/')) {
+    if (
+      url.pathname === '/v1/sync' ||
+      url.pathname === '/v1/photos' ||
+      url.pathname.startsWith('/v1/photos/')
+    ) {
       if (!env.PREMIUM_ACCESS_TOKEN) {
         return json({ error: 'Server misconfigured: missing PREMIUM_ACCESS_TOKEN' }, 500);
       }
@@ -389,7 +394,7 @@ export default {
       }
 
       // Rate limit per sync id (photos get a higher per-minute budget)
-      const isPhoto = url.pathname.startsWith('/v1/photos/');
+      const isPhoto = url.pathname.startsWith('/v1/photos');
       const sidFp = (await sha256Hex(syncId)).slice(0, 16);
       const limits: Array<{ key: string; limit: number; ms: number }> = [
         {
@@ -439,7 +444,15 @@ export default {
         return json({ error: (result as { error: string }).error }, 400);
       }
 
-      if (isPhoto) {
+      // Photo manifest — the names KV holds for this sync id. The client
+      // uploads any local photo not in this set (self-heals a desynced
+      // client cache and pulls new photos from other devices).
+      if (url.pathname === '/v1/photos' && request.method === 'GET') {
+        const photos = await listPhotos(env.PHOTOS_KV, syncId);
+        return json({ photos });
+      }
+
+      if (url.pathname.startsWith('/v1/photos/')) {
         const name = decodeURIComponent(url.pathname.slice('/v1/photos/'.length));
         if (!validPhotoName(name)) {
           return json({ error: 'Invalid photo name' }, 400);

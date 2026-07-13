@@ -153,8 +153,11 @@ export default function MyPlantsScreen() {
                   style={[
                     styles.chip,
                     {
-                      backgroundColor: active ? c.night : c.surface,
-                      borderColor: active ? c.night : c.border,
+                      // Active pill inverts the page so it's high-contrast in
+                      // BOTH themes. A raw `night` fill == background in dark
+                      // mode and made the selected chip vanish.
+                      backgroundColor: active ? c.emphasis : c.surface,
+                      borderColor: active ? c.emphasis : c.border,
                     },
                   ]}
                 >
@@ -162,7 +165,7 @@ export default function MyPlantsScreen() {
                     style={[
                       Type.meta,
                       {
-                        color: active ? c.background : c.text,
+                        color: active ? c.onEmphasis : c.text,
                         fontFamily: Fonts.bodySemi,
                       },
                     ]}

@@ -21,6 +21,11 @@ export type D1Like = {
     };
   };
 };
+export type KVListResult = {
+  keys: Array<{ name: string }>;
+  list_complete: boolean;
+  cursor?: string;
+};
 export type KVLike = {
   get(key: string, type: 'arrayBuffer'): Promise<ArrayBuffer | null>;
   put(
@@ -29,6 +34,7 @@ export type KVLike = {
     opts?: { metadata?: Record<string, string> }
   ): Promise<void>;
   delete(key: string): Promise<void>;
+  list(opts: { prefix: string; cursor?: string; limit?: number }): Promise<KVListResult>;
 };
 
 export const SYNC_LIMITS = {
@@ -166,4 +172,25 @@ export async function putPhoto(
     metadata: { contentType },
   });
   return { ok: true };
+}
+
+/**
+ * List the photo names KV holds for a sync id. This is the authority the
+ * client reconciles against — the device's local "already uploaded" cache
+ * can silently desync (KV wiped, a prior run marked a name uploaded before
+ * the PUT actually landed), so the server tells the client what truly
+ * exists and the client uploads anything missing.
+ */
+export async function listPhotos(kv: KVLike, syncId: string): Promise<string[]> {
+  const prefix = photoKey(syncId, '');
+  const names: string[] = [];
+  let cursor: string | undefined;
+  // Paginate; a collection won't be huge, but never trust a single page.
+  for (let i = 0; i < 100; i++) {
+    const page = await kv.list({ prefix, cursor, limit: 1000 });
+    for (const k of page.keys) names.push(k.name.slice(prefix.length));
+    if (page.list_complete || !page.cursor) break;
+    cursor = page.cursor;
+  }
+  return names;
 }

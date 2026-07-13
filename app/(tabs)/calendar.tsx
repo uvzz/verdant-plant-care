@@ -182,7 +182,7 @@ export default function CalendarScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {toast ? (
           <View
-            style={[styles.toast, { backgroundColor: c.night }]}
+            style={[styles.toast, { backgroundColor: c.heroSurface }]}
             accessibilityLiveRegion="polite"
           >
             <Text style={[Type.meta, { color: c.growth, fontFamily: Fonts.bodySemi }]}>

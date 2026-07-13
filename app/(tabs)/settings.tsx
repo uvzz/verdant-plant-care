@@ -285,7 +285,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Billing */}
-        <View style={[styles.card, { backgroundColor: c.night, borderColor: c.night }]}>
+        <View style={[styles.card, { backgroundColor: c.heroSurface, borderColor: c.heroSurface }]}>
           <Text style={[Type.micro, { color: c.growth }]}>Premium</Text>
           <Text style={[Type.displayM, { color: '#EEF3EF', marginTop: 6, fontSize: 22 }]}>
             {isPremium ? 'Premium active' : 'Unlock Premium'}

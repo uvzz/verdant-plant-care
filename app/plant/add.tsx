@@ -265,15 +265,15 @@ export default function AddPlantScreen() {
                   style={[
                     styles.chip,
                     {
-                      backgroundColor: active ? c.night : c.surface,
-                      borderColor: active ? c.night : c.border,
+                      backgroundColor: active ? c.emphasis : c.surface,
+                      borderColor: active ? c.emphasis : c.border,
                     },
                   ]}
                 >
                   <Text
                     style={[
                       Type.meta,
-                      { color: active ? c.background : c.text, fontFamily: Fonts.bodySemi },
+                      { color: active ? c.onEmphasis : c.text, fontFamily: Fonts.bodySemi },
                     ]}
                   >
                     {cat}
@@ -305,15 +305,15 @@ export default function AddPlantScreen() {
                   style={[
                     styles.chip,
                     {
-                      backgroundColor: active ? c.night : c.surface,
-                      borderColor: active ? c.night : c.border,
+                      backgroundColor: active ? c.emphasis : c.surface,
+                      borderColor: active ? c.emphasis : c.border,
                     },
                   ]}
                 >
                   <Text
                     style={[
                       Type.meta,
-                      { color: active ? c.background : c.text, fontFamily: Fonts.bodySemi },
+                      { color: active ? c.onEmphasis : c.text, fontFamily: Fonts.bodySemi },
                     ]}
                   >
                     {LIGHT_LABELS[lv]}
@@ -335,15 +335,15 @@ export default function AddPlantScreen() {
                   style={[
                     styles.chip,
                     {
-                      backgroundColor: active ? c.night : c.surface,
-                      borderColor: active ? c.night : c.border,
+                      backgroundColor: active ? c.emphasis : c.surface,
+                      borderColor: active ? c.emphasis : c.border,
                     },
                   ]}
                 >
                   <Text
                     style={[
                       Type.meta,
-                      { color: active ? c.background : c.text, fontFamily: Fonts.bodySemi },
+                      { color: active ? c.onEmphasis : c.text, fontFamily: Fonts.bodySemi },
                     ]}
                   >
                     {POT_LABELS[sz]}
@@ -365,15 +365,15 @@ export default function AddPlantScreen() {
                   style={[
                     styles.chip,
                     {
-                      backgroundColor: active ? c.night : c.surface,
-                      borderColor: active ? c.night : c.border,
+                      backgroundColor: active ? c.emphasis : c.surface,
+                      borderColor: active ? c.emphasis : c.border,
                     },
                   ]}
                 >
                   <Text
                     style={[
                       Type.meta,
-                      { color: active ? c.background : c.text, fontFamily: Fonts.bodySemi },
+                      { color: active ? c.onEmphasis : c.text, fontFamily: Fonts.bodySemi },
                     ]}
                   >
                     {PET_LABELS[tx]}

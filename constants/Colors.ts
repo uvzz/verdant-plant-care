@@ -40,6 +40,15 @@ export default {
     night: palette.night,
     growth: palette.growth,
     growthInk: palette.growthInk,
+    // High-contrast "selected/emphasis" surface. Inverts per theme so a
+    // selected chip / today-cell stays legible in BOTH modes (a raw dark
+    // `night` fill collapses into the dark background).
+    emphasis: palette.night,
+    onEmphasis: palette.paper,
+    // Dark "hero" card (premium panel, toasts). Pops on the light page; in
+    // dark mode it lifts to an elevated dark so it doesn't merge into the
+    // near-black background. Always carries light text.
+    heroSurface: palette.night,
   },
   dark: {
     text: '#E8EFE9',
@@ -61,6 +70,10 @@ export default {
     night: palette.night,
     growth: palette.growth,
     growthInk: palette.growthInk,
+    // Inverted in dark: a light pill with dark text reads as "selected".
+    emphasis: '#E8EFE9',
+    onEmphasis: palette.night,
+    heroSurface: palette.nightSoft,
   },
 };
 

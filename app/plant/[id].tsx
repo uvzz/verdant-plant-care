@@ -350,7 +350,7 @@ export default function PlantDetailScreen() {
         <View style={styles.body}>
           {toast ? (
             <View
-              style={[styles.toast, { backgroundColor: c.night }]}
+              style={[styles.toast, { backgroundColor: c.heroSurface }]}
               accessibilityLiveRegion="polite"
             >
               <Text style={[Type.meta, { color: c.growth }]}>{toast}</Text>
