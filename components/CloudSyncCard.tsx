@@ -265,9 +265,18 @@ export function CloudSyncCard() {
                     await refresh();
                     await setSyncEnabled(true);
                     const s = await syncNow();
+                    // setSyncEnabled(true) already kicks off a sync, so this
+                    // explicit call may hit the in-flight guard — that's not a
+                    // failure, the enable-triggered sync is running.
+                    const linked =
+                      s.ok || s.reason === 'A sync is already in progress.';
                     Alert.alert(
-                      s.ok ? 'Device linked' : 'Linked, but sync failed',
-                      s.ok ? `Now sharing a collection (${s.pulledPlants} plants).` : s.reason
+                      linked ? 'Device linked' : 'Linked, but sync failed',
+                      linked
+                        ? s.ok
+                          ? `Now sharing a collection (${s.pulledPlants} plants).`
+                          : 'Syncing your collection now…'
+                        : s.reason
                     );
                   }}
                   style={{ minWidth: 72 }}
