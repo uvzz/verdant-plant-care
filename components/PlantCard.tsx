@@ -1,5 +1,6 @@
+import { useRef } from 'react';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { PawPrint, Sprout } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
@@ -7,6 +8,7 @@ import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { CareIcon } from '@/components/CareIcon';
 import { WaterRing } from '@/components/WaterRing';
+import { setHeroOrigin } from '@/lib/heroTransition';
 import { PET_LABELS, type CareLogType, type Plant } from '@/lib/types';
 
 interface Props {
@@ -30,13 +32,32 @@ export function PlantCard({
 }: Props) {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
+  const router = useRouter();
   const track = filamentColor ?? c.tint;
   const tox =
     plant.petToxicity && plant.petToxicity !== 'unknown' ? plant.petToxicity : null;
+  const imageWrapRef = useRef<View>(null);
+
+  const open = () => {
+    // Measure the photo's on-screen rect and hand it to the detail hero for a
+    // shared-element rise, then navigate. Measurement is best-effort — if it
+    // fails the detail just skips the overlay and renders normally.
+    if (plant.photoUri && imageWrapRef.current) {
+      imageWrapRef.current.measureInWindow((x, y, width, height) => {
+        setHeroOrigin(
+          { plantId: plant.id, uri: plant.photoUri as string, x, y, width, height, radius: 18 },
+          Date.now()
+        );
+        router.push(`/plant/${plant.id}`);
+      });
+    } else {
+      router.push(`/plant/${plant.id}`);
+    }
+  };
 
   return (
-    <Link href={`/plant/${plant.id}`} asChild>
       <Pressable
+        onPress={open}
         style={({ pressed }) => [
           styles.card,
           {
@@ -48,7 +69,7 @@ export function PlantCard({
           },
         ]}
       >
-        <View style={styles.imageWrap}>
+        <View ref={imageWrapRef} style={styles.imageWrap}>
           {plant.photoUri ? (
             <Image source={{ uri: plant.photoUri }} style={styles.image} contentFit="cover" />
           ) : (
@@ -115,7 +136,6 @@ export function PlantCard({
           ) : null}
         </View>
       </Pressable>
-    </Link>
   );
 }
 
