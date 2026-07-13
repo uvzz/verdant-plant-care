@@ -149,6 +149,13 @@ function PrivacyPane({ c }: { c: (typeof Colors)['dark'] }) {
     if (goAdd) setTimeout(() => router.push('/plant/add'), 80);
   };
 
+  // Finish onboarding and land on Settings, where sign-in / backup lives.
+  const finishToSettings = async () => {
+    await setOnboardingDone();
+    router.replace('/(tabs)');
+    setTimeout(() => router.push('/(tabs)/settings'), 80);
+  };
+
   return (
     <View style={styles.pane}>
       <Text style={[Type.micro, styles.mark, { color: c.growth }]}>Yours, privately</Text>
@@ -186,6 +193,15 @@ function PrivacyPane({ c }: { c: (typeof Colors)['dark'] }) {
           ]}
         >
           <Text style={[Type.button, { color: c.growthInk }]}>Start your collection</Text>
+        </Pressable>
+        <Pressable
+          onPress={finishToSettings}
+          style={({ pressed }) => [styles.signInRow, { opacity: pressed ? 0.7 : 1 }]}
+        >
+          <Lock color={c.growth} size={14} strokeWidth={2.4} />
+          <Text style={[Type.button, { color: c.growth, fontSize: 15 }]}>
+            Sign in to back up & sync
+          </Text>
         </Pressable>
         <Pressable
           onPress={() => finish(false)}
@@ -275,6 +291,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actions: { marginTop: 'auto', gap: 10 },
+  signInRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    height: 44,
+  },
   btnPrimary: {
     height: 52,
     borderRadius: 14,

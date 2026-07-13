@@ -13,7 +13,7 @@ import { usePlants } from '@/lib/PlantContext';
 import {
   exchangeIdentityToken,
   getAuthSession,
-  googleClientId,
+  googleAuthConfig,
   signInWithApple,
   signOut,
   type AuthSession,
@@ -41,9 +41,13 @@ export function CloudSyncCard() {
   const [syncCode, setSyncCode] = useState<string | null>(null);
   const [linkCode, setLinkCode] = useState('');
 
-  const gClientId = googleClientId();
+  const gConfig = googleAuthConfig();
   const [, googleResponse, promptGoogle] = Google.useIdTokenAuthRequest({
-    clientId: gClientId ?? 'unconfigured.apps.googleusercontent.com',
+    // At least one must be non-empty for the hook; the button is hidden
+    // unless gConfig.configured, so the placeholder is never actually used.
+    clientId: gConfig.webClientId ?? 'unconfigured.apps.googleusercontent.com',
+    iosClientId: gConfig.iosClientId,
+    androidClientId: gConfig.androidClientId,
   });
 
   useEffect(() => {
@@ -181,7 +185,7 @@ export function CloudSyncCard() {
               with Apple.
             </Text>
           ) : null}
-          {gClientId ? (
+          {gConfig.configured ? (
             <PrimaryButton
               label="Continue with Google"
               variant="secondary"

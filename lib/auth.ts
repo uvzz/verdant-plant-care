@@ -106,10 +106,7 @@ export async function signInWithApple(): Promise<SignInResult> {
   }
 }
 
-/** Google client id (web client id for Expo). Absent → Google button hidden. */
-export function googleClientId(): string | null {
-  return process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || null;
-}
+export { googleAuthConfig, type GoogleAuthConfig } from './authConfig';
 
 /** Sign out: forget the session. Local data stays; sync pauses. */
 export async function signOut(): Promise<void> {
