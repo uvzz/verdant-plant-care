@@ -20,11 +20,13 @@ import {
   loadPlants,
   loadSettings,
   loadTombstones,
+  resetLocalCollection,
   saveCareLogs,
   savePlants,
   saveSettings,
   saveTombstones,
 } from './storage';
+import { shouldResetOnAdopt } from './syncIdentity';
 import {
   emptySyncDoc,
   mergeSyncDocs,
@@ -34,6 +36,7 @@ import {
 
 const SYNC_ID_KEY = 'verdant.sync.id';
 const UPLOADED_KEY = '@verdant/sync_uploaded_photos';
+const ADOPTED_KEY = '@verdant/sync_id_adopted';
 const SYNC_ID_RE = /^[a-f0-9]{32,64}$/;
 
 export type SyncResult =
@@ -56,7 +59,16 @@ export async function getOrCreateSyncId(): Promise<string> {
   const bytes = await Crypto.getRandomBytesAsync(32);
   const id = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
   await SecureStore.setItemAsync(SYNC_ID_KEY, id);
+  // A device-generated random id is NOT an adopted account — clear the marker
+  // so a later first sign-in keeps this offline collection instead of wiping it.
+  await AsyncStorage.removeItem(ADOPTED_KEY);
   return id;
+}
+
+/** True when the current sync id came from a real account link / sign-in
+ *  (as opposed to a device-generated random id). */
+export async function wasSyncIdAdopted(): Promise<boolean> {
+  return (await AsyncStorage.getItem(ADOPTED_KEY)) === '1';
 }
 
 /** Adopt another device's sync code (links this device to that collection). */
@@ -67,7 +79,13 @@ export async function adoptSyncId(
   if (!SYNC_ID_RE.test(id)) {
     return { ok: false, reason: 'Sync codes are 32–64 hex characters.' };
   }
+  const prev = await getSyncId();
+  if (shouldResetOnAdopt(prev, id, await wasSyncIdAdopted())) {
+    await resetLocalCollection();
+  }
   await SecureStore.setItemAsync(SYNC_ID_KEY, id);
+  // This id came from a real account link / sign-in — mark it adopted.
+  await AsyncStorage.setItem(ADOPTED_KEY, '1');
   await AsyncStorage.removeItem(UPLOADED_KEY);
   return { ok: true };
 }

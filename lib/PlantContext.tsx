@@ -23,6 +23,11 @@ import {
   saveTombstones,
 } from './storage';
 import { syncNow as runCloudSync, type SyncResult } from './sync';
+import {
+  canAutoSyncNow,
+  nextBackoffMs,
+  AUTO_SYNC_BASE_BACKOFF_MS,
+} from './syncSchedule';
 import type {
   AppSettings,
   CareLog,
@@ -72,6 +77,9 @@ interface PlantContextValue {
   syncNow: () => Promise<SyncResult>;
   setSyncEnabled: (value: boolean) => Promise<void>;
   syncing: boolean;
+  /** 'error' after a failed sync until the next successful one. */
+  syncStatus: 'idle' | 'syncing' | 'error';
+  lastSyncError: string | null;
 }
 
 const PlantContext = createContext<PlantContextValue | null>(null);
@@ -320,6 +328,18 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   );
 
   const [syncing, setSyncing] = useState(false);
+  const syncingRef = useRef(false);
+  syncingRef.current = syncing;
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>(
+    'idle'
+  );
+  const [lastSyncError, setLastSyncError] = useState<string | null>(null);
+
+  // Backoff bookkeeping for auto-sync only — a failing sync (offline, 5xx)
+  // must not retry on every mutation/foreground with no cooldown. Manual
+  // "Sync now" presses bypass this entirely.
+  const lastFailureAtRef = useRef<number | null>(null);
+  const backoffMsRef = useRef(AUTO_SYNC_BASE_BACKOFF_MS);
 
   // Debounced push after local mutations — sync is automatic, users never
   // think about it. Ref indirection because mutations are declared above.
@@ -331,6 +351,16 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     syncTimerRef.current = setTimeout(() => {
       syncTimerRef.current = null;
+      if (
+        !canAutoSyncNow({
+          now: Date.now(),
+          inFlight: syncingRef.current,
+          lastFailureAt: lastFailureAtRef.current,
+          backoffMs: backoffMsRef.current,
+        })
+      ) {
+        return;
+      }
       void syncNowRef.current?.();
     }, 8_000);
   }, []);
@@ -345,10 +375,28 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     if (!settingsRef.current.isPremium) {
       return { ok: false, reason: 'Cloud sync is a Premium feature.' };
     }
+    // Re-entry guard: a manual "Sync now" racing an in-flight sync (auto or
+    // manual) must not be recorded as a failure. Bail before touching status /
+    // backoff so the collision never reaches runCloudSync's in-flight sentinel.
+    if (syncingRef.current) {
+      return { ok: false, reason: 'A sync is already in progress.' };
+    }
     setSyncing(true);
+    setSyncStatus('syncing');
     try {
       const result = await runCloudSync();
-      if (result.ok) await refresh();
+      if (result.ok) {
+        await refresh();
+        lastFailureAtRef.current = null;
+        backoffMsRef.current = AUTO_SYNC_BASE_BACKOFF_MS;
+        setSyncStatus('idle');
+        setLastSyncError(null);
+      } else {
+        lastFailureAtRef.current = Date.now();
+        backoffMsRef.current = nextBackoffMs(backoffMsRef.current);
+        setSyncStatus('error');
+        setLastSyncError(result.reason);
+      }
       return result;
     } finally {
       setSyncing(false);
@@ -368,7 +416,9 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
   );
 
   // Auto-sync: once after hydration, then on each return to foreground
-  // (min 5 minutes apart). Failures are silent — next pass reconciles.
+  // (min 5 minutes apart), gated by canAutoSyncNow so a failing sync backs
+  // off instead of retrying every pass. Failures are silent here — next
+  // pass (once backoff clears) reconciles.
   const lastAutoSyncRef = useRef(0);
   useEffect(() => {
     const maybeSync = () => {
@@ -378,6 +428,16 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       const now = Date.now();
       if (now - lastAutoSyncRef.current < 5 * 60_000) return;
       lastAutoSyncRef.current = now;
+      if (
+        !canAutoSyncNow({
+          now,
+          inFlight: syncingRef.current,
+          lastFailureAt: lastFailureAtRef.current,
+          backoffMs: backoffMsRef.current,
+        })
+      ) {
+        return;
+      }
       void syncNow();
     };
     maybeSync();
@@ -414,6 +474,8 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       syncNow,
       setSyncEnabled,
       syncing,
+      syncStatus,
+      lastSyncError,
     }),
     [
       plants,
@@ -440,6 +502,8 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       syncNow,
       setSyncEnabled,
       syncing,
+      syncStatus,
+      lastSyncError,
     ]
   );
 

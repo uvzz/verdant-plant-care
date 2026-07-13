@@ -19,6 +19,7 @@ import {
   type AuthSession,
 } from '@/lib/auth';
 import { adoptSyncId, getOrCreateSyncId } from '@/lib/sync';
+import { syncStatusLabel } from '@/lib/syncSchedule';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -30,7 +31,7 @@ WebBrowser.maybeCompleteAuthSession();
 export function CloudSyncCard() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
-  const { settings, syncNow, setSyncEnabled, syncing } = usePlants();
+  const { settings, syncNow, setSyncEnabled, refresh, syncing, syncStatus, lastSyncError } = usePlants();
   const isPremium = settings.isPremium;
 
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -63,12 +64,15 @@ export function CloudSyncCard() {
       setBusy(false);
       if (result.ok) {
         setSession(result.session);
+        // Load the (now wiped-or-new) storage into memory before enabling sync
+        // so no later mutation writes the prior account's data back.
+        await refresh();
         await setSyncEnabled(true);
       } else {
         Alert.alert('Google sign-in failed', result.reason);
       }
     })();
-  }, [googleResponse, setSyncEnabled]);
+  }, [googleResponse, setSyncEnabled, refresh]);
 
   const onApple = async () => {
     setBusy(true);
@@ -76,6 +80,9 @@ export function CloudSyncCard() {
     setBusy(false);
     if (result.ok) {
       setSession(result.session);
+      // Load the (now wiped-or-new) storage into memory before enabling sync
+      // so no later mutation writes the prior account's data back.
+      await refresh();
       await setSyncEnabled(true);
       Alert.alert('Signed in', 'Your plants now back up and sync automatically.');
     } else if (!result.cancelled) {
@@ -122,12 +129,12 @@ export function CloudSyncCard() {
             {session.email ? ` · ${session.email}` : ''}. Everything syncs
             automatically — after changes, on app open, and when you return.
           </Text>
-          <Text style={[Type.meta, { color: c.textMuted, marginTop: 8 }]}>
-            {syncing
-              ? 'Syncing…'
-              : settings.lastSyncAt
-                ? `Last synced ${new Date(settings.lastSyncAt).toLocaleString()}`
-                : 'First sync pending.'}
+          <Text style={[Type.meta, { color: syncStatus === 'error' ? c.danger : c.textMuted, marginTop: 8 }]}>
+            {syncStatusLabel({
+              status: syncStatus,
+              lastSyncError,
+              lastSyncAt: settings.lastSyncAt ?? null,
+            })}
           </Text>
           <PrimaryButton
             label={syncing ? 'Syncing…' : 'Sync now'}
@@ -135,7 +142,11 @@ export function CloudSyncCard() {
             loading={syncing}
             onPress={async () => {
               const r = await syncNow();
-              if (!r.ok) Alert.alert('Sync failed', r.reason);
+              // A collision with an already-running sync is benign — don't
+              // flag it as a failure to the user.
+              if (!r.ok && r.reason !== 'A sync is already in progress.') {
+                Alert.alert('Sync failed', r.reason);
+              }
             }}
             style={{ marginTop: 10 }}
           />
@@ -248,11 +259,24 @@ export function CloudSyncCard() {
                       return;
                     }
                     setLinkCode('');
+                    // Load the (now wiped-or-new) storage into memory before
+                    // enabling sync so no later mutation writes the prior
+                    // account's data back.
+                    await refresh();
                     await setSyncEnabled(true);
                     const s = await syncNow();
+                    // setSyncEnabled(true) already kicks off a sync, so this
+                    // explicit call may hit the in-flight guard — that's not a
+                    // failure, the enable-triggered sync is running.
+                    const linked =
+                      s.ok || s.reason === 'A sync is already in progress.';
                     Alert.alert(
-                      s.ok ? 'Device linked' : 'Linked, but sync failed',
-                      s.ok ? `Now sharing a collection (${s.pulledPlants} plants).` : s.reason
+                      linked ? 'Device linked' : 'Linked, but sync failed',
+                      linked
+                        ? s.ok
+                          ? `Now sharing a collection (${s.pulledPlants} plants).`
+                          : 'Syncing your collection now…'
+                        : s.reason
                     );
                   }}
                   style={{ minWidth: 72 }}
