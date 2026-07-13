@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   Alert,
-  Linking,
   ScrollView,
   StyleSheet,
   Switch,
@@ -432,15 +431,6 @@ export default function SettingsScreen() {
             label="Terms of use"
             variant="ghost"
             onPress={() => router.push('/legal/terms')}
-          />
-          <PrimaryButton
-            label="Open privacy (web)"
-            variant="ghost"
-            onPress={() =>
-              Linking.openURL(
-                'https://github.com/uvzz/verdant-plant-care/blob/main/docs/legal/PRIVACY.md'
-              )
-            }
           />
         </View>
       </ScrollView>

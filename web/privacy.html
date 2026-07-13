@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacy Policy — Verdant</title>
+<meta name="description" content="How Verdant handles your data: local-first by default, optional cloud sync, and Premium AI that never puts a key on your device." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{ --ink:#14201b; --ink-soft:#5a6b64; --night:#0f1612; --paper:#eef2ef; --glass:#fff; --lichen:#6f8f63; --lime:#c6d45a; --lime-ink:#2a3318; --line:#c9d4cd; --serif:'Fraunces',Georgia,serif; --sans:'Outfit',sans-serif; }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{ font-family:var(--sans); color:var(--ink); background:var(--paper); line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a{ color:var(--lichen); text-decoration:none; } a:hover{ text-decoration:underline; }
+  .wrap{ max-width:760px; margin:0 auto; padding:0 24px; }
+  nav{ position:sticky; top:0; background:rgba(238,242,239,0.82); backdrop-filter:blur(12px); border-bottom:1px solid rgba(20,32,27,0.06); }
+  nav .wrap{ max-width:1120px; display:flex; align-items:center; justify-content:space-between; height:64px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-family:var(--serif); font-weight:600; font-size:20px; color:var(--ink); }
+  .brand .mark{ width:30px; height:30px; border-radius:9px; background:var(--night); display:grid; place-items:center; }
+  .back{ font-weight:600; font-size:14px; color:var(--ink-soft); }
+  header.hd{ padding:64px 0 20px; }
+  .eyebrow{ font-size:12px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--lichen); }
+  h1{ font-family:var(--serif); font-size:clamp(34px,6vw,52px); font-weight:600; letter-spacing:-0.01em; margin-top:12px; }
+  .updated{ color:var(--ink-soft); font-size:14px; margin-top:14px; }
+  main{ padding:20px 0 90px; }
+  main h2{ font-family:var(--serif); font-size:24px; font-weight:600; margin:38px 0 10px; }
+  main p{ margin:12px 0; color:#31423b; }
+  main ul{ margin:12px 0 12px 20px; color:#31423b; }
+  main li{ margin:7px 0; }
+  .callout{ background:var(--glass); border:1px solid var(--line); border-left:3px solid var(--lime); border-radius:12px; padding:16px 18px; margin:20px 0; font-size:15px; }
+  .lede{ font-size:19px; color:var(--ink-soft); margin-top:8px; }
+  footer{ background:var(--night); color:#7f8f85; padding:34px 0 54px; font-size:14px; }
+  footer .wrap{ max-width:1120px; display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+  footer .brand{ color:#eef3ef; font-size:18px; } footer a{ color:#9fb0a5; } footer a:hover{ color:#eef3ef; }
+  .footlinks{ display:flex; gap:22px; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs><symbol id="leaf" viewBox="0 0 40 40"><g transform="rotate(-14 20 20)"><path d="M20 6 C27.5 13.5 27.5 27 20 34 C12.5 27 12.5 13.5 20 6 Z" fill="var(--lime)"/><path d="M20 9 C19.8 17 19.8 25 20 32" stroke="var(--lime-ink)" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.55"/></g></symbol></defs></svg>
+
+<nav><div class="wrap">
+  <a class="brand" href="/"><span class="mark"><svg width="20" height="20"><use href="#leaf"/></svg></span>Verdant</a>
+  <a class="back" href="/">← Back to site</a>
+</div></nav>
+
+<header class="hd"><div class="wrap">
+  <span class="eyebrow">Legal</span>
+  <h1>Privacy Policy</h1>
+  <p class="lede">Local-first by default. Your plants stay on your phone unless you choose to sync.</p>
+  <p class="updated">Last updated: 13 July 2026</p>
+</div></header>
+
+<main><div class="wrap">
+  <p>Verdant is a <b>local-first</b> plant care journal for iOS and Android. This policy explains what stays on your device, what happens when you turn on optional cloud sync, what Premium AI sends, and what we never do.</p>
+
+  <div class="callout">In plain terms: no account is required to use Verdant. Nothing is sold, tracked, or advertised. Cloud sync and Premium AI are optional and only run when you turn them on.</div>
+
+  <h2>Data stored on your device</h2>
+  <p>By default, everything lives locally in the app’s storage:</p>
+  <ul>
+    <li>Plant profiles, species, care intervals, rooms, and notes</li>
+    <li>Photos you add (copied into the app’s own storage on your device)</li>
+    <li>Care logs, reminders, streaks, and insights</li>
+    <li>Family household members and your settings</li>
+  </ul>
+  <p>If you never sign in, this data never leaves your phone.</p>
+
+  <h2>Optional cloud sync</h2>
+  <p>Cloud sync is <b>off by default</b>. When you turn it on and sign in with Apple or Google, Verdant backs up and syncs your plants, care history, and photos so they appear on your other devices.</p>
+  <ul>
+    <li>Your sign-in provider returns a signed identity token. Verdant’s server verifies it and derives a per-account <b>sync identifier</b> from it. We keep only your provider, email (if shared), and that sync id — <b>never the raw token</b>.</li>
+    <li>Your collection and photos are stored on Verdant’s infrastructure (Cloudflare) under that sync id and transferred <b>encrypted in transit (HTTPS)</b>.</li>
+    <li>Signing out pauses sync on that device; your local data stays. You can stop syncing at any time.</li>
+  </ul>
+
+  <h2>Premium AI (optional)</h2>
+  <p>When you use Premium AI — plant identify, care guide, coach, or collection insights:</p>
+  <ul>
+    <li>The app sends only the content needed (your text prompt; for photo features, the image) to <b>Verdant’s edge proxy</b>.</li>
+    <li>The proxy calls the AI model provider using a <b>server-held key</b>. That key is never placed in the app or on your device, so there is nothing for you to leak.</li>
+  </ul>
+  <p>Please don’t include sensitive personal information in AI prompts that you wouldn’t want processed by an AI provider. AI output is educational and not professional, veterinary, or medical advice.</p>
+
+  <h2>Purchases</h2>
+  <p>In-app purchases are handled by the <b>Apple App Store</b> or <b>Google Play</b>. We receive entitlement status (whether Premium is active) from the store — we do not receive or store your full payment card details.</p>
+
+  <h2>Analytics &amp; advertising</h2>
+  <p>Verdant contains <b>no third-party advertising SDKs</b> and does not sell your plant photos or data. If crash or performance tooling is added in a future build, it will be disclosed here first.</p>
+
+  <h2>Children</h2>
+  <p>Verdant is not directed at children under 13. Please don’t use Premium AI with a child’s personal information.</p>
+
+  <h2>Your choices</h2>
+  <ul>
+    <li>Use Verdant fully offline with no account.</li>
+    <li>Turn cloud sync on or off at any time in Settings.</li>
+    <li>Sign out to stop syncing while keeping your local journal.</li>
+    <li>Delete a plant or the app to remove local data; ask us to remove synced data by contacting us.</li>
+  </ul>
+
+  <h2>Contact</h2>
+  <p>Questions about privacy? Reach the developer contact listed on the App Store / Google Play listing. This policy applies to the Verdant mobile app and this website.</p>
+
+  <h2>Changes</h2>
+  <p>We may update this policy. Material changes bump the “Last updated” date above and ship with the app.</p>
+</div></main>
+
+<footer><div class="wrap">
+  <div class="brand"><svg width="17" height="17" style="vertical-align:-2px"><use href="#leaf"/></svg> Verdant</div>
+  <div class="footlinks">
+    <a href="/">Home</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/terms.html">Terms</a>
+  </div>
+  <div>© 2026 Verdant · A calm plant journal</div>
+</div></footer>
+</body>
+</html>
