@@ -19,8 +19,7 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { ensureNotificationPermissions } from '@/lib/notifications';
 import { usePlants } from '@/lib/PlantContext';
 import { getAiProxyUrl } from '@/lib/aiConfig';
-import { exportCollectionBackup } from '@/lib/export';
-import { pickBackupJsonFile } from '@/lib/backupFile';
+import { CloudSyncCard } from '@/components/CloudSyncCard';
 import {
   fetchStoreProducts,
   PREMIUM_DISPLAY,
@@ -66,15 +65,9 @@ const BENEFITS: Benefit[] = [
     live: true,
   },
   {
-    label: 'Export / import backup',
-    free: 'Included',
-    premium: 'Included',
-    live: true,
-  },
-  {
     label: 'Cloud backup & device sync',
     free: '—',
-    premium: 'Included',
+    premium: 'Automatic',
     live: true,
   },
 ];
@@ -93,24 +86,16 @@ export default function SettingsScreen() {
     setHouseholdName,
     addFamilyMember,
     removeFamilyMember,
-    importBackup,
     familyMembers,
-    syncNow,
-    setSyncEnabled,
-    syncing,
   } = usePlants();
   const isPremium = settings.isPremium;
   const aiUrl = getAiProxyUrl();
-  const [exporting, setExporting] = useState(false);
   const [buying, setBuying] = useState(false);
   const [memberName, setMemberName] = useState('');
   const [householdDraft, setHouseholdDraft] = useState(
     settings.householdName ?? ''
   );
-  const [importJson, setImportJson] = useState('');
   const [storeProducts, setStoreProducts] = useState<StoreProductInfo[]>([]);
-  const [syncCode, setSyncCode] = useState<string | null>(null);
-  const [linkCode, setLinkCode] = useState('');
 
   useEffect(() => {
     fetchStoreProducts().then(setStoreProducts).catch(() => {});
@@ -124,33 +109,6 @@ export default function SettingsScreen() {
   const yearlyPrice =
     storeProducts.find((p) => p.id === PREMIUM_PRODUCT_IDS.yearly)?.price ||
     PREMIUM_DISPLAY.yearlyPriceHint;
-
-  const onExport = async () => {
-    setExporting(true);
-    try {
-      const result = await exportCollectionBackup({
-        plants,
-        logs,
-        settings,
-        familyMembers,
-        householdName: settings.householdName,
-      });
-      if (!result.ok) {
-        Alert.alert('Export failed', result.reason);
-        return;
-      }
-      if (result.path !== 'cancelled') {
-        Alert.alert(
-          'Backup ready',
-          plants.length
-            ? `Shared JSON for ${plants.length} plant${plants.length === 1 ? '' : 's'}.`
-            : 'Empty collection exported.'
-        );
-      }
-    } finally {
-      setExporting(false);
-    }
-  };
 
   const onBuy = async () => {
     setBuying(true);
@@ -201,55 +159,6 @@ export default function SettingsScreen() {
     setMemberName('');
   };
 
-  const runImport = async (raw: string, mode: 'merge' | 'replace') => {
-    const result = await importBackup(raw.trim(), mode);
-    if (!result.ok) {
-      Alert.alert('Import failed', result.reason);
-      return;
-    }
-    setImportJson('');
-    Alert.alert('Import complete', result.message);
-  };
-
-  const onImport = async (mode: 'merge' | 'replace') => {
-    if (!importJson.trim()) {
-      Alert.alert(
-        'No backup text',
-        'Pick a JSON file or paste the backup into the field first.'
-      );
-      return;
-    }
-    if (mode === 'replace') {
-      Alert.alert(
-        'Replace collection?',
-        'This overwrites plants and care logs on this device.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Replace',
-            style: 'destructive',
-            onPress: () => runImport(importJson, mode),
-          },
-        ]
-      );
-    } else {
-      await runImport(importJson, mode);
-    }
-  };
-
-  const onPickBackupFile = async () => {
-    const picked = await pickBackupJsonFile();
-    if (!picked.ok) {
-      if (!picked.cancelled) Alert.alert('Could not open file', picked.reason);
-      return;
-    }
-    setImportJson(picked.text);
-    Alert.alert(
-      'Backup loaded',
-      `${picked.name} · choose Merge or Replace to apply.`
-    );
-  };
-
   const inputStyle = [
     styles.input,
     {
@@ -275,13 +184,6 @@ export default function SettingsScreen() {
             {isPremium ? 'Premium' : 'Free'} ·{' '}
             {premiumSourceLabel(settings.premiumSource)}
           </Text>
-          <PrimaryButton
-            label={exporting ? 'Exporting…' : 'Export backup (JSON)'}
-            variant="secondary"
-            onPress={onExport}
-            loading={exporting}
-            style={{ marginTop: 12 }}
-          />
         </View>
 
         {/* Billing */}
@@ -394,8 +296,8 @@ export default function SettingsScreen() {
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
           <Text style={[Type.title, { color: c.text }]}>Family sharing</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
-            Local household — assign caretakers, share care sheets, import backups.
-            No cloud account required.
+            Local household — assign caretakers and share care sheets. Link
+            devices from Backup &amp; sync above.
           </Text>
           <Text style={[Type.micro, { color: c.textMuted, marginTop: 12 }]}>
             Household name
@@ -469,41 +371,6 @@ export default function SettingsScreen() {
             onPress={() => shareFamilyInvite(settings.householdName || 'our plants')}
             style={{ marginTop: 8 }}
           />
-          <Text style={[Type.micro, { color: c.textMuted, marginTop: 16 }]}>
-            Import shared backup
-          </Text>
-          <Text style={[Type.meta, { color: c.textMuted, marginTop: 6 }]}>
-            Backups carry plant data and care logs, not photo files — plants
-            imported from another device appear without photos.
-          </Text>
-          <PrimaryButton
-            label="Choose backup file…"
-            variant="secondary"
-            onPress={onPickBackupFile}
-            style={{ marginTop: 8 }}
-          />
-          <TextInput
-            value={importJson}
-            onChangeText={setImportJson}
-            placeholder="Or paste Verdant backup JSON…"
-            placeholderTextColor={c.textMuted}
-            multiline
-            style={[inputStyle, styles.importBox, { marginTop: 8 }]}
-          />
-          <View style={styles.memberAdd}>
-            <PrimaryButton
-              label="Merge"
-              variant="secondary"
-              onPress={() => onImport('merge')}
-              style={{ flex: 1 }}
-            />
-            <PrimaryButton
-              label="Replace"
-              variant="secondary"
-              onPress={() => onImport('replace')}
-              style={{ flex: 1 }}
-            />
-          </View>
         </View>
 
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
@@ -518,121 +385,8 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        {/* Cloud sync */}
-        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={[Type.title, { color: c.text }]}>Cloud sync</Text>
-              <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
-                {isPremium
-                  ? 'Encrypted-in-transit backup and multi-device sync, including photos. Off by default — your data stays local until you opt in.'
-                  : 'Premium: back up your collection and sync it across devices.'}
-              </Text>
-            </View>
-            <Switch
-              value={!!settings.syncEnabled}
-              disabled={!isPremium}
-              onValueChange={async (v) => {
-                await setSyncEnabled(v);
-              }}
-              trackColor={{ true: c.tint, false: c.border }}
-            />
-          </View>
-          {isPremium && settings.syncEnabled ? (
-            <>
-              <Text style={[Type.meta, { color: c.textMuted, marginTop: 10 }]}>
-                {settings.lastSyncAt
-                  ? `Last synced ${new Date(settings.lastSyncAt).toLocaleString()}`
-                  : 'Not synced yet.'}
-              </Text>
-              <PrimaryButton
-                label={syncing ? 'Syncing…' : 'Sync now'}
-                variant="secondary"
-                loading={syncing}
-                onPress={async () => {
-                  const r = await syncNow();
-                  Alert.alert(
-                    r.ok ? 'Synced' : 'Sync failed',
-                    r.ok
-                      ? `Collection is up to date (rev ${r.rev}).`
-                      : r.reason
-                  );
-                }}
-                style={{ marginTop: 10 }}
-              />
-              <PrimaryButton
-                label={syncCode ? 'Hide sync code' : 'Show sync code'}
-                variant="ghost"
-                onPress={async () => {
-                  if (syncCode) {
-                    setSyncCode(null);
-                    return;
-                  }
-                  const { getOrCreateSyncId } = await import('@/lib/sync');
-                  setSyncCode(await getOrCreateSyncId());
-                }}
-                style={{ marginTop: 6 }}
-              />
-              {syncCode ? (
-                <>
-                  <Text
-                    selectable
-                    style={[
-                      Type.meta,
-                      {
-                        color: c.text,
-                        marginTop: 8,
-                        fontFamily: Fonts.bodySemi,
-                        letterSpacing: 0.5,
-                      },
-                    ]}
-                  >
-                    {syncCode}
-                  </Text>
-                  <Text style={[Type.meta, { color: c.textMuted, marginTop: 4 }]}>
-                    Enter this code on another device to share one collection.
-                    Treat it like a password.
-                  </Text>
-                </>
-              ) : null}
-              <Text style={[Type.micro, { color: c.textMuted, marginTop: 14 }]}>
-                Link this device to an existing collection
-              </Text>
-              <View style={styles.memberAdd}>
-                <TextInput
-                  value={linkCode}
-                  onChangeText={setLinkCode}
-                  placeholder="Paste sync code…"
-                  placeholderTextColor={c.textMuted}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  style={[inputStyle, { flex: 1 }]}
-                />
-                <PrimaryButton
-                  label="Link"
-                  onPress={async () => {
-                    const { adoptSyncId } = await import('@/lib/sync');
-                    const r = await adoptSyncId(linkCode);
-                    if (!r.ok) {
-                      Alert.alert('Invalid code', r.reason);
-                      return;
-                    }
-                    setLinkCode('');
-                    setSyncCode(null);
-                    const s = await syncNow();
-                    Alert.alert(
-                      s.ok ? 'Device linked' : 'Linked, but sync failed',
-                      s.ok
-                        ? `Now sharing a collection (${s.pulledPlants} plants).`
-                        : s.reason
-                    );
-                  }}
-                  style={{ minWidth: 72 }}
-                />
-              </View>
-            </>
-          ) : null}
-        </View>
+        {/* Backup & sync — Apple/Google sign-in, automatic sync */}
+        <CloudSyncCard />
 
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
           <View style={styles.row}>
@@ -665,8 +419,8 @@ export default function SettingsScreen() {
           <Text style={[Type.title, { color: c.text }]}>About</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
             {APP_NAME} v{APP_VERSION}{'\n'}
-            A calm, photo-first plant journal. Local-first — cloud sync is
-            optional and off by default.
+            A calm, photo-first plant journal. Works fully offline — sign in
+            to back up and sync across devices.
           </Text>
           <PrimaryButton
             label="Privacy policy"

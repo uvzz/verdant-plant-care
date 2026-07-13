@@ -11,6 +11,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, Droplet, NotebookPen, Sparkles, Sprout } from 'lucide-react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { TextSkeleton } from '@/components/Skeleton';
 
 import Colors, { APP_NAME } from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
@@ -209,13 +211,16 @@ export default function InsightsScreen() {
                   accessibilityHint="Opens Settings to unlock Premium"
                 />
               )}
+              {loading && !aiSummary ? <TextSkeleton lines={3} /> : null}
               {aiSummary ? (
-                <Text
-                  style={[Type.body, { color: '#EEF3EF', marginTop: 14, lineHeight: 22 }]}
-                  accessibilityLiveRegion="polite"
-                >
-                  {aiSummary}
-                </Text>
+                <Animated.View entering={FadeInDown.duration(220)}>
+                  <Text
+                    style={[Type.body, { color: '#EEF3EF', marginTop: 14, lineHeight: 22 }]}
+                    accessibilityLiveRegion="polite"
+                  >
+                    {aiSummary}
+                  </Text>
+                </Animated.View>
               ) : null}
             </View>
           </>

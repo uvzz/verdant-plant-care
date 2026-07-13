@@ -47,6 +47,8 @@ import {
 import { plantAgeDays } from '@/lib/stats';
 import { firstParam } from '@/lib/routeParams';
 import { mergeAiNote } from '@/lib/aiParse';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { TextSkeleton } from '@/components/Skeleton';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   Droplet,
@@ -349,12 +351,13 @@ export default function PlantDetailScreen() {
 
         <View style={styles.body}>
           {toast ? (
-            <View
+            <Animated.View
+              entering={FadeIn.duration(180)}
               style={[styles.toast, { backgroundColor: c.heroSurface }]}
               accessibilityLiveRegion="polite"
             >
               <Text style={[Type.meta, { color: c.growth }]}>{toast}</Text>
-            </View>
+            </Animated.View>
           ) : null}
 
           <View style={styles.profileChips}>
@@ -596,7 +599,7 @@ export default function PlantDetailScreen() {
                   loading={guideLoading}
                   variant="secondary"
                 />
-                {guideLoading ? <ActivityIndicator color={c.tint} style={{ marginTop: 10 }} /> : null}
+                {guideLoading ? <TextSkeleton lines={4} /> : null}
                 {guide ? (
                   <View style={{ marginTop: 12, gap: 8 }}>
                     <Text style={[Type.title, { color: c.text }]}>{guide.title}</Text>
@@ -643,7 +646,12 @@ export default function PlantDetailScreen() {
                   onPress={runCoach}
                   loading={coachLoading}
                 />
-                {coach ? <CoachBlock result={coach} c={c} isLatest /> : null}
+                {coachLoading && !coach ? <TextSkeleton lines={3} /> : null}
+                {coach ? (
+                  <Animated.View entering={FadeInDown.duration(220)}>
+                    <CoachBlock result={coach} c={c} isLatest />
+                  </Animated.View>
+                ) : null}
                 {(plant.aiCoachHistory?.length ?? 0) > 0 ? (
                   <View style={{ marginTop: 16, gap: 10 }}>
                     <Text style={[Type.micro, { color: c.textMuted }]}>Saved answers</Text>

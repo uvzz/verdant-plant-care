@@ -31,8 +31,7 @@ import type {
   Plant,
   PremiumSource,
 } from './types';
-import { createFamilyMember, mergeFamilyBackup } from './family';
-import { parseBackupJson, type VerdantBackup } from './export';
+import { createFamilyMember } from './family';
 import { peekLocalAiQuota } from './aiSafety';
 
 interface PlantContextValue {
@@ -65,10 +64,6 @@ interface PlantContextValue {
   setHouseholdName: (name: string) => Promise<void>;
   addFamilyMember: (name: string) => Promise<FamilyMember>;
   removeFamilyMember: (id: string) => Promise<void>;
-  importBackup: (
-    raw: string,
-    mode: 'merge' | 'replace'
-  ) => Promise<{ ok: true; message: string } | { ok: false; reason: string }>;
   /** Premium gate for AI. Returns false if not Premium. */
   consumeAiUse: () => Promise<{ ok: true } | { ok: false; reason: string }>;
   getPlant: (id: string) => Plant | undefined;
@@ -165,6 +160,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       plantsRef.current = next;
       setPlants(next);
       await savePlants(next);
+      scheduleAutoSync();
       return { ok: true as const, plant };
     },
     []
@@ -183,6 +179,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     plantsRef.current = next;
     setPlants(next);
     await savePlants(next);
+    scheduleAutoSync();
   }, []);
 
   const deletePlant = useCallback(async (id: string) => {
@@ -197,6 +194,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       saveCareLogs(nextLogs),
       addTombstone('plants', id),
     ]);
+    scheduleAutoSync();
   }, []);
 
   const addCareLog = useCallback(
@@ -228,6 +226,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       plantsRef.current = nextPlants;
       setPlants(nextPlants);
       await savePlants(nextPlants);
+      scheduleAutoSync();
       return entry;
     },
     []
@@ -238,6 +237,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     logsRef.current = next;
     setLogs(next);
     await Promise.all([saveCareLogs(next), addTombstone('logs', id)]);
+    scheduleAutoSync();
   }, []);
 
   const setPremium = useCallback(
@@ -297,91 +297,6 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     await Promise.all([saveSettings(next), savePlants(nextPlants)]);
   }, []);
 
-  const importBackup = useCallback(
-    async (raw: string, mode: 'merge' | 'replace') => {
-      const parsed = parseBackupJson(raw);
-      if (!parsed.ok) return parsed;
-
-      const backup: VerdantBackup = parsed.backup;
-      // Already normalized in parseBackupJson
-      const incomingPlants = backup.plants;
-      const incomingLogs = backup.logs;
-
-      if (mode === 'replace') {
-        plantsRef.current = incomingPlants;
-        logsRef.current = incomingLogs;
-        setPlants(incomingPlants);
-        setLogs(incomingLogs);
-        await Promise.all([
-          savePlants(incomingPlants),
-          saveCareLogs(incomingLogs),
-          // Replace is an explicit restore — old deletions must not shadow
-          // re-imported records on the next cloud sync.
-          saveTombstones({ plants: {}, logs: {} }),
-        ]);
-        if (backup.familyMembers?.length) {
-          const next = {
-            ...settingsRef.current,
-            familyMembers: backup.familyMembers,
-            householdName:
-              backup.householdName || settingsRef.current.householdName,
-          };
-          settingsRef.current = next;
-          setSettings(next);
-          await saveSettings(next);
-        }
-        return {
-          ok: true as const,
-          message: `Replaced collection with ${incomingPlants.length} plants and ${incomingLogs.length} logs.`,
-        };
-      }
-
-      const merged = mergeFamilyBackup({
-        existingPlants: plantsRef.current,
-        existingLogs: logsRef.current,
-        incomingPlants,
-        incomingLogs,
-      });
-      plantsRef.current = merged.plants;
-      logsRef.current = merged.logs;
-      setPlants(merged.plants);
-      setLogs(merged.logs);
-      await Promise.all([
-        savePlants(merged.plants),
-        saveCareLogs(merged.logs),
-      ]);
-
-      if (backup.familyMembers?.length) {
-        const existingIds = new Set(
-          (settingsRef.current.familyMembers ?? []).map((m) => m.id)
-        );
-        const extra = backup.familyMembers.filter((m) => !existingIds.has(m.id));
-        if (extra.length) {
-          const next = {
-            ...settingsRef.current,
-            familyMembers: [
-              ...(settingsRef.current.familyMembers ?? []),
-              ...extra,
-            ],
-            householdName:
-              settingsRef.current.householdName ||
-              backup.householdName ||
-              '',
-          };
-          settingsRef.current = next;
-          setSettings(next);
-          await saveSettings(next);
-        }
-      }
-
-      return {
-        ok: true as const,
-        message: `Merged ${merged.addedPlants} plants and ${merged.addedLogs} care logs.`,
-      };
-    },
-    []
-  );
-
   const consumeAiUse = useCallback(async () => {
     // Preflight only — actual local charge happens in openrouter.chat
     // so failed network calls do not burn quota.
@@ -406,6 +321,26 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
 
   const [syncing, setSyncing] = useState(false);
 
+  // Debounced push after local mutations — sync is automatic, users never
+  // think about it. Ref indirection because mutations are declared above.
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncNowRef = useRef<null | (() => Promise<SyncResult>)>(null);
+  const scheduleAutoSync = useCallback(() => {
+    const s = settingsRef.current;
+    if (!s.isPremium || !s.syncEnabled) return;
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    syncTimerRef.current = setTimeout(() => {
+      syncTimerRef.current = null;
+      void syncNowRef.current?.();
+    }, 8_000);
+  }, []);
+  useEffect(
+    () => () => {
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    },
+    []
+  );
+
   const syncNow = useCallback(async (): Promise<SyncResult> => {
     if (!settingsRef.current.isPremium) {
       return { ok: false, reason: 'Cloud sync is a Premium feature.' };
@@ -419,6 +354,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       setSyncing(false);
     }
   }, [refresh]);
+  syncNowRef.current = syncNow;
 
   const setSyncEnabled = useCallback(
     async (value: boolean) => {
@@ -472,7 +408,6 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       setHouseholdName,
       addFamilyMember,
       removeFamilyMember,
-      importBackup,
       consumeAiUse,
       getPlant,
       refresh,
@@ -499,7 +434,6 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
       setHouseholdName,
       addFamilyMember,
       removeFamilyMember,
-      importBackup,
       consumeAiUse,
       getPlant,
       refresh,

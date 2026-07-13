@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   StyleSheet,
@@ -11,6 +10,8 @@ import {
 import { Link, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { PlantCardSkeleton } from '@/components/Skeleton';
 
 import Colors, { APP_NAME } from '@/constants/Colors';
 import { Fonts, Type } from '@/constants/Typography';
@@ -81,8 +82,23 @@ export default function MyPlantsScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: c.background }]}>
-        <ActivityIndicator color={c.growth} />
+      <View style={[styles.container, { backgroundColor: c.background }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[Type.micro, { color: c.tint }]}>{APP_NAME}</Text>
+            <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>My Plants</Text>
+          </View>
+        </View>
+        <View style={styles.skeletonGrid}>
+          <View style={styles.row}>
+            <PlantCardSkeleton />
+            <PlantCardSkeleton />
+          </View>
+          <View style={styles.row}>
+            <PlantCardSkeleton />
+            <PlantCardSkeleton />
+          </View>
+        </View>
       </View>
     );
   }
@@ -266,7 +282,10 @@ export default function MyPlantsScreen() {
             const isOddLast =
               filtered.length % 2 === 1 && index === filtered.length - 1;
             return (
-              <View style={[styles.cardWrap, isOddLast && styles.cardWrapHalf]}>
+              <Animated.View
+                entering={FadeInDown.delay(Math.min(index, 8) * 55).springify().damping(16)}
+                style={[styles.cardWrap, isOddLast && styles.cardWrapHalf]}
+              >
                 <PlantCard
                   plant={item}
                   subtitle={due?.label}
@@ -275,7 +294,7 @@ export default function MyPlantsScreen() {
                   overdue={due?.colorKey === 'late'}
                   filamentColor={filamentColor}
                 />
-              </View>
+              </Animated.View>
             );
           }}
           ListFooterComponent={
@@ -375,6 +394,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
   },
+  skeletonGrid: { paddingHorizontal: 14, gap: 10, marginTop: 8 },
   ghostAdd: {
     marginTop: 2,
     marginBottom: 24,

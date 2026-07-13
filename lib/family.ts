@@ -93,7 +93,7 @@ export async function shareCareSheet(input: {
   }
 }
 
-/** Invite blurb for family to install + import a backup */
+/** Invite blurb for family to install + link via cloud sync */
 export async function shareFamilyInvite(householdName: string): Promise<void> {
   const name = householdName.trim() || 'our glasshouse';
   await Share.share({
@@ -101,31 +101,11 @@ export async function shareFamilyInvite(householdName: string): Promise<void> {
       `You're invited to help care for ${name} on Verdant 🌿`,
       '',
       '1. Install Verdant (iOS / Android)',
-      '2. Ask me for a JSON backup export from Settings',
-      '3. Import it in Settings → Family → Import shared backup',
+      '2. Settings → Backup & sync → Advanced → paste the sync code I send you',
+      '3. Our plants and care history appear automatically',
       '',
       'Tip: check soil before watering — we never water on autopilot.',
     ].join('\n'),
     title: 'Verdant family invite',
   });
-}
-
-export function mergeFamilyBackup(input: {
-  existingPlants: Plant[];
-  existingLogs: CareLog[];
-  incomingPlants: Plant[];
-  incomingLogs: CareLog[];
-}): { plants: Plant[]; logs: CareLog[]; addedPlants: number; addedLogs: number } {
-  const plantIds = new Set(input.existingPlants.map((p) => p.id));
-  const logIds = new Set(input.existingLogs.map((l) => l.id));
-
-  const newPlants = input.incomingPlants.filter((p) => !plantIds.has(p.id));
-  const newLogs = input.incomingLogs.filter((l) => !logIds.has(l.id));
-
-  return {
-    plants: [...newPlants, ...input.existingPlants],
-    logs: [...newLogs, ...input.existingLogs],
-    addedPlants: newPlants.length,
-    addedLogs: newLogs.length,
-  };
 }

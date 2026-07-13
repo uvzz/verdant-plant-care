@@ -21,8 +21,9 @@ import {
   type D1Like,
   type KVLike,
 } from './sync';
+import { deriveSyncId, verifyIdentityToken, type AuthEnv } from './auth';
 
-export interface Env {
+export interface Env extends AuthEnv {
   OPENROUTER_API_KEY: string;
   PREMIUM_ACCESS_TOKEN: string;
   /** Optional overrides (string ints) */
@@ -367,6 +368,54 @@ export default {
         rateLimited: true,
         sync: Boolean(env.DB && env.PHOTOS_KV),
         models: [...ALLOWED_MODELS],
+      });
+    }
+
+    // ---------- Auth: exchange a provider identity token for a sync id ----------
+    if (url.pathname === '/v1/auth/login' && request.method === 'POST') {
+      if (!env.PREMIUM_ACCESS_TOKEN) {
+        return json({ error: 'Server misconfigured: missing PREMIUM_ACCESS_TOKEN' }, 500);
+      }
+      // Prefer a dedicated derive secret; fall back to the premium token so
+      // login works before it's provisioned. NOTE: with the fallback, rotating
+      // PREMIUM_ACCESS_TOKEN would change every derived sync id (users would
+      // see an empty collection until re-sync) — set SYNC_DERIVE_SECRET via
+      // `wrangler secret put SYNC_DERIVE_SECRET` to decouple them.
+      const deriveSecret = env.SYNC_DERIVE_SECRET || env.PREMIUM_ACCESS_TOKEN;
+      const token = extractBearer(request);
+      if (!token || !timingSafeEqual(token, env.PREMIUM_ACCESS_TOKEN)) {
+        return json({ error: 'Premium required.' }, 403);
+      }
+
+      // Brute-force guard: identity tokens are signed, but cap attempts per IP.
+      const ipFp = (await sha256Hex(clientIp(request))).slice(0, 16);
+      const rl = await consumeRate(`auth:m:${ipFp}`, 10, 60_000);
+      if (!rl.ok) {
+        const retry = Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000));
+        return json({ error: 'Too many attempts.', retryAfterSec: retry }, 429, {
+          'Retry-After': String(retry),
+        });
+      }
+
+      let body: { provider?: string; identityToken?: string };
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: 'Invalid JSON body' }, 400);
+      }
+      const verified = await verifyIdentityToken(
+        String(body.provider || ''),
+        String(body.identityToken || ''),
+        env
+      );
+      if (!verified.ok) {
+        return json({ error: `Sign-in failed: ${verified.error}` }, 401);
+      }
+      const syncId = await deriveSyncId(verified.identity, deriveSecret);
+      return json({
+        syncId,
+        provider: verified.identity.provider,
+        email: verified.identity.email ?? null,
       });
     }
 

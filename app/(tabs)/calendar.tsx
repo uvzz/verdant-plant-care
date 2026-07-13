@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { format } from 'date-fns';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -101,7 +102,8 @@ export default function CalendarScreen() {
         : `every ${item.effectiveIntervalDays}d`;
 
     return (
-      <View
+      <Animated.View
+        entering={FadeInDown.springify().damping(16)}
         key={`${item.plant.id}-${item.type}-${sectionKey}`}
         style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
       >
@@ -162,7 +164,7 @@ export default function CalendarScreen() {
             onPress={() => router.push(`/plant/${item.plant.id}`)}
           />
         </View>
-      </View>
+      </Animated.View>
     );
   };
 
@@ -181,14 +183,15 @@ export default function CalendarScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {toast ? (
-          <View
+          <Animated.View
+            entering={FadeIn.duration(180)}
             style={[styles.toast, { backgroundColor: c.heroSurface }]}
             accessibilityLiveRegion="polite"
           >
             <Text style={[Type.meta, { color: c.growth, fontFamily: Fonts.bodySemi }]}>
               {toast}
             </Text>
-          </View>
+          </Animated.View>
         ) : null}
 
         {plants.length === 0 ? (
