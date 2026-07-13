@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Verdant — Care you can see grow</title>
+<meta name="description" content="Verdant is a calm, photo-first plant care journal. Check the soil before you water — never blind schedules. Private by default, with optional cloud sync and Premium AI that never puts a key on your device." />
+<meta property="og:title" content="Verdant — Care you can see grow" />
+<meta property="og:description" content="A calm, photo-first plant journal. Check before you water. Private by default. Premium AI, safely." />
+<meta property="og:type" content="website" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #14201b;
+    --ink-soft: #5a6b64;
+    --night: #0f1612;
+    --night-2: #17241d;
+    --night-3: #1f2f27;
+    --paper: #eef2ef;
+    --mist: #d9e2dc;
+    --glass: #ffffff;
+    --lichen: #6f8f63;
+    --lime: #c6d45a;
+    --lime-ink: #2a3318;
+    --copper: #b56a4a;
+    --line: #c9d4cd;
+    --line-dark: rgba(255,255,255,0.1);
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'Outfit', -apple-system, sans-serif;
+    --wrap: 1120px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.55;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
+
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.02; letter-spacing: -0.01em; }
+  .eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--lichen);
+  }
+
+  /* ---------- Nav ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: saturate(140%) blur(12px);
+    background: rgba(238,242,239,0.72);
+    border-bottom: 1px solid rgba(20,32,27,0.06);
+  }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 66px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-weight: 600; font-size: 20px; letter-spacing: -0.01em; }
+  .brand .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--night); display: grid; place-items: center; }
+  .nav-links { display: flex; align-items: center; gap: 30px; font-size: 15px; font-weight: 500; }
+  .nav-links a.muted { color: var(--ink-soft); transition: color .2s; }
+  .nav-links a.muted:hover { color: var(--ink); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--sans); font-weight: 600; font-size: 15px;
+    padding: 11px 20px; border-radius: 12px; cursor: pointer; border: none;
+    transition: transform .15s ease, opacity .2s, box-shadow .2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-lime { background: var(--lime); color: var(--lime-ink); box-shadow: 0 6px 20px rgba(198,212,90,0.35); }
+  .btn-lime:hover { box-shadow: 0 10px 30px rgba(198,212,90,0.5); }
+  .btn-ghost-dark { background: transparent; color: #eef3ef; border: 1px solid rgba(255,255,255,0.2); }
+  .btn-dark { background: var(--night); color: #eef3ef; }
+  @media (max-width: 720px) { .nav-links a.muted { display: none; } }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative; overflow: hidden;
+    background: radial-gradient(120% 90% at 80% -10%, var(--night-3), var(--night) 55%);
+    color: #eef3ef;
+    padding: 96px 0 120px;
+  }
+  .orb { position: absolute; border-radius: 50%; filter: blur(6px); pointer-events: none; }
+  .orb-a { width: 340px; height: 340px; background: rgba(198,212,90,0.16); top: -80px; right: -60px; animation: float 14s ease-in-out infinite; }
+  .orb-b { width: 260px; height: 260px; background: rgba(111,143,99,0.22); bottom: -60px; left: -70px; animation: float 18s ease-in-out infinite reverse; }
+  @keyframes float { 0%,100%{ transform: translateY(0) translateX(0);} 50%{ transform: translateY(26px) translateX(-14px);} }
+
+  .hero .wrap { position: relative; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 40px; align-items: center; }
+  .hero h1 { font-size: clamp(44px, 6.4vw, 82px); color: #f3f7f2; }
+  .hero .sub { margin-top: 22px; font-size: 19px; color: #aebbb2; max-width: 460px; }
+  .hero .cta-row { margin-top: 34px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .hero .trust { margin-top: 22px; font-size: 13px; color: #8a998f; display: flex; gap: 18px; flex-wrap: wrap; }
+  .hero .trust span { display: inline-flex; align-items: center; gap: 7px; }
+
+  .reveal { opacity: 0; transform: translateY(22px); }
+  .hero .reveal { animation: rise .9s cubic-bezier(.2,.7,.2,1) forwards; }
+  .hero .d1 { animation-delay: .05s; } .hero .d2 { animation-delay: .16s; }
+  .hero .d3 { animation-delay: .27s; } .hero .d4 { animation-delay: .38s; } .hero .d5 { animation-delay: .5s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  /* Phone mock */
+  .phone-stage { display: flex; justify-content: center; }
+  .phone {
+    width: 290px; border-radius: 44px; padding: 12px;
+    background: linear-gradient(160deg, #26332b, #0c120f);
+    box-shadow: 0 40px 90px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+  .screen { border-radius: 34px; background: var(--paper); overflow: hidden; padding: 20px 16px 16px; color: var(--ink); }
+  .screen .app-eyebrow { font-size: 9px; letter-spacing: 0.16em; color: var(--lichen); font-weight: 700; text-transform: uppercase; }
+  .screen .app-title { font-family: var(--serif); font-size: 26px; font-weight: 600; margin-top: 2px; }
+  .screen .app-meta { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+  .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .pcard { background: var(--glass); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 18px rgba(20,32,27,0.06); }
+  .pcard .thumb { height: 92px; position: relative; }
+  .pcard .thumb .ring {
+    position: absolute; right: 8px; bottom: 8px; width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(15,22,18,0.4); display: grid; place-items: center;
+    border: 2px solid var(--lime); box-shadow: inset 0 0 0 2px rgba(255,255,255,0.25);
+  }
+  .pcard .body { padding: 8px 10px 11px; }
+  .pcard .body .n { font-family: var(--serif); font-size: 13px; font-weight: 600; }
+  .pcard .body .s { font-size: 10px; color: var(--ink-soft); }
+  .pcard .body .due { font-size: 10px; color: var(--lichen); font-weight: 600; margin-top: 5px; display: flex; align-items: center; gap: 4px; }
+
+  /* ---------- Section scaffolding ---------- */
+  section { padding: 96px 0; }
+  .section-head { max-width: 640px; margin-bottom: 52px; }
+  .section-head h2 { font-size: clamp(30px, 4vw, 46px); margin-top: 14px; }
+  .section-head p { margin-top: 16px; font-size: 18px; color: var(--ink-soft); }
+
+  .in { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); }
+  .in.on { opacity: 1; transform: none; }
+
+  /* Differentiator band */
+  .band { background: var(--night); color: #eef3ef; }
+  .band .quote { font-family: var(--serif); font-size: clamp(26px, 3.6vw, 40px); line-height: 1.18; max-width: 880px; }
+  .band .quote .hl { color: var(--lime); }
+  .band .quote-sub { margin-top: 20px; color: #9fb0a5; font-size: 17px; max-width: 620px; }
+
+  /* Feature grid */
+  .features { background: var(--paper); }
+  .feat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 900px){ .feat-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 620px){ .feat-grid { grid-template-columns: 1fr; } }
+  .feat {
+    background: var(--glass); border: 1px solid var(--line); border-radius: 20px; padding: 26px 24px;
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s;
+  }
+  .feat:hover { transform: translateY(-4px); box-shadow: 0 22px 40px rgba(20,32,27,0.1); border-color: var(--lichen); }
+  .feat .ic { width: 46px; height: 46px; border-radius: 13px; background: rgba(111,143,99,0.12); display: grid; place-items: center; margin-bottom: 18px; }
+  .feat h3 { font-size: 20px; }
+  .feat p { margin-top: 9px; color: var(--ink-soft); font-size: 15px; }
+
+  /* Comparison table */
+  .compare { background: linear-gradient(180deg, var(--mist), var(--paper)); }
+  .table-wrap { overflow-x: auto; border-radius: 20px; border: 1px solid var(--line); background: var(--glass); box-shadow: 0 24px 50px rgba(20,32,27,0.08); }
+  table { width: 100%; border-collapse: collapse; min-width: 720px; }
+  th, td { padding: 16px 18px; text-align: left; font-size: 15px; border-bottom: 1px solid var(--line); }
+  thead th { font-family: var(--sans); font-weight: 600; font-size: 13px; letter-spacing: 0.02em; color: var(--ink-soft); background: var(--paper); }
+  thead th.us { color: var(--lime-ink); background: var(--lime); border-top-right-radius: 0; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.rowlabel { font-weight: 600; }
+  td.center { text-align: center; }
+  .col-us { background: rgba(198,212,90,0.1); font-weight: 600; }
+  .yes { color: var(--lichen); font-weight: 700; }
+  .yes.us { color: var(--lime-ink); }
+  .no { color: #b9c2bb; }
+  .partial { color: var(--copper); font-weight: 600; }
+  .tick { display: inline-block; }
+
+  /* Privacy / AI split */
+  .trust-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 780px){ .trust-split { grid-template-columns: 1fr; } }
+  .trust-card { border-radius: 22px; padding: 34px 30px; }
+  .trust-card.dark { background: var(--night); color: #eef3ef; }
+  .trust-card.light { background: var(--glass); border: 1px solid var(--line); }
+  .trust-card h3 { font-size: 26px; }
+  .trust-card p { margin-top: 12px; font-size: 16px; }
+  .trust-card.dark p { color: #a6b6ac; }
+  .trust-card.light p { color: var(--ink-soft); }
+  .chips { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-size: 12.5px; font-weight: 600; padding: 7px 12px; border-radius: 999px; }
+  .trust-card.dark .chip { background: rgba(198,212,90,0.14); color: var(--lime); }
+  .trust-card.light .chip { background: rgba(111,143,99,0.12); color: var(--lichen); }
+
+  /* Pricing */
+  .pricing { background: var(--paper); }
+  .price-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 20px; max-width: 860px; margin: 0 auto; }
+  @media (max-width: 720px){ .price-grid { grid-template-columns: 1fr; } }
+  .plan { border-radius: 22px; padding: 32px 30px; border: 1px solid var(--line); background: var(--glass); }
+  .plan.pro { background: var(--night); color: #eef3ef; border-color: var(--night); position: relative; }
+  .plan .tag { font-size: 13px; font-weight: 600; letter-spacing: 0.03em; color: var(--ink-soft); }
+  .plan.pro .tag { color: var(--lime); }
+  .plan .amt { font-family: var(--serif); font-size: 46px; font-weight: 600; margin-top: 10px; }
+  .plan .amt small { font-family: var(--sans); font-size: 16px; font-weight: 500; color: var(--ink-soft); }
+  .plan.pro .amt small { color: #9fb0a5; }
+  .plan ul { list-style: none; margin-top: 22px; display: grid; gap: 11px; }
+  .plan li { font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
+  .plan li .t { color: var(--lichen); flex: none; margin-top: 2px; }
+  .plan.pro li .t { color: var(--lime); }
+  .plan .badge { position: absolute; top: 22px; right: 24px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lime-ink); background: var(--lime); padding: 5px 10px; border-radius: 999px; }
+  .plan .cta { margin-top: 26px; width: 100%; justify-content: center; }
+  .price-note { text-align: center; margin-top: 22px; font-size: 13.5px; color: var(--ink-soft); }
+
+  /* FAQ */
+  .faq { background: linear-gradient(180deg, var(--paper), var(--mist)); }
+  .faq-list { max-width: 760px; margin: 0 auto; }
+  details { border-bottom: 1px solid var(--line); padding: 6px 0; }
+  summary { list-style: none; cursor: pointer; padding: 18px 4px; font-family: var(--serif); font-size: 19px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  summary::-webkit-details-marker { display: none; }
+  summary .plus { transition: transform .25s; color: var(--lichen); font-family: var(--sans); font-weight: 400; }
+  details[open] summary .plus { transform: rotate(45deg); }
+  details p { padding: 0 4px 20px; color: var(--ink-soft); font-size: 16px; max-width: 660px; }
+
+  /* CTA + footer */
+  .final { background: radial-gradient(120% 100% at 20% -20%, var(--night-3), var(--night) 60%); color: #eef3ef; text-align: center; }
+  .final h2 { font-size: clamp(34px, 5vw, 58px); }
+  .final p { margin: 18px auto 0; color: #a6b6ac; font-size: 19px; max-width: 480px; }
+  .final .cta-row { margin-top: 34px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  footer { background: var(--night); color: #7f8f85; padding: 40px 0 60px; }
+  footer .wrap { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; font-size: 14px; }
+  footer .brand { color: #eef3ef; }
+  footer a.muted:hover { color: #eef3ef; }
+
+  .storebadge {
+    display: inline-flex; align-items: center; gap: 9px; padding: 11px 18px; border-radius: 12px;
+    background: #eef3ef; color: var(--night); font-weight: 600; font-size: 15px;
+  }
+  .storebadge small { display: block; font-size: 10px; font-weight: 500; opacity: .7; letter-spacing: .04em; text-transform: uppercase; }
+  .storebadge b { font-size: 15px; }
+</style>
+</head>
+<body>
+
+<!-- leaf mark reused -->
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="leaf" viewBox="0 0 40 40">
+    <g transform="rotate(-14 20 20)">
+      <path d="M20 6 C27.5 13.5 27.5 27 20 34 C12.5 27 12.5 13.5 20 6 Z" fill="var(--lime)"/>
+      <path d="M20 9 C19.8 17 19.8 25 20 32" stroke="var(--lime-ink)" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.55"/>
+      <path d="M20 15 C22 15.5 23.7 16.7 24.9 18.8 M20 15 C18 15.5 16.3 16.7 15.1 18.8 M20 21 C22.3 21.7 24 23 25.2 25.2 M20 21 C17.7 21.7 16 23 14.8 25.2" stroke="var(--lime-ink)" stroke-width="1" stroke-linecap="round" fill="none" opacity="0.45"/>
+    </g>
+  </symbol>
+</defs></svg>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="mark"><svg width="20" height="20"><use href="#leaf"/></svg></span>Verdant</a>
+    <div class="nav-links">
+      <a class="muted" href="#features">Features</a>
+      <a class="muted" href="#compare">Compare</a>
+      <a class="muted" href="#pricing">Pricing</a>
+      <a class="muted" href="#faq">FAQ</a>
+      <a class="btn btn-lime" href="#get">Get Verdant</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <span class="orb orb-a"></span><span class="orb orb-b"></span>
+  <div class="wrap">
+    <div>
+      <span class="eyebrow reveal d1" style="color:var(--lime)">A calmer way to keep plants alive</span>
+      <h1 class="reveal d2">Care you can<br>see grow.</h1>
+      <p class="sub reveal d3">A photo-first plant journal that asks you to <b style="color:#dfe8dd">check the soil before watering</b> — never blind schedules. Private by default. Premium AI that never puts a key on your phone.</p>
+      <div class="cta-row reveal d4">
+        <a class="storebadge" href="#get"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.1 1-.3 2-.9 2.8-.6.8-1.6 1.4-2.6 1.3-.1-1 .4-2 1-2.7.6-.8 1.7-1.3 2.5-1.4zM19 17.3c-.5 1.1-.7 1.6-1.3 2.6-.9 1.4-2.1 3.1-3.6 3.1-1.3 0-1.7-.9-3.5-.9s-2.2.9-3.5.9c-1.5 0-2.7-1.6-3.6-3C1 19.6 0.7 16 2.3 13.7c1-1.6 2.5-2.5 4-2.5 1.4 0 2.3.9 3.5.9 1.1 0 1.8-.9 3.5-.9 1.3 0 2.7.7 3.7 1.9-3.2 1.8-2.7 6.3.5 8.2z"/></svg><span><small>Coming soon on</small><b>App Store</b></span></a>
+        <a class="storebadge" href="#get"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3c-.2.3-.3.7-.3 1.2v17c0 .5.1.9.3 1.2l9.1-9.7L3.6 2.3zM14 11.1l2.7-2.9-9.5-5.4c-.4-.2-.8-.3-1.1-.2L14 11.1zm0 1.8L6.1 21.4c.3.1.7 0 1.1-.2l9.5-5.4L14 12.9zm3.9-2.2-2.4 2.4 2.4 2.4 2.9-1.6c.8-.5.8-1.6 0-2z"/></svg><span><small>Coming soon on</small><b>Google Play</b></span></a>
+      </div>
+      <div class="trust reveal d5">
+        <span><svg width="15" height="15"><use href="#leaf"/></svg>Works fully offline</span>
+        <span>🔒 Private by default</span>
+        <span>✦ No ads, no tracking</span>
+      </div>
+    </div>
+
+    <div class="phone-stage reveal d3">
+      <div class="phone"><div class="screen">
+        <div class="app-eyebrow">Verdant</div>
+        <div class="app-title">My Plants</div>
+        <div class="app-meta">2 plants · Premium</div>
+        <div class="card-grid">
+          <div class="pcard">
+            <div class="thumb" style="background:linear-gradient(150deg,#c0447f,#7a2f52)"><div class="ring"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7S6 9.4 6 14a6 6 0 0 0 12 0c0-4.6-6-11.3-6-11.3z"/></svg></div></div>
+            <div class="body"><div class="n">Living Stone</div><div class="s">Delosperma cooperi</div><div class="due"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 2.7S6 9.4 6 14a6 6 0 0 0 12 0c0-4.6-6-11.3-6-11.3z"/></svg>In 9 days</div></div>
+          </div>
+          <div class="pcard">
+            <div class="thumb" style="background:linear-gradient(150deg,#5f8a3a,#2f4a22)"><div class="ring" style="border-color:#e8927c"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7S6 9.4 6 14a6 6 0 0 0 12 0c0-4.6-6-11.3-6-11.3z"/></svg></div></div>
+            <div class="body"><div class="n">Citrus</div><div class="s">Citrus spp.</div><div class="due" style="color:var(--copper)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 2.7S6 9.4 6 14a6 6 0 0 0 12 0c0-4.6-6-11.3-6-11.3z"/></svg>Due tomorrow</div></div>
+          </div>
+        </div>
+        <div style="margin-top:14px;border:1px dashed var(--line);border-radius:16px;padding:16px;text-align:center;color:var(--ink-soft);font-size:12px">＋ Add a plant</div>
+      </div></div>
+    </div>
+  </div>
+</header>
+
+<!-- Differentiator band -->
+<section class="band">
+  <div class="wrap in">
+    <span class="eyebrow" style="color:var(--lime)">The Verdant difference</span>
+    <p class="quote" style="margin-top:20px">Most apps tell you to water on a fixed schedule. Verdant asks you to <span class="hl">stick a finger in the soil first</span> — then adapts every interval to your pot size and light.</p>
+    <p class="quote-sub">Overwatering kills more houseplants than anything else. “Still moist?” snoozes the reminder without breaking your streak — the single feature that keeps plants alive.</p>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="wrap">
+    <div class="section-head in">
+      <span class="eyebrow">Everything, calmly</span>
+      <h2>A journal, a coach, and a quiet reminder.</h2>
+      <p>Photo-first by design. Every plant is a specimen card you watch change over the seasons.</p>
+    </div>
+    <div class="feat-grid">
+      <div class="feat in">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--lichen)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M8.5 15l2 2 4.5-4.5"/></svg></div>
+        <h3>Check-before-water calendar</h3>
+        <p>Gentle nudges, not orders. Tap “Still moist” to snooze without guilt. Light- and pot-aware intervals do the rest.</p>
+      </div>
+      <div class="feat in">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--lichen)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 3.8L17.5 8l-3.9 1.2L12 13l-1.6-3.8L6.5 8l3.9-1.2z"/><path d="M18 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></div>
+        <h3>AI plant identify & coach</h3>
+        <p>Snap a photo — get the species, care intervals, light and pet-safety, plus a calm coach that reads your log history.</p>
+      </div>
+      <div class="feat in">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--lichen)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M12 8c-4 0-6-2-6-5 3 0 6 2 6 5zM12 11c4 0 6-2 6-5-3 0-6 2-6 5z"/></svg></div>
+        <h3>Light &amp; pot-aware schedules</h3>
+        <p>A cactus in a big terracotta pot and a fern on a north sill get different rhythms — automatically, from the details you set.</p>
+      </div>
+      <div class="feat in">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--lichen)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+        <h3>Private by default</h3>
+        <p>Your plants and photos live on your device. No account required to start. Nothing is sold, tracked, or advertised.</p>
+      </div>
+      <div class="feat in">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--lichen)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4M4 20h16M8 16l3-4 3 3 5-7"/></svg></div>
+        <h3>Progress &amp; insights</h3>
+        <p>Water rings on every photo, care streaks, and a 14-day activity curve. Watch a plant — and your habit — grow.</p>
+      </div>
+      <div class="feat in">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--lichen)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3 2.7-5 6-5s6 2 6 5M15 20c0-1.8.8-3.2 2-4"/></svg></div>
+        <h3>Family sharing &amp; sync</h3>
+        <p>Sign in once with Apple or Google to back up and sync across devices — or share a household so everyone waters on time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Comparison -->
+<section class="compare" id="compare">
+  <div class="wrap">
+    <div class="section-head in">
+      <span class="eyebrow">How it stacks up</span>
+      <h2>Verdant vs. the usual suspects.</h2>
+      <p>The big plant apps push blind schedules, ads, or a subscription just to log a plant. Here’s the honest comparison.</p>
+    </div>
+    <div class="table-wrap in">
+      <table>
+        <thead>
+          <tr><th>Feature</th><th class="us">Verdant</th><th>Planta</th><th>Greg</th><th>PictureThis</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="rowlabel">Check-before-water (anti-overwatering)</td><td class="center col-us"><span class="yes us">✓</span></td><td class="center"><span class="no">—</span></td><td class="center"><span class="partial">Partial</span></td><td class="center"><span class="no">—</span></td></tr>
+          <tr><td class="rowlabel">Light &amp; pot-size aware intervals</td><td class="center col-us"><span class="yes us">✓</span></td><td class="center"><span class="yes">✓</span></td><td class="center"><span class="yes">✓</span></td><td class="center"><span class="no">—</span></td></tr>
+          <tr><td class="rowlabel">Local-first, works fully offline</td><td class="center col-us"><span class="yes us">✓</span></td><td class="center"><span class="no">—</span></td><td class="center"><span class="no">—</span></td><td class="center"><span class="no">—</span></td></tr>
+          <tr><td class="rowlabel">No AI key or personal data on device</td><td class="center col-us"><span class="yes us">✓</span></td><td class="center"><span class="no">—</span></td><td class="center"><span class="no">—</span></td><td class="center"><span class="no">—</span></td></tr>
+          <tr><td class="rowlabel">AI photo identify &amp; care coach</td><td class="center col-us"><span class="yes us">✓</span></td><td class="center"><span class="partial">Add-on</span></td><td class="center"><span class="no">—</span></td><td class="center"><span class="yes">✓</span></td></tr>
+          <tr><td class="rowlabel">Optional cloud sync (Apple / Google)</td><td class="center col-us"><span class="yes us">✓</span></td><td class="center"><span class="yes">✓</span></td><td class="center"><span class="yes">✓</span></td><td class="center"><span class="yes">✓</span></td></tr>
+          <tr><td class="rowlabel">Free to log a real collection</td><td class="center col-us"><span class="yes us">Up to 5</span></td><td class="center"><span class="partial">Trial</span></td><td class="center"><span class="yes">✓</span></td><td class="center"><span class="partial">Trial</span></td></tr>
+          <tr><td class="rowlabel">No ads, ever</td><td class="center col-us"><span class="yes us">✓</span></td><td class="center"><span class="yes">✓</span></td><td class="center"><span class="yes">✓</span></td><td class="center"><span class="no">—</span></td></tr>
+          <tr><td class="rowlabel">Premium price</td><td class="center col-us">$29.99/yr</td><td class="center">~$36/yr</td><td class="center">~$36/yr</td><td class="center">~$30/yr</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="text-align:center;margin-top:16px;font-size:12.5px;color:var(--ink-soft)">Competitor details are approximate and based on publicly listed features as of 2026; they change often. Verify current pricing on each store.</p>
+  </div>
+</section>
+
+<!-- Trust split -->
+<section>
+  <div class="wrap">
+    <div class="section-head in">
+      <span class="eyebrow">Built on trust</span>
+      <h2>Powerful AI, uncompromising privacy.</h2>
+    </div>
+    <div class="trust-split">
+      <div class="trust-card dark in">
+        <h3>Private by default</h3>
+        <p>Your journal is local-first. Photos never leave your phone unless you turn on sync — and even then they’re yours, backed up under your own Apple or Google account.</p>
+        <div class="chips"><span class="chip">No ads</span><span class="chip">No tracking</span><span class="chip">No data sold</span><span class="chip">Offline-first</span></div>
+      </div>
+      <div class="trust-card light in">
+        <h3>AI that keeps the keys</h3>
+        <p>Plant identify and coaching run on Verdant’s own servers — the AI key is never shipped in the app, never on your device, and never in your hands to leak. You get the magic without the liability.</p>
+        <div class="chips"><span class="chip">Server-side AI</span><span class="chip">Educational</span><span class="chip">Pet-safety aware</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="section-head in" style="margin-left:auto;margin-right:auto;text-align:center">
+      <span class="eyebrow">Simple, honest pricing</span>
+      <h2>Start free. Upgrade when you fall in love.</h2>
+      <p style="margin-left:auto;margin-right:auto">No trial traps. The free plan is a real plan.</p>
+    </div>
+    <div class="price-grid">
+      <div class="plan in">
+        <div class="tag">Free</div>
+        <div class="amt">$0</div>
+        <ul>
+          <li><span class="t">✓</span> Up to 5 plants</li>
+          <li><span class="t">✓</span> Check-before-water calendar</li>
+          <li><span class="t">✓</span> Progress photos &amp; insights</li>
+          <li><span class="t">✓</span> Family household &amp; care sheets</li>
+          <li><span class="t">✓</span> Works fully offline</li>
+        </ul>
+        <a class="btn btn-dark cta" href="#get">Get Verdant free</a>
+      </div>
+      <div class="plan pro in">
+        <div class="badge">Best value</div>
+        <div class="tag">Premium</div>
+        <div class="amt">$29.99 <small>/ year</small></div>
+        <ul>
+          <li><span class="t">✓</span> <b>Unlimited</b> plants</li>
+          <li><span class="t">✓</span> AI plant identify &amp; care coach</li>
+          <li><span class="t">✓</span> Cloud backup &amp; multi-device sync (incl. photos)</li>
+          <li><span class="t">✓</span> Collection insights &amp; AI coaching</li>
+          <li><span class="t">✓</span> Everything in Free</li>
+        </ul>
+        <a class="btn btn-lime cta" href="#get">Go Premium</a>
+      </div>
+    </div>
+    <p class="price-note">Or unlock Premium forever for a one-time <b>$59.99</b>. Prices set through the App Store &amp; Google Play.</p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="wrap">
+    <div class="section-head in" style="margin-left:auto;margin-right:auto;text-align:center">
+      <span class="eyebrow">Good questions</span>
+      <h2>Frequently asked.</h2>
+    </div>
+    <div class="faq-list in">
+      <details open><summary>Do I need an account to use Verdant?<span class="plus">＋</span></summary><p>No. Verdant is local-first — add plants, log care, and take progress photos entirely offline with no account. Signing in with Apple or Google is optional and only turns on cloud backup and cross-device sync.</p></details>
+      <details><summary>What makes “check-before-water” different?<span class="plus">＋</span></summary><p>Most apps water on a fixed timer, which is the #1 cause of houseplant death. Verdant nudges you to feel the soil first; if it’s still damp, one tap snoozes the reminder. Intervals also adapt to each plant’s pot size and light.</p></details>
+      <details><summary>Where does the AI run — is my data safe?<span class="plus">＋</span></summary><p>AI identify and coaching run on Verdant’s own servers. The API key is never bundled in the app or placed on your device, so there’s nothing to leak. Photos stay on your phone unless you explicitly enable sync.</p></details>
+      <details><summary>Is there a free plan or just a trial?<span class="plus">＋</span></summary><p>A genuine free plan: up to 5 plants with the full check-before-water calendar, progress photos, insights, and family sharing — no time limit. Premium adds unlimited plants, AI, and cloud sync.</p></details>
+      <details><summary>Which platforms are supported?<span class="plus">＋</span></summary><p>Verdant is built for iOS and Android. Sign in with Apple on iPhone or Google on any device to sync your collection across them.</p></details>
+      <details><summary>How does cloud sync work across devices?<span class="plus">＋</span></summary><p>Sign in once and your plants, care history, and photos back up automatically and appear on every device signed into the same account. It’s optional, encrypted in transit, and off until you turn it on.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="final" id="get">
+  <span class="orb orb-a" style="opacity:.5"></span>
+  <div class="wrap in">
+    <span class="eyebrow" style="color:var(--lime)">Your glasshouse, in your pocket</span>
+    <h2 style="margin-top:16px">Care you can see grow.</h2>
+    <p>Start your collection today — free, private, and calm.</p>
+    <div class="cta-row">
+      <a class="storebadge" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.1 1-.3 2-.9 2.8-.6.8-1.6 1.4-2.6 1.3-.1-1 .4-2 1-2.7.6-.8 1.7-1.3 2.5-1.4zM19 17.3c-.5 1.1-.7 1.6-1.3 2.6-.9 1.4-2.1 3.1-3.6 3.1-1.3 0-1.7-.9-3.5-.9s-2.2.9-3.5.9c-1.5 0-2.7-1.6-3.6-3C1 19.6.7 16 2.3 13.7c1-1.6 2.5-2.5 4-2.5 1.4 0 2.3.9 3.5.9 1.1 0 1.8-.9 3.5-.9 1.3 0 2.7.7 3.7 1.9-3.2 1.8-2.7 6.3.5 8.2z"/></svg><span><small>Coming soon on</small><b>App Store</b></span></a>
+      <a class="storebadge" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3c-.2.3-.3.7-.3 1.2v17c0 .5.1.9.3 1.2l9.1-9.7L3.6 2.3zM14 11.1l2.7-2.9-9.5-5.4c-.4-.2-.8-.3-1.1-.2L14 11.1zm0 1.8L6.1 21.4c.3.1.7 0 1.1-.2l9.5-5.4L14 12.9zm3.9-2.2-2.4 2.4 2.4 2.4 2.9-1.6c.8-.5.8-1.6 0-2z"/></svg><span><small>Coming soon on</small><b>Google Play</b></span></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="brand" style="font-size:18px"><span class="mark" style="width:26px;height:26px"><svg width="17" height="17"><use href="#leaf"/></svg></span>Verdant</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <a class="muted" href="#features">Features</a>
+      <a class="muted" href="#compare">Compare</a>
+      <a class="muted" href="#pricing">Pricing</a>
+      <a class="muted" href="https://github.com/uvzz/verdant-plant-care">GitHub</a>
+    </div>
+    <div>© 2026 Verdant · A calm plant journal</div>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.in').forEach(el => io.observe(el));
+</script>
+</body>
+</html>
