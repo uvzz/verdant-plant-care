@@ -45,3 +45,4 @@ yarn-error.*
 .env.*
 !.env.example
 workers/verdant-ai/.dev.vars
+.worktrees/
