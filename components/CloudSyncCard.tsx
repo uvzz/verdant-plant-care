@@ -31,7 +31,7 @@ WebBrowser.maybeCompleteAuthSession();
 export function CloudSyncCard() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
-  const { settings, syncNow, setSyncEnabled, syncing, syncStatus, lastSyncError } = usePlants();
+  const { settings, syncNow, setSyncEnabled, refresh, syncing, syncStatus, lastSyncError } = usePlants();
   const isPremium = settings.isPremium;
 
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -64,12 +64,15 @@ export function CloudSyncCard() {
       setBusy(false);
       if (result.ok) {
         setSession(result.session);
+        // Load the (now wiped-or-new) storage into memory before enabling sync
+        // so no later mutation writes the prior account's data back.
+        await refresh();
         await setSyncEnabled(true);
       } else {
         Alert.alert('Google sign-in failed', result.reason);
       }
     })();
-  }, [googleResponse, setSyncEnabled]);
+  }, [googleResponse, setSyncEnabled, refresh]);
 
   const onApple = async () => {
     setBusy(true);
@@ -77,6 +80,9 @@ export function CloudSyncCard() {
     setBusy(false);
     if (result.ok) {
       setSession(result.session);
+      // Load the (now wiped-or-new) storage into memory before enabling sync
+      // so no later mutation writes the prior account's data back.
+      await refresh();
       await setSyncEnabled(true);
       Alert.alert('Signed in', 'Your plants now back up and sync automatically.');
     } else if (!result.cancelled) {
@@ -136,7 +142,11 @@ export function CloudSyncCard() {
             loading={syncing}
             onPress={async () => {
               const r = await syncNow();
-              if (!r.ok) Alert.alert('Sync failed', r.reason);
+              // A collision with an already-running sync is benign — don't
+              // flag it as a failure to the user.
+              if (!r.ok && r.reason !== 'A sync is already in progress.') {
+                Alert.alert('Sync failed', r.reason);
+              }
             }}
             style={{ marginTop: 10 }}
           />
@@ -249,6 +259,10 @@ export function CloudSyncCard() {
                       return;
                     }
                     setLinkCode('');
+                    // Load the (now wiped-or-new) storage into memory before
+                    // enabling sync so no later mutation writes the prior
+                    // account's data back.
+                    await refresh();
                     await setSyncEnabled(true);
                     const s = await syncNow();
                     Alert.alert(

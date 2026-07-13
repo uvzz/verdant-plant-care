@@ -21,3 +21,14 @@ export function shouldResetLocalData(
   if (!prev) return false;
   return prev !== next;
 }
+
+/** Reset local data only when switching away from a real (adopted) account
+ *  to a different account. A device-generated id that was never adopted is
+ *  the user's own offline collection — keep it so first sign-in uploads it. */
+export function shouldResetOnAdopt(
+  prevId: string | null | undefined,
+  newId: string,
+  prevWasAdopted: boolean
+): boolean {
+  return prevWasAdopted && shouldResetLocalData(prevId, newId);
+}

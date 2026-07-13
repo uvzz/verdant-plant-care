@@ -375,6 +375,12 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     if (!settingsRef.current.isPremium) {
       return { ok: false, reason: 'Cloud sync is a Premium feature.' };
     }
+    // Re-entry guard: a manual "Sync now" racing an in-flight sync (auto or
+    // manual) must not be recorded as a failure. Bail before touching status /
+    // backoff so the collision never reaches runCloudSync's in-flight sentinel.
+    if (syncingRef.current) {
+      return { ok: false, reason: 'A sync is already in progress.' };
+    }
     setSyncing(true);
     setSyncStatus('syncing');
     try {
