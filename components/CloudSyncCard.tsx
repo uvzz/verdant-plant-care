@@ -18,7 +18,7 @@ import {
   signOut,
   type AuthSession,
 } from '@/lib/auth';
-import { adoptSyncId, getOrCreateSyncId } from '@/lib/sync';
+import { adoptSyncId, deleteCloudData, getOrCreateSyncId } from '@/lib/sync';
 import { syncStatusLabel } from '@/lib/syncSchedule';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -40,6 +40,7 @@ export function CloudSyncCard() {
   const [advanced, setAdvanced] = useState(false);
   const [syncCode, setSyncCode] = useState<string | null>(null);
   const [linkCode, setLinkCode] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const gConfig = googleAuthConfig();
   const [, googleResponse, promptGoogle] = Google.useIdTokenAuthRequest({
@@ -92,6 +93,38 @@ export function CloudSyncCard() {
     } else if (!result.cancelled) {
       Alert.alert('Apple sign-in failed', result.reason);
     }
+  };
+
+  // Apple 5.1.1(v): sign-in requires an in-app way to delete the account's data.
+  const onDeleteCloud = () => {
+    Alert.alert(
+      'Delete synced data?',
+      'This permanently removes your plants, care history, and photos from the cloud, and signs you out. Your plants stay on this device — delete the app to remove them too. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            const r = await deleteCloudData();
+            if (r.ok) {
+              await signOut();
+              await setSyncEnabled(false);
+              setSession(null);
+              setSyncCode(null);
+            }
+            setDeleting(false);
+            Alert.alert(
+              r.ok ? 'Synced data deleted' : 'Delete failed',
+              r.ok
+                ? 'Your cloud collection is gone and sync is off. Your plants are still on this device.'
+                : r.reason
+            );
+          },
+        },
+      ]
+    );
   };
 
   const onSignOut = () => {
@@ -159,6 +192,14 @@ export function CloudSyncCard() {
             variant="ghost"
             onPress={onSignOut}
             style={{ marginTop: 6 }}
+          />
+          <PrimaryButton
+            label={deleting ? 'Deleting…' : 'Delete synced data'}
+            variant="ghost"
+            loading={deleting}
+            onPress={onDeleteCloud}
+            accessibilityHint="Permanently removes your collection from the cloud"
+            style={{ marginTop: 2 }}
           />
         </>
       ) : (

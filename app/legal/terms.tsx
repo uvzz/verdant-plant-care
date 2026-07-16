@@ -29,7 +29,7 @@ const SECTIONS: { title: string; body: string }[] = [
   },
   {
     title: 'Your content',
-    body: 'You retain rights to photos and notes you add. You grant us a limited license to process content only as needed to provide AI features you request. Local journal data remains under your control on device and in exports you create.',
+    body: 'You retain rights to photos and notes you add. You grant us a limited license to process content only as needed to provide the features you request — AI assists, and cloud backup/sync if you enable it. Your journal remains under your control: it stays on your device, and syncs only to your own account when you turn sync on.',
   },
   {
     title: 'Disclaimer of warranties',

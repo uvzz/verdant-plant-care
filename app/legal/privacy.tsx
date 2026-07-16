@@ -13,7 +13,11 @@ const SECTIONS: { title: string; body: string }[] = [
   },
   {
     title: 'Data stored on your device',
-    body: 'Plant profiles, photos, care logs, settings, family household members, and Premium status are stored locally (AsyncStorage / app documents). Photos you add are copied into the app’s document storage on device. We do not operate a Verdant account system that uploads your collection by default.',
+    body: 'Plant profiles, photos, care logs, settings, family household members, and Premium status are stored locally (AsyncStorage / app documents). Photos you add are copied into the app’s document storage on device. No account is required to use Verdant, and if you never sign in, this data never leaves your phone.',
+  },
+  {
+    title: 'Cloud sync (optional, off by default)',
+    body: 'If you turn on sync and sign in with Apple or Google, Verdant backs up and syncs your plants, care history, and photos so they appear on your other devices. Your provider returns a signed identity token; our server verifies it and derives a per-account sync identifier from it. We keep only your provider, email (if shared), and that sync id — never the raw token. Your collection is stored on Verdant’s infrastructure (Cloudflare) under that sync id and transferred encrypted in transit (HTTPS). Signing out pauses sync on that device; your local data stays.',
   },
   {
     title: 'Premium AI (optional)',
@@ -28,8 +32,8 @@ const SECTIONS: { title: string; body: string }[] = [
     body: 'Verdant does not include third-party advertising SDKs or sell your plant photos for ads. We may use standard platform crash / performance tools in future store builds; those will be disclosed here when enabled.',
   },
   {
-    title: 'Backups you export',
-    body: 'Export creates a JSON file you control. If you share or import a backup, you choose who receives it. Imported backups are stored locally like other journal data.',
+    title: 'Your choices',
+    body: 'Use Verdant fully offline with no account. Turn cloud sync on or off at any time in Settings. Sign out to stop syncing while keeping your local journal. Deleting a plant or the app removes local data; contact us to remove synced data.',
   },
   {
     title: 'Children',
@@ -37,7 +41,7 @@ const SECTIONS: { title: string; body: string }[] = [
   },
   {
     title: 'Contact',
-    body: 'Questions: open an issue at github.com/uvzz/verdant-plant-care or email the developer address listed on the App Store / Play listing when published.',
+    body: 'Questions about privacy? Email the developer address listed on the App Store / Google Play listing. The full policy is also published at verdant-bk5.pages.dev/privacy.',
   },
   {
     title: 'Changes',
@@ -57,7 +61,7 @@ export default function PrivacyScreen() {
         style={{ flex: 1, backgroundColor: c.background }}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
       >
-        <Text style={[Type.meta, { color: c.textMuted }]}>Last updated: 2026-07-11</Text>
+        <Text style={[Type.meta, { color: c.textMuted }]}>Last updated: 2026-07-13</Text>
         {SECTIONS.map((s) => (
           <View key={s.title} style={styles.block}>
             <Text style={[Type.title, { color: c.text }]}>{s.title}</Text>

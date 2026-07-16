@@ -175,6 +175,31 @@ export async function putPhoto(
 }
 
 /**
+ * Delete everything stored for a sync id — the collection row and every photo.
+ * Backs the in-app "Delete synced data" action (Apple guideline 5.1.1(v)
+ * requires account/data deletion to be reachable in-app).
+ */
+export async function deleteCollection(db: D1Like, syncId: string): Promise<void> {
+  await db.prepare('DELETE FROM collections WHERE sync_id = ?').bind(syncId).run();
+}
+
+/**
+ * Note on KV consistency: the delete takes effect immediately for reads (a GET
+ * of a deleted photo 404s at once), but `list` is eventually consistent and can
+ * keep reporting deleted names for up to ~60s. Verified live: GET 404'd
+ * instantly while the manifest cleared after ~32s. That lag is benign here —
+ * the account is signed out on delete, and a later re-sync re-uploads anything
+ * the (self-healed) manifest says is missing. Don't "fix" it by polling.
+ */
+export async function deleteAllPhotos(kv: KVLike, syncId: string): Promise<number> {
+  const names = await listPhotos(kv, syncId);
+  for (const name of names) {
+    await kv.delete(photoKey(syncId, name));
+  }
+  return names.length;
+}
+
+/**
  * List the photo names KV holds for a sync id. This is the authority the
  * client reconciles against — the device's local "already uploaded" cache
  * can silently desync (KV wiped, a prior run marked a name uploaded before

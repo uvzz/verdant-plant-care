@@ -71,6 +71,37 @@ export async function wasSyncIdAdopted(): Promise<boolean> {
   return (await AsyncStorage.getItem(ADOPTED_KEY)) === '1';
 }
 
+/**
+ * Delete this account's cloud collection and photos, and forget the local
+ * upload cache. Local plants stay on the device (the user removes those by
+ * deleting the app). Backs the in-app "Delete synced data" action, which
+ * Apple guideline 5.1.1(v) requires for apps with sign-in.
+ */
+export async function deleteCloudData(): Promise<
+  { ok: true; deletedPhotos: number } | { ok: false; reason: string }
+> {
+  const token = getPremiumAccessToken();
+  if (!token) return { ok: false, reason: 'Sync is not configured for this build.' };
+  const syncId = await getSyncId();
+  if (!syncId) return { ok: false, reason: 'Nothing is synced from this device.' };
+
+  try {
+    const res = await fetch(`${getAiProxyUrl()}/v1/sync`, {
+      method: 'DELETE',
+      headers: syncHeaders(token, syncId),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      return { ok: false, reason: `Delete failed (${res.status}): ${body.slice(0, 120)}` };
+    }
+    const data = (await res.json().catch(() => ({}))) as { deletedPhotos?: number };
+    await AsyncStorage.removeItem(UPLOADED_KEY);
+    return { ok: true, deletedPhotos: data.deletedPhotos ?? 0 };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : 'Delete failed.' };
+  }
+}
+
 /** Adopt another device's sync code (links this device to that collection). */
 export async function adoptSyncId(
   raw: string
