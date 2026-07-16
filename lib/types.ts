@@ -196,6 +196,18 @@ const VALID_CARE_TYPES: CareLogType[] = [
   'check',
 ];
 
+/** True when string parses as a real date (ISO or YYYY-MM-DD). */
+function isPlausibleIsoDate(value: string): boolean {
+  if (!value || typeof value !== 'string') return false;
+  const t = Date.parse(value);
+  if (!Number.isNaN(t)) return true;
+  // date-only YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return !Number.isNaN(Date.parse(`${value}T12:00:00`));
+  }
+  return false;
+}
+
 /** Normalize older plant records missing new fields */
 export function normalizePlant(
   raw: Partial<Plant> & { id?: string; name?: string }
@@ -212,12 +224,20 @@ export function normalizePlant(
   const category = PLANT_CATEGORIES.includes(raw.category as PlantCategory)
     ? (raw.category as PlantCategory)
     : 'Other';
+  const createdAt =
+    typeof raw.createdAt === 'string' && isPlausibleIsoDate(raw.createdAt)
+      ? raw.createdAt
+      : now;
+  const updatedAt =
+    typeof raw.updatedAt === 'string' && isPlausibleIsoDate(raw.updatedAt)
+      ? raw.updatedAt
+      : now;
   return {
     id,
     name: (raw.name || 'Plant').toString().slice(0, 120),
     species: (raw.species ?? '').toString().slice(0, 160),
     category,
-    photoUri: raw.photoUri ?? null,
+    photoUri: typeof raw.photoUri === 'string' ? raw.photoUri : null,
     acquiredDate: acquired,
     location: (raw.location ?? '').toString().slice(0, 120),
     waterIntervalDays: Math.min(365, Math.max(1, Number(raw.waterIntervalDays) || 7)),
@@ -226,8 +246,8 @@ export function normalizePlant(
       Math.max(1, Number(raw.fertilizeIntervalDays) || 30)
     ),
     notes: (raw.notes ?? '').toString().slice(0, 4000),
-    createdAt: raw.createdAt ?? now,
-    updatedAt: raw.updatedAt ?? now,
+    createdAt,
+    updatedAt,
     lightLevel: raw.lightLevel ?? 'medium',
     potSize: raw.potSize ?? 'medium',
     petToxicity: raw.petToxicity ?? 'unknown',
@@ -256,15 +276,16 @@ export function normalizeCareLog(
     typeof raw.id === 'string' && raw.id.trim()
       ? raw.id.trim()
       : `log-${Math.random().toString(36).slice(2, 10)}`;
+  const createdAt =
+    typeof raw.createdAt === 'string' && isPlausibleIsoDate(raw.createdAt)
+      ? raw.createdAt
+      : now;
   return {
     id,
     plantId,
     type,
     note: (raw.note ?? '').toString().slice(0, 2000),
-    photoUri: raw.photoUri ?? null,
-    createdAt:
-      typeof raw.createdAt === 'string' && raw.createdAt
-        ? raw.createdAt
-        : now,
+    photoUri: typeof raw.photoUri === 'string' ? raw.photoUri : null,
+    createdAt,
   };
 }

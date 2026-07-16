@@ -33,6 +33,7 @@ import {
   parseSyncDoc,
   type SyncDoc,
 } from './syncMerge';
+import { normalizeCareLog, normalizePlant, type CareLog, type Plant } from './types';
 
 const SYNC_ID_KEY = 'verdant.sync.id';
 const UPLOADED_KEY = '@verdant/sync_uploaded_photos';
@@ -136,9 +137,11 @@ function photoName(uri: string | null | undefined): string | null {
 }
 
 function mimeFor(name: string): string {
-  const n = name.toLowerCase();
+  const n = name.toLowerCase().split(/[?#]/)[0] ?? '';
   if (n.endsWith('.png')) return 'image/png';
   if (n.endsWith('.webp')) return 'image/webp';
+  if (n.endsWith('.gif')) return 'image/gif';
+  if (n.endsWith('.heic') || n.endsWith('.heif')) return 'image/heic';
   return 'image/jpeg';
 }
 
@@ -159,16 +162,31 @@ async function buildLocalDoc(): Promise<SyncDoc> {
   };
 }
 
+/** Sanitize remote/merged records before persisting (corrupt cloud payloads). */
+function sanitizeDoc(doc: SyncDoc): SyncDoc {
+  const plants = doc.plants
+    .map((p) =>
+      normalizePlant((p ?? {}) as Partial<Plant> & Pick<Plant, 'id' | 'name'>)
+    )
+    .filter((p) => !!p.id);
+  const plantIds = new Set(plants.map((p) => p.id));
+  const logs = doc.logs
+    .map((l) => normalizeCareLog((l ?? {}) as Partial<CareLog>))
+    .filter((l): l is CareLog => l != null && plantIds.has(l.plantId));
+  return { ...doc, plants, logs };
+}
+
 async function applyDocLocally(doc: SyncDoc): Promise<void> {
+  const clean = sanitizeDoc(doc);
   const settings = await loadSettings();
   await Promise.all([
-    savePlants(doc.plants),
-    saveCareLogs(doc.logs),
-    saveTombstones(doc.tombstones),
+    savePlants(clean.plants),
+    saveCareLogs(clean.logs),
+    saveTombstones(clean.tombstones),
     saveSettings({
       ...settings,
-      familyMembers: doc.familyMembers,
-      householdName: doc.householdName || settings.householdName || '',
+      familyMembers: clean.familyMembers,
+      householdName: clean.householdName || settings.householdName || '',
       lastSyncAt: new Date().toISOString(),
     }),
   ]);

@@ -6,9 +6,12 @@ import {
   getCareDueItems,
   listRooms,
   nextDueDate,
+  safeFormatDate,
+  safeParseDate,
 } from '../care';
 import type { CareLog, Plant } from '../types';
-import { normalizePlant } from '../types';
+import { normalizeCareLog, normalizePlant } from '../types';
+import { mimeFromPhotoUri } from '../photoMime';
 
 function plant(partial: Partial<Plant> & { id: string; name: string }): Plant {
   return normalizePlant({
@@ -171,6 +174,73 @@ describe('formatRelativeCare', () => {
     expect(formatRelativeCare(0)).toBe('Due today');
     expect(formatRelativeCare(1)).toBe('Due tomorrow');
     expect(formatRelativeCare(5)).toBe('In 5 days');
+  });
+});
+
+describe('safeFormatDate / safeParseDate', () => {
+  it('formats valid ISO without throwing', () => {
+    expect(safeFormatDate('2026-06-15T14:30:00.000Z', 'yyyy-MM-dd')).toBe(
+      '2026-06-15'
+    );
+  });
+
+  it('returns fallback for invalid / empty values', () => {
+    expect(safeFormatDate('not-a-date', 'MMM d', '—')).toBe('—');
+    expect(safeFormatDate('', 'MMM d', 'n/a')).toBe('n/a');
+    expect(safeFormatDate(null, 'MMM d')).toBe('—');
+    expect(safeFormatDate(undefined, 'MMM d')).toBe('—');
+  });
+
+  it('parses date-only YYYY-MM-DD', () => {
+    const d = safeParseDate('2026-03-01');
+    expect(Number.isNaN(d.getTime())).toBe(false);
+    expect(format(d, 'yyyy-MM-dd')).toBe('2026-03-01');
+  });
+
+  it('falls back to today for garbage input', () => {
+    const d = safeParseDate('garbage');
+    const today = new Date();
+    expect(format(d, 'yyyy-MM-dd')).toBe(format(today, 'yyyy-MM-dd'));
+  });
+});
+
+describe('normalizeCareLog', () => {
+  it('drops logs without plantId', () => {
+    expect(normalizeCareLog({ id: 'x', type: 'water' })).toBeNull();
+    expect(normalizeCareLog({ plantId: '  ', type: 'water' })).toBeNull();
+  });
+
+  it('repairs invalid type and createdAt', () => {
+    const log = normalizeCareLog({
+      plantId: 'p1',
+      type: 'not-real' as never,
+      createdAt: 'bogus',
+      note: 'hi',
+    });
+    expect(log).not.toBeNull();
+    expect(log!.type).toBe('note');
+    expect(log!.createdAt).not.toBe('bogus');
+    expect(Number.isNaN(Date.parse(log!.createdAt))).toBe(false);
+  });
+
+  it('keeps valid ISO createdAt', () => {
+    const log = normalizeCareLog({
+      id: 'l1',
+      plantId: 'p1',
+      type: 'check',
+      createdAt: '2026-01-02T03:04:05.000Z',
+    });
+    expect(log!.createdAt).toBe('2026-01-02T03:04:05.000Z');
+  });
+});
+
+describe('mimeFromPhotoUri', () => {
+  it('detects extension and strips query strings', () => {
+    expect(mimeFromPhotoUri('file:///x/a.png')).toBe('image/png');
+    expect(mimeFromPhotoUri('file:///x/a.webp?w=10')).toBe('image/webp');
+    expect(mimeFromPhotoUri('file:///x/a.heic#frag')).toBe('image/heic');
+    expect(mimeFromPhotoUri('file:///x/a.jpg')).toBe('image/jpeg');
+    expect(mimeFromPhotoUri('file:///x/noext')).toBe('image/jpeg');
   });
 });
 

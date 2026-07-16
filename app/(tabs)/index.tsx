@@ -72,10 +72,10 @@ export default function MyPlantsScreen() {
       if (room !== 'All' && (p.location || '').trim() !== room) return false;
       if (!q) return true;
       return (
-        p.name.toLowerCase().includes(q) ||
-        p.species.toLowerCase().includes(q) ||
-        p.location.toLowerCase().includes(q) ||
-        p.notes.toLowerCase().includes(q)
+        (p.name ?? '').toLowerCase().includes(q) ||
+        (p.species ?? '').toLowerCase().includes(q) ||
+        (p.location ?? '').toLowerCase().includes(q) ||
+        (p.notes ?? '').toLowerCase().includes(q)
       );
     });
   }, [plants, query, category, room]);

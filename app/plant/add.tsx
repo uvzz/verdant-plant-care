@@ -144,28 +144,34 @@ export default function AddPlantScreen() {
       Alert.alert('Name required', 'Give your plant a name (at least 2 characters).');
       return;
     }
+    if (saving) return;
     setSaving(true);
-    const result = await addPlant({
-      name: name.trim(),
-      species: species.trim(),
-      category,
-      photoUri,
-      acquiredDate: acquiredDate || format(new Date(), 'yyyy-MM-dd'),
-      location: location.trim(),
-      waterIntervalDays: Math.max(1, parseInt(waterDays, 10) || intervals.water),
-      fertilizeIntervalDays: Math.max(1, parseInt(fertDays, 10) || intervals.fertilize),
-      notes: notes.trim(),
-      lightLevel,
-      potSize,
-      petToxicity,
-      checkBeforeWater: true,
-    });
-    setSaving(false);
-    if (!result.ok) {
-      Alert.alert('Could not add plant', result.reason);
-      return;
+    try {
+      const result = await addPlant({
+        name: name.trim(),
+        species: species.trim(),
+        category,
+        photoUri,
+        acquiredDate: acquiredDate || format(new Date(), 'yyyy-MM-dd'),
+        location: location.trim(),
+        waterIntervalDays: Math.max(1, parseInt(waterDays, 10) || intervals.water),
+        fertilizeIntervalDays: Math.max(1, parseInt(fertDays, 10) || intervals.fertilize),
+        notes: notes.trim(),
+        lightLevel,
+        potSize,
+        petToxicity,
+        checkBeforeWater: true,
+      });
+      if (!result.ok) {
+        Alert.alert('Could not add plant', result.reason);
+        return;
+      }
+      router.replace(`/plant/${result.plant.id}`);
+    } catch {
+      Alert.alert('Could not add plant', 'Try again in a moment.');
+    } finally {
+      setSaving(false);
     }
-    router.replace(`/plant/${result.plant.id}`);
   };
 
   const inputStyle = [

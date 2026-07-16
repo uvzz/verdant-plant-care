@@ -91,15 +91,21 @@ export default function LogCareScreen() {
       Alert.alert('Photo required', 'Add a photo for a photo log entry.');
       return;
     }
+    if (saving) return;
     setSaving(true);
-    await addCareLog({
-      plantId: plant.id,
-      type,
-      note: note.trim(),
-      photoUri,
-    });
-    setSaving(false);
-    router.back();
+    try {
+      await addCareLog({
+        plantId: plant.id,
+        type,
+        note: note.trim(),
+        photoUri,
+      });
+      router.back();
+    } catch {
+      Alert.alert('Could not save', 'Try again in a moment.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!plant) {

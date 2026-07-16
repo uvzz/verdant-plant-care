@@ -1,10 +1,10 @@
 import { Image } from 'expo-image';
-import { format, parseISO } from 'date-fns';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import Colors from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { CareIcon } from '@/components/CareIcon';
+import { safeFormatDate } from '@/lib/care';
 import { CARE_TYPE_LABELS, type CareLog } from '@/lib/types';
 
 export function CareLogRow({
@@ -42,7 +42,7 @@ export function CareLogRow({
           {CARE_TYPE_LABELS[log.type] ?? 'Care'}
         </Text>
         <Text style={[Type.meta, { color: c.textMuted }]}>
-          {format(parseISO(log.createdAt), 'MMM d · h:mm a')}
+          {safeFormatDate(log.createdAt, 'MMM d · h:mm a')}
         </Text>
         {log.note ? (
           <Text style={[Type.bodySmall, { color: c.text, marginTop: 4 }]} numberOfLines={3}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { format } from 'date-fns';
@@ -31,6 +31,7 @@ export default function CalendarScreen() {
   const { plants, logs, settings, addCareLog } = usePlants();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const dueItems = useMemo(() => getCareDueItems(plants, logs), [plants, logs]);
   // Once the user has logged a handful of care actions they know the routine —
@@ -44,9 +45,16 @@ export default function CalendarScreen() {
     scheduleGentleReminders(dueItems, settings.notificationsEnabled).catch(() => {});
   }, [dueItems, settings.notificationsEnabled]);
 
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
   const flash = (msg: string) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 2400);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 2400);
   };
 
   const onWatered = async (item: CareDueItem) => {
@@ -90,6 +98,10 @@ export default function CalendarScreen() {
     }
   };
 
+  const openPlant = (item: CareDueItem) => {
+    router.push(`/plant/${item.plant.id}`);
+  };
+
   const openLog = (item: CareDueItem) => {
     router.push({
       pathname: '/plant/log',
@@ -121,10 +133,10 @@ export default function CalendarScreen() {
       >
       <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
         <Pressable
-          onPress={() => openLog(item)}
-          onLongPress={() => router.push(`/plant/${item.plant.id}`)}
+          onPress={() => openPlant(item)}
+          onLongPress={() => openLog(item)}
           accessibilityRole="button"
-          accessibilityLabel={`${item.plant.name}, ${item.type}, ${formatRelativeCare(item.daysUntil)}. Tap to log, long-press for plant.`}
+          accessibilityLabel={`${item.plant.name}, ${item.type}, ${formatRelativeCare(item.daysUntil)}. Tap for plant, long-press to log.`}
           style={styles.cardTop}
         >
           <View style={[styles.dot, { backgroundColor: tint }]} />
@@ -169,12 +181,20 @@ export default function CalendarScreen() {
             />
           ) : null}
           <ActionChip
+            label="Log"
+            bg={c.surface}
+            fg={c.tint}
+            border={c.border}
+            disabled={busy}
+            onPress={() => openLog(item)}
+          />
+          <ActionChip
             label="Details"
             bg={c.surface}
             fg={c.tint}
             border={c.border}
             disabled={busy}
-            onPress={() => router.push(`/plant/${item.plant.id}`)}
+            onPress={() => openPlant(item)}
           />
         </View>
       </View>

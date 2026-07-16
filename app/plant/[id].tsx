@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { differenceInCalendarDays, format, parseISO, startOfDay } from 'date-fns';
+import { differenceInCalendarDays, startOfDay } from 'date-fns';
 
 import Colors from '@/constants/Colors';
 import { Fonts, Type } from '@/constants/Typography';
@@ -26,6 +26,7 @@ import {
   getPlantLogs,
   getProgressPhotos,
   nextDueDate,
+  safeFormatDate,
 } from '@/lib/care';
 import { createId } from '@/lib/storage';
 import {
@@ -208,7 +209,7 @@ export default function PlantDetailScreen() {
       .map((p) => ({
         uri: p.photoUri as string,
         key: p.id,
-        label: format(parseISO(p.createdAt), 'MMM d, yyyy'),
+        label: safeFormatDate(p.createdAt, 'MMM d, yyyy'),
       })),
   ];
 
@@ -629,7 +630,7 @@ export default function PlantDetailScreen() {
                 <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4, marginBottom: 10 }]}>
                   Saved on this plant after generation.
                   {plant.aiGuide?.generatedAt
-                    ? ` Last: ${format(parseISO(plant.aiGuide.generatedAt), 'MMM d, yyyy')}.`
+                    ? ` Last: ${safeFormatDate(plant.aiGuide.generatedAt, 'MMM d, yyyy')}.`
                     : ''}
                 </Text>
                 <PrimaryButton
@@ -710,7 +711,7 @@ export default function PlantDetailScreen() {
                         ]}
                       >
                         <Text style={[Type.meta, { color: c.textMuted }]}>
-                          {format(parseISO(h.createdAt), 'MMM d · h:mm a')} · {h.urgency}
+                          {safeFormatDate(h.createdAt, 'MMM d · h:mm a')} · {h.urgency}
                         </Text>
                         <Text style={[Type.title, { color: c.text, fontSize: 14, marginTop: 4 }]}>
                           {h.question}

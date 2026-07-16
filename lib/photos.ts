@@ -1,5 +1,8 @@
 import * as FileSystem from 'expo-file-system/legacy';
+import { mimeFromPhotoUri } from './photoMime';
 import { createId } from './storage';
+
+export { mimeFromPhotoUri } from './photoMime';
 
 const photosDir = () => {
   const base = FileSystem.documentDirectory;
@@ -43,12 +46,7 @@ export async function photoToBase64(
   uri: string
 ): Promise<{ base64: string; mime: string } | null> {
   try {
-    const lower = uri.toLowerCase();
-    const mime = lower.endsWith('.png')
-      ? 'image/png'
-      : lower.endsWith('.webp')
-        ? 'image/webp'
-        : 'image/jpeg';
+    const mime = mimeFromPhotoUri(uri);
     const base64 = await FileSystem.readAsStringAsync(uri, {
       encoding: FileSystem.EncodingType.Base64,
     });

@@ -1,6 +1,7 @@
 import {
   addDays,
   differenceInCalendarDays,
+  format,
   isValid,
   parseISO,
   startOfDay,
@@ -23,6 +24,34 @@ export function safeParseDate(iso: string | undefined | null): Date {
     if (isValid(d)) return d;
   }
   return startOfDay(new Date());
+}
+
+/**
+ * Format an ISO / date-only string without throwing.
+ * date-fns `format` throws RangeError on Invalid Date — never call it raw
+ * on user/sync/backup data.
+ */
+export function safeFormatDate(
+  iso: string | undefined | null,
+  pattern: string,
+  fallback = '—'
+): string {
+  if (!iso) return fallback;
+  try {
+    const d = parseISO(iso);
+    if (isValid(d)) return format(d, pattern);
+  } catch {
+    /* fall through */
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    try {
+      const d = parseISO(`${iso}T12:00:00`);
+      if (isValid(d)) return format(d, pattern);
+    } catch {
+      /* fall through */
+    }
+  }
+  return fallback;
 }
 
 export function lastCareOfType(

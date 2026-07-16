@@ -6,7 +6,7 @@ import {
   subDays,
 } from 'date-fns';
 import type { CareLog, CareLogType, Plant } from './types';
-import { getCareDueItems } from './care';
+import { getCareDueItems, safeParseDate } from './care';
 
 export type CollectionStats = {
   plantCount: number;
@@ -131,10 +131,8 @@ export function computeCollectionStats(
 
 export function plantAgeDays(plant: Plant): number {
   try {
-    return Math.max(
-      0,
-      differenceInCalendarDays(new Date(), parseISO(plant.acquiredDate))
-    );
+    const acquired = safeParseDate(plant.acquiredDate);
+    return Math.max(0, differenceInCalendarDays(new Date(), acquired));
   } catch {
     return 0;
   }

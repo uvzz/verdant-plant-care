@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AppSettings, CareLog, FamilyMember, Plant } from './types';
-import { FREE_AI_USES_PER_MONTH, normalizePlant } from './types';
+import { FREE_AI_USES_PER_MONTH, normalizeCareLog, normalizePlant } from './types';
 
 const KEYS = {
   plants: '@verdant/plants',
@@ -80,7 +80,11 @@ export async function loadCareLogs(): Promise<CareLog[]> {
   const raw = await AsyncStorage.getItem(KEYS.logs);
   if (!raw) return [];
   try {
-    return JSON.parse(raw) as CareLog[];
+    const list = JSON.parse(raw) as Partial<CareLog>[];
+    if (!Array.isArray(list)) return [];
+    return list
+      .map((l) => normalizeCareLog(l ?? {}))
+      .filter((l): l is CareLog => l != null);
   } catch {
     return [];
   }

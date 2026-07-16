@@ -31,6 +31,8 @@ export function SwipeToComplete({
   disabled?: boolean;
 }) {
   const ref = useRef<SwipeableMethods>(null);
+  /** willOpen can fire more than once before close settles — guard once. */
+  const firedRef = useRef(false);
 
   if (disabled) return <>{children}</>;
 
@@ -51,11 +53,15 @@ export function SwipeToComplete({
         </View>
       )}
       onSwipeableWillOpen={(direction) => {
-        if (direction === 'left') {
-          tapSuccess();
-          onComplete();
-          ref.current?.close();
-        }
+        if (direction !== 'left') return;
+        if (firedRef.current) return;
+        firedRef.current = true;
+        tapSuccess();
+        onComplete();
+        ref.current?.close();
+      }}
+      onSwipeableClose={() => {
+        firedRef.current = false;
       }}
       containerStyle={styles.container}
     >

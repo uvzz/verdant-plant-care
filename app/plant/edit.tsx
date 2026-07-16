@@ -122,25 +122,31 @@ export default function EditPlantScreen() {
       Alert.alert('Name required', 'Give your plant a name (at least 2 characters).');
       return;
     }
+    if (saving) return;
     setSaving(true);
-    await updatePlant(plant.id, {
-      name: name.trim(),
-      species: species.trim(),
-      category,
-      photoUri,
-      acquiredDate,
-      location: location.trim(),
-      waterIntervalDays: Math.max(1, parseInt(waterDays, 10) || intervals.water),
-      fertilizeIntervalDays: Math.max(1, parseInt(fertDays, 10) || intervals.fertilize),
-      notes: notes.trim(),
-      lightLevel,
-      potSize,
-      petToxicity,
-      checkBeforeWater,
-      caretakerId,
-    });
-    setSaving(false);
-    router.back();
+    try {
+      await updatePlant(plant.id, {
+        name: name.trim(),
+        species: species.trim(),
+        category,
+        photoUri,
+        acquiredDate,
+        location: location.trim(),
+        waterIntervalDays: Math.max(1, parseInt(waterDays, 10) || intervals.water),
+        fertilizeIntervalDays: Math.max(1, parseInt(fertDays, 10) || intervals.fertilize),
+        notes: notes.trim(),
+        lightLevel,
+        potSize,
+        petToxicity,
+        checkBeforeWater,
+        caretakerId,
+      });
+      router.back();
+    } catch {
+      Alert.alert('Could not save', 'Try again in a moment.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const previewInterval = effectiveWaterIntervalDays({
