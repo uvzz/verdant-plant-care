@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import ReanimatedSwipeable, {
   type SwipeableMethods,
@@ -34,6 +34,16 @@ export function SwipeToComplete({
   /** willOpen can fire more than once before close settles — guard once. */
   const firedRef = useRef(false);
 
+  // Completing sets `disabled` (busy) on the parent, which unmounts the
+  // Swipeable below — killing the close spring, so onSwipeableClose never
+  // fires and can't be trusted to clear the guard. firedRef lives on THIS
+  // component, which does not unmount, so a stuck `true` would kill the
+  // gesture forever on any row whose React key doesn't change (every
+  // Upcoming row). Reset when the busy state clears instead.
+  useEffect(() => {
+    if (!disabled) firedRef.current = false;
+  }, [disabled]);
+
   if (disabled) return <>{children}</>;
 
   const Icon = type === 'water' ? Droplet : Sprout;
@@ -54,11 +64,13 @@ export function SwipeToComplete({
       )}
       onSwipeableWillOpen={(direction) => {
         if (direction !== 'left') return;
+        // Always snap shut — returning early before close() left the action
+        // panel jammed open whenever the guard was set.
+        ref.current?.close();
         if (firedRef.current) return;
         firedRef.current = true;
         tapSuccess();
         onComplete();
-        ref.current?.close();
       }}
       onSwipeableClose={() => {
         firedRef.current = false;

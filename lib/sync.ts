@@ -136,12 +136,16 @@ function photoName(uri: string | null | undefined): string | null {
   return /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(base) ? base : null;
 }
 
+/**
+ * Content-Type for a photo UPLOAD. Constrained to what the Worker accepts
+ * (PHOTO_TYPES = jpeg|png|webp): sending image/gif or image/heic gets a hard
+ * "Unsupported photo type" reject, and the photo then silently never syncs.
+ * Anything else is labelled jpeg, which is what the pickers/camera produce.
+ */
 function mimeFor(name: string): string {
   const n = name.toLowerCase().split(/[?#]/)[0] ?? '';
   if (n.endsWith('.png')) return 'image/png';
   if (n.endsWith('.webp')) return 'image/webp';
-  if (n.endsWith('.gif')) return 'image/gif';
-  if (n.endsWith('.heic') || n.endsWith('.heif')) return 'image/heic';
   return 'image/jpeg';
 }
 
@@ -164,11 +168,16 @@ async function buildLocalDoc(): Promise<SyncDoc> {
 
 /** Sanitize remote/merged records before persisting (corrupt cloud payloads). */
 function sanitizeDoc(doc: SyncDoc): SyncDoc {
-  const plants = doc.plants
-    .map((p) =>
-      normalizePlant((p ?? {}) as Partial<Plant> & Pick<Plant, 'id' | 'name'>)
+  const plants = (Array.isArray(doc.plants) ? doc.plants : [])
+    // Drop garbage BEFORE normalizing: normalizePlant always mints an id and
+    // name, so feeding it `null` produced a phantom plant called "Plant" that
+    // got saved locally and pushed to the cloud. (The old
+    // `.filter((p) => !!p.id)` afterwards could never remove anything.)
+    .filter(
+      (p): p is Plant =>
+        !!p && typeof p === 'object' && typeof (p as Plant).id === 'string'
     )
-    .filter((p) => !!p.id);
+    .map((p) => normalizePlant(p as Partial<Plant> & Pick<Plant, 'id' | 'name'>));
   const plantIds = new Set(plants.map((p) => p.id));
   const logs = doc.logs
     .map((l) => normalizeCareLog((l ?? {}) as Partial<CareLog>))
