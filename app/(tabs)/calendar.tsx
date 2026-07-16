@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { WeekStrip } from '@/components/WeekStrip';
 import { CareIcon } from '@/components/CareIcon';
 import { SwipeToComplete } from '@/components/SwipeToComplete';
+import { CalendarDays } from 'lucide-react-native';
 import { tapLight, tapSuccess } from '@/lib/haptics';
 import {
   effectiveWaterIntervalDays,
@@ -210,7 +211,7 @@ export default function CalendarScreen() {
 
         {plants.length === 0 ? (
           <EmptyState
-            emoji="📅"
+            icon={<CalendarDays color="#FFFFFF" size={36} strokeWidth={1.8} />}
             title="Nothing scheduled yet"
             body="Add plants with water and fertilize intervals to build a calm care calendar."
             actionLabel="Add a plant"

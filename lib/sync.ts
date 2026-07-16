@@ -39,6 +39,14 @@ const UPLOADED_KEY = '@verdant/sync_uploaded_photos';
 const ADOPTED_KEY = '@verdant/sync_id_adopted';
 const SYNC_ID_RE = /^[a-f0-9]{32,64}$/;
 
+/**
+ * The one sentinel meaning "a sync is already running — this is not an error".
+ * Both guards (this module's in-flight lock and PlantContext's re-entry guard)
+ * must return exactly this, so callers have a single string to treat as benign.
+ * Two different strings previously leaked a false "Linked, but sync failed".
+ */
+export const SYNC_BUSY_REASON = 'A sync is already in progress.';
+
 export type SyncResult =
   | { ok: true; rev: number; pulledPlants: number; pushedPhotos: number }
   | { ok: false; reason: string };
@@ -69,6 +77,37 @@ export async function getOrCreateSyncId(): Promise<string> {
  *  (as opposed to a device-generated random id). */
 export async function wasSyncIdAdopted(): Promise<boolean> {
   return (await AsyncStorage.getItem(ADOPTED_KEY)) === '1';
+}
+
+/**
+ * Delete this account's cloud collection and photos, and forget the local
+ * upload cache. Local plants stay on the device (the user removes those by
+ * deleting the app). Backs the in-app "Delete synced data" action, which
+ * Apple guideline 5.1.1(v) requires for apps with sign-in.
+ */
+export async function deleteCloudData(): Promise<
+  { ok: true; deletedPhotos: number } | { ok: false; reason: string }
+> {
+  const token = getPremiumAccessToken();
+  if (!token) return { ok: false, reason: 'Sync is not configured for this build.' };
+  const syncId = await getSyncId();
+  if (!syncId) return { ok: false, reason: 'Nothing is synced from this device.' };
+
+  try {
+    const res = await fetch(`${getAiProxyUrl()}/v1/sync`, {
+      method: 'DELETE',
+      headers: syncHeaders(token, syncId),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      return { ok: false, reason: `Delete failed (${res.status}): ${body.slice(0, 120)}` };
+    }
+    const data = (await res.json().catch(() => ({}))) as { deletedPhotos?: number };
+    await AsyncStorage.removeItem(UPLOADED_KEY);
+    return { ok: true, deletedPhotos: data.deletedPhotos ?? 0 };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : 'Delete failed.' };
+  }
 }
 
 /** Adopt another device's sync code (links this device to that collection). */
@@ -148,7 +187,7 @@ function syncHeaders(token: string, syncId: string): Record<string, string> {
  * apply locally. Never throws; returns a result the UI can show.
  */
 export async function syncNow(): Promise<SyncResult> {
-  if (syncInFlight) return { ok: false, reason: 'Sync already running.' };
+  if (syncInFlight) return { ok: false, reason: SYNC_BUSY_REASON };
   syncInFlight = true;
   try {
     const token = getPremiumAccessToken();

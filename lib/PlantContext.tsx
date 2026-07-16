@@ -22,7 +22,7 @@ import {
   saveSettings,
   saveTombstones,
 } from './storage';
-import { syncNow as runCloudSync, type SyncResult } from './sync';
+import { syncNow as runCloudSync, SYNC_BUSY_REASON, type SyncResult } from './sync';
 import {
   canAutoSyncNow,
   nextBackoffMs,
@@ -379,7 +379,7 @@ export function PlantProvider({ children }: { children: React.ReactNode }) {
     // manual) must not be recorded as a failure. Bail before touching status /
     // backoff so the collision never reaches runCloudSync's in-flight sentinel.
     if (syncingRef.current) {
-      return { ok: false, reason: 'A sync is already in progress.' };
+      return { ok: false, reason: SYNC_BUSY_REASON };
     }
     setSyncing(true);
     setSyncStatus('syncing');

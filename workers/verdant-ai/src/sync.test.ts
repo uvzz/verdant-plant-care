@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  deleteAllPhotos,
+  deleteCollection,
+  getCollection,
   listPhotos,
   putCollection,
   putPhoto,
@@ -65,6 +68,8 @@ function fakeDb() {
                 if (row && row.rev === baseRev) {
                   rows.set(syncId, { rev: nextRev, payload, updated_at: now });
                 }
+              } else if (sql.startsWith('DELETE')) {
+                rows.delete(args[0] as string);
               }
               return {};
             },
@@ -166,6 +171,23 @@ describe('photo store + manifest', () => {
     expect(await listPhotos(kv, SYNC_ID)).toEqual([]);
   });
 
+  it('deleteAllPhotos removes only this sync id, and reports the count', async () => {
+    const { kv } = fakeKv();
+    await putPhoto(kv, SYNC_ID, 'a.jpg', bytes(10), 'image/jpeg');
+    await putPhoto(kv, SYNC_ID, 'b.png', bytes(10), 'image/png');
+    await putPhoto(kv, OTHER_ID, 'keep.jpg', bytes(10), 'image/jpeg');
+
+    expect(await deleteAllPhotos(kv, SYNC_ID)).toBe(2);
+    expect(await listPhotos(kv, SYNC_ID)).toEqual([]);
+    // Another account's photos must survive.
+    expect(await listPhotos(kv, OTHER_ID)).toEqual(['keep.jpg']);
+  });
+
+  it('deleteAllPhotos on an empty collection is a no-op', async () => {
+    const { kv } = fakeKv();
+    expect(await deleteAllPhotos(kv, SYNC_ID)).toBe(0);
+  });
+
   it('rejects empty, oversized, and wrong-type photos', async () => {
     const { kv } = fakeKv();
     expect((await putPhoto(kv, SYNC_ID, 'x.jpg', bytes(0), 'image/jpeg')).ok).toBe(false);
@@ -173,5 +195,19 @@ describe('photo store + manifest', () => {
       false
     );
     expect((await putPhoto(kv, SYNC_ID, 'x.gif', bytes(10), 'image/gif')).ok).toBe(false);
+  });
+});
+
+describe('deleteCollection', () => {
+  it('removes the row so a later read is empty (and re-sync starts fresh)', async () => {
+    const { db } = fakeDb();
+    await putCollection(db, SYNC_ID, 0, doc('mine'));
+    expect(await getCollection(db, SYNC_ID)).not.toBeNull();
+
+    await deleteCollection(db, SYNC_ID);
+    expect(await getCollection(db, SYNC_ID)).toBeNull();
+
+    // After deletion the id behaves like a first-ever sync again.
+    expect(await putCollection(db, SYNC_ID, 0, doc('fresh'))).toEqual({ ok: true, rev: 1 });
   });
 });

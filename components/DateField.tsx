@@ -3,6 +3,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format, parseISO, isValid } from 'date-fns';
 
+import { CalendarDays } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -41,7 +42,7 @@ export function DateField({
         <Text style={[Type.body, { color: c.text, fontFamily: Fonts.body }]}>
           {format(date, 'MMM d, yyyy')}
         </Text>
-        <Text style={{ color: c.textMuted }}>📅</Text>
+        <CalendarDays color={c.textMuted} size={16} strokeWidth={2} />
       </Pressable>
       {open ? (
         <View

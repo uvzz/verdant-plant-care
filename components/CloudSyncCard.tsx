@@ -18,7 +18,7 @@ import {
   signOut,
   type AuthSession,
 } from '@/lib/auth';
-import { adoptSyncId, getOrCreateSyncId } from '@/lib/sync';
+import { adoptSyncId, deleteCloudData, getOrCreateSyncId, SYNC_BUSY_REASON } from '@/lib/sync';
 import { syncStatusLabel } from '@/lib/syncSchedule';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -40,6 +40,7 @@ export function CloudSyncCard() {
   const [advanced, setAdvanced] = useState(false);
   const [syncCode, setSyncCode] = useState<string | null>(null);
   const [linkCode, setLinkCode] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const gConfig = googleAuthConfig();
   const [, googleResponse, promptGoogle] = Google.useIdTokenAuthRequest({
@@ -92,6 +93,38 @@ export function CloudSyncCard() {
     } else if (!result.cancelled) {
       Alert.alert('Apple sign-in failed', result.reason);
     }
+  };
+
+  // Apple 5.1.1(v): sign-in requires an in-app way to delete the account's data.
+  const onDeleteCloud = () => {
+    Alert.alert(
+      'Delete synced data?',
+      'This permanently removes your plants, care history, and photos from the cloud, and signs you out. Your plants stay on this device — delete the app to remove them too. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            const r = await deleteCloudData();
+            if (r.ok) {
+              await signOut();
+              await setSyncEnabled(false);
+              setSession(null);
+              setSyncCode(null);
+            }
+            setDeleting(false);
+            Alert.alert(
+              r.ok ? 'Synced data deleted' : 'Delete failed',
+              r.ok
+                ? 'Your cloud collection is gone and sync is off. Your plants are still on this device.'
+                : r.reason
+            );
+          },
+        },
+      ]
+    );
   };
 
   const onSignOut = () => {
@@ -148,7 +181,7 @@ export function CloudSyncCard() {
               const r = await syncNow();
               // A collision with an already-running sync is benign — don't
               // flag it as a failure to the user.
-              if (!r.ok && r.reason !== 'A sync is already in progress.') {
+              if (!r.ok && r.reason !== SYNC_BUSY_REASON) {
                 Alert.alert('Sync failed', r.reason);
               }
             }}
@@ -196,6 +229,20 @@ export function CloudSyncCard() {
           ) : null}
         </>
       )}
+
+      {/* Deletion must be reachable whenever a cloud collection exists — not
+          only when signed in. A sync-code linked device has cloud data with no
+          session, and Apple 5.1.1(v) still requires an in-app way to delete it. */}
+      {isPremium && (session || settings.syncEnabled) ? (
+        <PrimaryButton
+          label={deleting ? 'Deleting…' : 'Delete synced data'}
+          variant="ghost"
+          loading={deleting}
+          onPress={onDeleteCloud}
+          accessibilityHint="Permanently removes your collection from the cloud"
+          style={{ marginTop: 6 }}
+        />
+      ) : null}
 
       {isPremium ? (
         <>
@@ -273,7 +320,7 @@ export function CloudSyncCard() {
                     // explicit call may hit the in-flight guard — that's not a
                     // failure, the enable-triggered sync is running.
                     const linked =
-                      s.ok || s.reason === 'A sync is already in progress.';
+                      s.ok || s.reason === SYNC_BUSY_REASON;
                     Alert.alert(
                       linked ? 'Device linked' : 'Linked, but sync failed',
                       linked

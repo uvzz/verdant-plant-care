@@ -10,7 +10,15 @@ Verdant is a **local-first** plant care journal for iOS and Android. This policy
 
 - Plant profiles, photos, care logs, settings, family household members, and Premium entitlement status are stored **locally** (app storage).
 - Photos you add are copied into the app’s document directory on your device.
-- We do **not** require a Verdant cloud account that uploads your collection by default.
+- No account is required. If you never sign in, this data never leaves your phone.
+
+## Cloud sync (optional, off by default)
+
+When you enable sync and sign in with Apple or Google:
+
+1. The provider returns a signed identity token. Our server verifies it and derives a per-account **sync identifier** from it. We keep only your provider, email (if shared), and that sync id — **never the raw token**.
+2. Your plants, care history, and photos are stored on Verdant's infrastructure (Cloudflare) under that sync id, transferred **encrypted in transit (HTTPS)**.
+3. Signing out pauses sync on that device; your local data stays. You can turn sync off at any time.
 
 ## Premium AI (optional)
 
@@ -30,9 +38,12 @@ In-app purchases are handled by **Apple App Store** or **Google Play**. We recei
 
 Verdant does **not** include third-party advertising SDKs and does not sell plant photos for advertising. Platform crash/performance tooling, if enabled in a future build, will be disclosed here.
 
-## Backups you export
+## Your choices
 
-Export creates a JSON file **you** control. Sharing or importing a backup is your choice. Imported data is stored locally like other journal data.
+- Use Verdant fully offline with no account.
+- Turn cloud sync on or off at any time in Settings.
+- Sign out to stop syncing while keeping your local journal.
+- Delete a plant or the app to remove local data; contact us to remove synced data.
 
 ## Children
 

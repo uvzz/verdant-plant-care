@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Plus } from 'lucide-react-native';
+import { Plus, Search, Sprout } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { PlantCardSkeleton } from '@/components/Skeleton';
 
@@ -234,7 +234,7 @@ export default function MyPlantsScreen() {
       {plants.length === 0 ? (
         <>
           <EmptyState
-            emoji="🌿"
+            icon={<Sprout color="#FFFFFF" size={36} strokeWidth={1.8} />}
             title="Your glasshouse is quiet"
             body="Add a plant with a portrait. Use AI identify to fill species and care intervals — then set room, light, and pot so schedules stay smart."
           />
@@ -252,7 +252,7 @@ export default function MyPlantsScreen() {
         </>
       ) : filtered.length === 0 ? (
         <EmptyState
-          emoji="🔎"
+          icon={<Search color="#FFFFFF" size={36} strokeWidth={1.8} />}
           title="No matches"
           body="Try another search, category, or room filter."
           actionLabel="Clear filters"
@@ -379,7 +379,11 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 14, paddingBottom: 40 },
   row: { gap: 10, marginBottom: 10 },
   cardWrap: { flex: 1, maxWidth: '50%' },
-  cardWrapHalf: { maxWidth: '48%', flexGrow: 0 },
+  // The odd last card must not stretch across the row — but `flex: 1` above
+  // sets flexBasis: 0%, so overriding only flexGrow left basis 0 with no grow
+  // and collapsed the card to zero width (a 1-plant grid rendered EMPTY).
+  // Give it an explicit basis.
+  cardWrapHalf: { maxWidth: '48%', flexGrow: 0, flexBasis: '48%' },
   emptyCta: { padding: 24, marginTop: 'auto' },
   cta: {
     borderRadius: 14,

@@ -11,6 +11,8 @@
 
 import {
   SYNC_LIMITS,
+  deleteAllPhotos,
+  deleteCollection,
   getCollection,
   getPhoto,
   listPhotos,
@@ -62,7 +64,7 @@ Educational only — not veterinary, medical, or lab diagnosis.`;
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers':
     'Content-Type, Authorization, X-Verdant-Client, X-Sync-Id',
   'Access-Control-Expose-Headers': 'X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After',
@@ -469,6 +471,14 @@ export default {
         const row = await getCollection(env.DB, syncId);
         if (!row) return json({ rev: 0, payload: null });
         return json({ rev: row.rev, payload: row.payload, updatedAt: row.updated_at });
+      }
+
+      // Delete everything for this sync id — backs the in-app "Delete synced
+      // data" action. Local device data is the user's to remove separately.
+      if (url.pathname === '/v1/sync' && request.method === 'DELETE') {
+        const photos = await deleteAllPhotos(env.PHOTOS_KV, syncId);
+        await deleteCollection(env.DB, syncId);
+        return json({ ok: true, deletedPhotos: photos });
       }
 
       if (url.pathname === '/v1/sync' && request.method === 'PUT') {
