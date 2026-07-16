@@ -358,7 +358,7 @@ export default function PlantDetailScreen() {
               <Image source={{ uri: plant.photoUri }} style={styles.hero} contentFit="cover" />
             ) : (
               <View style={[styles.hero, styles.heroEmpty, { backgroundColor: c.surfaceAlt }]}>
-                <Text style={{ fontSize: 64 }}>🪴</Text>
+                <Sprout color={c.tint} size={64} strokeWidth={1.6} />
               </View>
             )}
             </Animated.View>

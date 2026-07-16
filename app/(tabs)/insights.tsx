@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Camera, Droplet, NotebookPen, Sparkles, Sprout } from 'lucide-react-native';
+import { Camera, ChartColumn, Droplet, NotebookPen, Sparkles, Sprout } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { TextSkeleton } from '@/components/Skeleton';
 
@@ -99,7 +99,7 @@ export default function InsightsScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {plants.length === 0 ? (
           <EmptyState
-            emoji="📊"
+            icon={<ChartColumn color="#FFFFFF" size={36} strokeWidth={1.8} />}
             title="No data yet"
             body="Add plants and log care to unlock stats and AI insights."
             actionLabel="Add a plant"

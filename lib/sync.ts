@@ -39,6 +39,14 @@ const UPLOADED_KEY = '@verdant/sync_uploaded_photos';
 const ADOPTED_KEY = '@verdant/sync_id_adopted';
 const SYNC_ID_RE = /^[a-f0-9]{32,64}$/;
 
+/**
+ * The one sentinel meaning "a sync is already running — this is not an error".
+ * Both guards (this module's in-flight lock and PlantContext's re-entry guard)
+ * must return exactly this, so callers have a single string to treat as benign.
+ * Two different strings previously leaked a false "Linked, but sync failed".
+ */
+export const SYNC_BUSY_REASON = 'A sync is already in progress.';
+
 export type SyncResult =
   | { ok: true; rev: number; pulledPlants: number; pushedPhotos: number }
   | { ok: false; reason: string };
@@ -179,7 +187,7 @@ function syncHeaders(token: string, syncId: string): Record<string, string> {
  * apply locally. Never throws; returns a result the UI can show.
  */
 export async function syncNow(): Promise<SyncResult> {
-  if (syncInFlight) return { ok: false, reason: 'Sync already running.' };
+  if (syncInFlight) return { ok: false, reason: SYNC_BUSY_REASON };
   syncInFlight = true;
   try {
     const token = getPremiumAccessToken();

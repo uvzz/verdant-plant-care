@@ -1,32 +1,27 @@
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Sprout } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 
 interface Props {
-  emoji?: string;
+  /** Lucide icon element, sized ~36 and coloured for the tinted orb. */
+  icon?: ReactNode;
   title: string;
   body: string;
   actionLabel?: string;
   onAction?: () => void;
 }
 
-export function EmptyState({
-  emoji = '🌱',
-  title,
-  body,
-  actionLabel,
-  onAction,
-}: Props) {
+export function EmptyState({ icon, title, body, actionLabel, onAction }: Props) {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
 
   return (
     <View style={styles.wrap} accessibilityRole="summary">
       <View style={[styles.orb, { backgroundColor: c.tint, shadowColor: c.tint }]}>
-        <Text style={styles.emoji} accessibilityLabel="">
-          {emoji}
-        </Text>
+        {icon ?? <Sprout color="#FFFFFF" size={36} strokeWidth={1.8} />}
       </View>
       <Text style={[Type.displayM, { color: c.text, textAlign: 'center' }]}>{title}</Text>
       <Text style={[Type.bodySmall, { color: c.textMuted, textAlign: 'center', maxWidth: 300 }]}>
@@ -69,7 +64,6 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 6,
   },
-  emoji: { fontSize: 36 },
   cta: {
     marginTop: 16,
     minHeight: 48,

@@ -18,7 +18,7 @@ import {
   signOut,
   type AuthSession,
 } from '@/lib/auth';
-import { adoptSyncId, deleteCloudData, getOrCreateSyncId } from '@/lib/sync';
+import { adoptSyncId, deleteCloudData, getOrCreateSyncId, SYNC_BUSY_REASON } from '@/lib/sync';
 import { syncStatusLabel } from '@/lib/syncSchedule';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -181,7 +181,7 @@ export function CloudSyncCard() {
               const r = await syncNow();
               // A collision with an already-running sync is benign — don't
               // flag it as a failure to the user.
-              if (!r.ok && r.reason !== 'A sync is already in progress.') {
+              if (!r.ok && r.reason !== SYNC_BUSY_REASON) {
                 Alert.alert('Sync failed', r.reason);
               }
             }}
@@ -320,7 +320,7 @@ export function CloudSyncCard() {
                     // explicit call may hit the in-flight guard — that's not a
                     // failure, the enable-triggered sync is running.
                     const linked =
-                      s.ok || s.reason === 'A sync is already in progress.';
+                      s.ok || s.reason === SYNC_BUSY_REASON;
                     Alert.alert(
                       linked ? 'Device linked' : 'Linked, but sync failed',
                       linked
