@@ -193,14 +193,6 @@ export function CloudSyncCard() {
             onPress={onSignOut}
             style={{ marginTop: 6 }}
           />
-          <PrimaryButton
-            label={deleting ? 'Deleting…' : 'Delete synced data'}
-            variant="ghost"
-            loading={deleting}
-            onPress={onDeleteCloud}
-            accessibilityHint="Permanently removes your collection from the cloud"
-            style={{ marginTop: 2 }}
-          />
         </>
       ) : (
         <>
@@ -237,6 +229,20 @@ export function CloudSyncCard() {
           ) : null}
         </>
       )}
+
+      {/* Deletion must be reachable whenever a cloud collection exists — not
+          only when signed in. A sync-code linked device has cloud data with no
+          session, and Apple 5.1.1(v) still requires an in-app way to delete it. */}
+      {isPremium && (session || settings.syncEnabled) ? (
+        <PrimaryButton
+          label={deleting ? 'Deleting…' : 'Delete synced data'}
+          variant="ghost"
+          loading={deleting}
+          onPress={onDeleteCloud}
+          accessibilityHint="Permanently removes your collection from the cloud"
+          style={{ marginTop: 6 }}
+        />
+      ) : null}
 
       {isPremium ? (
         <>

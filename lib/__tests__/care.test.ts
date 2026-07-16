@@ -107,6 +107,62 @@ describe('nextDueDate + soil check snooze', () => {
     // check + 2 days snooze
     expect(format(due, 'yyyy-MM-dd')).toBe('2026-06-12');
   });
+
+  it('a check BEFORE the plant is due never pulls watering earlier', () => {
+    // Regression: checking a not-yet-due plant used to return check+2 days
+    // unconditionally, moving "due in 7 days" to "due in 2 days" — i.e. the
+    // anti-overwatering feature was telling people to water sooner.
+    const p = plant({
+      id: 'p1',
+      name: 'Fern',
+      waterIntervalDays: 7,
+      potSize: 'medium',
+      lightLevel: 'medium',
+      acquiredDate: '2026-01-01',
+    });
+    const logs: CareLog[] = [
+      {
+        id: 'l1',
+        plantId: 'p1',
+        type: 'water',
+        note: '',
+        photoUri: null,
+        createdAt: '2026-06-01T12:00:00.000Z', // due 2026-06-08
+      },
+      {
+        id: 'l2',
+        plantId: 'p1',
+        type: 'check',
+        note: 'still moist',
+        photoUri: null,
+        createdAt: '2026-06-02T12:00:00.000Z', // checked early
+      },
+    ];
+    // Must stay on the original schedule, NOT jump to 2026-06-04.
+    expect(format(nextDueDate(p, logs, 'water'), 'yyyy-MM-dd')).toBe('2026-06-08');
+  });
+
+  it('a check on a never-watered plant does not pull the first water earlier', () => {
+    const p = plant({
+      id: 'p2',
+      name: 'New',
+      waterIntervalDays: 14,
+      potSize: 'medium',
+      lightLevel: 'medium',
+      acquiredDate: '2026-06-01', // first water due 2026-06-15
+    });
+    const logs: CareLog[] = [
+      {
+        id: 'c1',
+        plantId: 'p2',
+        type: 'check',
+        note: 'still moist',
+        photoUri: null,
+        createdAt: '2026-06-02T12:00:00.000Z',
+      },
+    ];
+    expect(format(nextDueDate(p, logs, 'water'), 'yyyy-MM-dd')).toBe('2026-06-15');
+  });
 });
 
 describe('formatRelativeCare', () => {

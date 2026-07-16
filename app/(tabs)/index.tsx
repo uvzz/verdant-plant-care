@@ -379,7 +379,11 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 14, paddingBottom: 40 },
   row: { gap: 10, marginBottom: 10 },
   cardWrap: { flex: 1, maxWidth: '50%' },
-  cardWrapHalf: { maxWidth: '48%', flexGrow: 0 },
+  // The odd last card must not stretch across the row — but `flex: 1` above
+  // sets flexBasis: 0%, so overriding only flexGrow left basis 0 with no grow
+  // and collapsed the card to zero width (a 1-plant grid rendered EMPTY).
+  // Give it an explicit basis.
+  cardWrapHalf: { maxWidth: '48%', flexGrow: 0, flexBasis: '48%' },
   emptyCta: { padding: 24, marginTop: 'auto' },
   cta: {
     borderRadius: 14,

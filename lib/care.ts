@@ -95,7 +95,12 @@ export function nextDueDate(
     const checkAt = safeParseDate(lastCheck.createdAt);
     const waterAt = lastWater ? safeParseDate(lastWater.createdAt) : null;
     if (!waterAt || checkAt > waterAt) {
-      return startOfDay(addDays(checkAt, MOISTURE_SNOOZE_DAYS));
+      const snoozed = startOfDay(addDays(checkAt, MOISTURE_SNOOZE_DAYS));
+      // A "still moist" check may only ever DELAY watering. Returning the
+      // snooze unconditionally pulled a not-yet-due plant forward (due in 14d
+      // → due in 2d), which pushes people to overwater — the opposite of what
+      // check-before-water exists to prevent.
+      return snoozed > fromWater ? snoozed : fromWater;
     }
   }
 
