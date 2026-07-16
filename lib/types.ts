@@ -1,3 +1,4 @@
+import { isValid, parseISO } from 'date-fns';
 export type PlantCategory =
   | 'Houseplant'
   | 'Orchid'
@@ -196,17 +197,22 @@ const VALID_CARE_TYPES: CareLogType[] = [
   'check',
 ];
 
-/** True when string parses as a real date (ISO or YYYY-MM-DD). */
+/**
+ * True when a string is a date the REST OF THE APP can actually read.
+ *
+ * Must use the same parser the consumers use (`parseISO`, via
+ * care.ts safeParseDate) — validating with `Date.parse` accepted things
+ * parseISO rejects ("3/1/2026", "March 1, 2026", "0"), so corrupt values
+ * passed the gate, then failed at read time and silently fell back to
+ * "today" — which made a plant permanently not-due.
+ */
 function isPlausibleIsoDate(value: string): boolean {
   if (!value || typeof value !== 'string') return false;
-  const t = Date.parse(value);
-  if (!Number.isNaN(t)) return true;
-  // date-only YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return !Number.isNaN(Date.parse(`${value}T12:00:00`));
-  }
-  return false;
+  return isValid(parseISO(value));
 }
+
+/** Epoch — an unknown edit time must LOSE last-write-wins, never win it. */
+const UNKNOWN_TIME = new Date(0).toISOString();
 
 /** Normalize older plant records missing new fields */
 export function normalizePlant(
@@ -224,14 +230,20 @@ export function normalizePlant(
   const category = PLANT_CATEGORIES.includes(raw.category as PlantCategory)
     ? (raw.category as PlantCategory)
     : 'Other';
-  const createdAt =
-    typeof raw.createdAt === 'string' && isPlausibleIsoDate(raw.createdAt)
-      ? raw.createdAt
-      : now;
+  const rawCreatedValid =
+    typeof raw.createdAt === 'string' && isPlausibleIsoDate(raw.createdAt);
+  const createdAt = rawCreatedValid ? (raw.createdAt as string) : now;
+  // A missing/corrupt updatedAt must not be stamped `now`: loadPlants()
+  // re-normalizes on EVERY load (and every sync's buildLocalDoc), so `now`
+  // made the broken record beat every real remote edit, forever — silently
+  // destroying another device's changes. Fall back to a genuine creation
+  // time, else epoch, so last-write-wins resolves against it.
   const updatedAt =
     typeof raw.updatedAt === 'string' && isPlausibleIsoDate(raw.updatedAt)
       ? raw.updatedAt
-      : now;
+      : rawCreatedValid
+        ? (raw.createdAt as string)
+        : UNKNOWN_TIME;
   return {
     id,
     name: (raw.name || 'Plant').toString().slice(0, 120),
@@ -276,10 +288,14 @@ export function normalizeCareLog(
     typeof raw.id === 'string' && raw.id.trim()
       ? raw.id.trim()
       : `log-${Math.random().toString(36).slice(2, 10)}`;
+  // Care logs drive scheduling: lastCareOfType picks the newest by createdAt.
+  // Stamping a corrupt date `now` would make the broken log the "most recent
+  // water/check" and silently reset the plant's due date every load. Epoch
+  // keeps the entry visible in history without letting it hijack the schedule.
   const createdAt =
     typeof raw.createdAt === 'string' && isPlausibleIsoDate(raw.createdAt)
       ? raw.createdAt
-      : now;
+      : UNKNOWN_TIME;
   return {
     id,
     plantId,
