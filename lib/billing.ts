@@ -40,6 +40,14 @@ export const PREMIUM_DISPLAY = {
   lifetimePriceHint: '$59.99 once',
 } as const;
 
+/**
+ * Whether the yearly plan advertises a free trial. Keep FALSE until an
+ * introductory (free-trial) offer is actually configured on the yearly
+ * subscription in App Store Connect / Play Console — otherwise the app would
+ * promise a trial the store won't honor. Flip to true once the offer is live.
+ */
+export const PREMIUM_HAS_TRIAL = false;
+
 type IapModule = typeof import('expo-iap');
 
 let iapModule: IapModule | null | undefined;

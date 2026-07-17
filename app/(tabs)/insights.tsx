@@ -44,14 +44,7 @@ export default function InsightsScreen() {
       return;
     }
     if (!canUseAi) {
-      Alert.alert(
-        'Premium required',
-        'AI collection insights are included with Premium.',
-        [
-          { text: 'Not now', style: 'cancel' },
-          { text: 'Open Settings', onPress: () => router.push('/(tabs)/settings') },
-        ]
-      );
+      router.push({ pathname: '/paywall', params: { reason: 'insights' } });
       return;
     }
     setLoading(true);
@@ -210,8 +203,9 @@ export default function InsightsScreen() {
               ) : (
                 <PrimaryButton
                   label="Unlock Premium for AI"
-                  onPress={() => router.push('/(tabs)/settings')}
-                  accessibilityHint="Opens Settings to unlock Premium"
+                  icon={<Sparkles color={c.growthInk} size={16} strokeWidth={2.2} />}
+                  onPress={() => router.push({ pathname: '/paywall', params: { reason: 'insights' } })}
+                  accessibilityHint="Opens the Premium upgrade screen"
                 />
               )}
               {loading && !aiSummary ? <TextSkeleton lines={3} /> : null}

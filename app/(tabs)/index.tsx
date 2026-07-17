@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Plus, Search, Sprout } from 'lucide-react-native';
+import { Plus, Search, Sparkles, Sprout } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { PlantCardSkeleton } from '@/components/Skeleton';
 
@@ -118,7 +118,7 @@ export default function MyPlantsScreen() {
         <Pressable
           onPress={() => {
             if (!canAddPlant) {
-              router.push('/(tabs)/settings');
+              router.push({ pathname: '/paywall', params: { reason: 'limit' } });
               return;
             }
             router.push('/plant/add');
@@ -318,20 +318,23 @@ export default function MyPlantsScreen() {
                 </Text>
               </Pressable>
             ) : !canAddPlant ? (
-              <Link href="/(tabs)/settings" asChild>
+              <Link href={{ pathname: "/paywall", params: { reason: "limit" } }} asChild>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Upgrade to Premium for unlimited plants"
                   style={[
                     styles.upgradeBanner,
-                    { backgroundColor: c.surface, borderColor: c.border },
+                    { backgroundColor: c.heroSurface, borderColor: c.heroSurface },
                   ]}
                 >
-                  <Text style={[Type.title, { color: c.text, fontSize: 15 }]}>
-                    Plant limit reached
-                  </Text>
-                  <Text style={[Type.meta, { color: c.textMuted, marginTop: 4 }]}>
-                    Upgrade to Premium for unlimited plants and AI assists.
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Sparkles color={c.growth} size={16} strokeWidth={2.2} />
+                    <Text style={[Type.title, { color: '#EEF3EF', fontSize: 15 }]}>
+                      You’ve filled your {freeLimit} free plants
+                    </Text>
+                  </View>
+                  <Text style={[Type.meta, { color: 'rgba(232,239,233,0.7)', marginTop: 4 }]}>
+                    Go Premium for unlimited plants, AI, and cloud sync →
                   </Text>
                 </Pressable>
               </Link>

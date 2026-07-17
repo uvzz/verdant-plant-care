@@ -37,7 +37,10 @@ const STORAGE_KEY = '@verdant/language';
 /** Ordered language candidates from the device, most-preferred first. */
 function deviceLanguageCandidates(): string[] {
   try {
-    return getLocales().flatMap((l) => [l.languageCode, l.languageTag].filter(Boolean) as string[]);
+    return getLocales().flatMap(
+      (l: { languageCode: string | null; languageTag: string }) =>
+        [l.languageCode, l.languageTag].filter(Boolean) as string[]
+    );
   } catch {
     return [];
   }

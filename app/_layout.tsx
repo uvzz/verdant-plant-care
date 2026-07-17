@@ -160,6 +160,14 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen
+          name="paywall"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
           name="legal/privacy"
           options={{
             title: t('nav.privacy'),
