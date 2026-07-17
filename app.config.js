@@ -23,7 +23,7 @@ function pluginName(p) {
 }
 
 const basePlugins = appJson.expo.plugins || [];
-const extraPlugins = ['expo-document-picker', 'expo-updates'];
+const extraPlugins = ['expo-document-picker', 'expo-updates', 'expo-localization'];
 const seen = new Set(basePlugins.map(pluginName));
 const plugins = [...basePlugins];
 for (const p of extraPlugins) {

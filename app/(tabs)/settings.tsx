@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Alert,
+  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
@@ -10,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Check } from 'lucide-react-native';
 
 import Colors, { APP_NAME, APP_VERSION, FREE_PLANT_LIMIT } from '@/constants/Colors';
 import { Fonts, Type } from '@/constants/Typography';
@@ -17,6 +19,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ensureNotificationPermissions } from '@/lib/notifications';
 import { usePlants } from '@/lib/PlantContext';
+import { useI18n } from '@/lib/i18n';
 import { getAiProxyUrl } from '@/lib/aiConfig';
 import { CloudSyncCard } from '@/components/CloudSyncCard';
 import {
@@ -35,47 +38,42 @@ type Benefit = {
   label: string;
   free: string;
   premium: string;
-  live: boolean;
 };
-
-const BENEFITS: Benefit[] = [
-  {
-    label: 'Plants in your collection',
-    free: `Up to ${FREE_PLANT_LIMIT}`,
-    premium: 'Unlimited',
-    live: true,
-  },
-  {
-    label: 'Check-before-water calendar',
-    free: 'Included',
-    premium: 'Included',
-    live: true,
-  },
-  {
-    label: 'Family household & care sheets',
-    free: 'Included',
-    premium: 'Included',
-    live: true,
-  },
-  {
-    label: 'AI plant identify + coach',
-    free: '—',
-    premium: 'Server AI',
-    live: true,
-  },
-  {
-    label: 'Cloud backup & device sync',
-    free: '—',
-    premium: 'Automatic',
-    live: true,
-  },
-];
 
 export default function SettingsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t, language, setLanguage, languages } = useI18n();
+
+  const benefits: Benefit[] = [
+    {
+      label: t('settings.benefitPlants'),
+      free: t('settings.valueUpTo', { limit: FREE_PLANT_LIMIT }),
+      premium: t('settings.valueUnlimited'),
+    },
+    {
+      label: t('settings.benefitCalendar'),
+      free: t('settings.valueIncluded'),
+      premium: t('settings.valueIncluded'),
+    },
+    {
+      label: t('settings.benefitFamily'),
+      free: t('settings.valueIncluded'),
+      premium: t('settings.valueIncluded'),
+    },
+    {
+      label: t('settings.benefitAi'),
+      free: t('settings.valueNone'),
+      premium: t('settings.valueServerAi'),
+    },
+    {
+      label: t('settings.benefitSync'),
+      free: t('settings.valueNone'),
+      premium: t('settings.valueAutomatic'),
+    },
+  ];
   const {
     plants,
     logs,
@@ -114,7 +112,7 @@ export default function SettingsScreen() {
     try {
       const result = await purchasePremium('yearly');
       if (!result.ok) {
-        Alert.alert('Purchase unavailable', result.reason);
+        Alert.alert(t('settings.purchaseUnavailable'), result.reason);
         return;
       }
       await setPremium(true, {
@@ -122,10 +120,10 @@ export default function SettingsScreen() {
         productId: result.productId ?? PREMIUM_PRODUCT_IDS.yearly,
       });
       Alert.alert(
-        'Premium unlocked',
+        t('settings.premiumUnlockedTitle'),
         result.source === 'demo'
-          ? 'Development demo unlock. Store products go live with EAS production builds + App Store / Play SKUs.'
-          : 'Thank you — Premium is active.'
+          ? t('settings.premiumUnlockedDemo')
+          : t('settings.premiumUnlockedThanks')
       );
     } finally {
       setBuying(false);
@@ -135,23 +133,23 @@ export default function SettingsScreen() {
   const onRestore = async () => {
     const result = await restorePurchases();
     if (!result.ok) {
-      Alert.alert('Restore', result.reason);
+      Alert.alert(t('settings.restoreTitle'), result.reason);
       return;
     }
     if (result.restored) {
       await setPremium(true, { source: 'restore' });
-      Alert.alert('Restored', 'Your Premium purchase was restored.');
+      Alert.alert(t('settings.restoredTitle'), t('settings.restoredBody'));
     } else {
       Alert.alert(
-        'No purchases found',
-        'No active Verdant Premium subscription on this store account yet.'
+        t('settings.noPurchasesTitle'),
+        t('settings.noPurchasesBody')
       );
     }
   };
 
   const onAddMember = async () => {
     if (!memberName.trim()) {
-      Alert.alert('Name needed', 'Enter a family member name.');
+      Alert.alert(t('settings.nameNeededTitle'), t('settings.nameNeededBody'));
       return;
     }
     await addFamilyMember(memberName.trim());
@@ -172,24 +170,27 @@ export default function SettingsScreen() {
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={[Type.micro, { color: c.tint }]}>{APP_NAME}</Text>
-        <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>Settings</Text>
+        <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>{t('settings.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <Text style={[Type.title, { color: c.text }]}>Your collection</Text>
+          <Text style={[Type.title, { color: c.text }]}>{t('settings.collectionTitle')}</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
-            {plants.length} of {isPremium ? '∞' : FREE_PLANT_LIMIT} plants ·{' '}
-            {isPremium ? 'Premium' : 'Free'} ·{' '}
-            {premiumSourceLabel(settings.premiumSource)}
+            {t('settings.collectionSummary', {
+              count: plants.length,
+              limit: isPremium ? '∞' : FREE_PLANT_LIMIT,
+              tier: isPremium ? t('settings.tierPremium') : t('settings.tierFree'),
+              source: premiumSourceLabel(settings.premiumSource),
+            })}
           </Text>
         </View>
 
         {/* Billing */}
         <View style={[styles.card, { backgroundColor: c.heroSurface, borderColor: c.heroSurface }]}>
-          <Text style={[Type.micro, { color: c.growth }]}>Premium</Text>
+          <Text style={[Type.micro, { color: c.growth }]}>{t('settings.premiumBadge')}</Text>
           <Text style={[Type.displayM, { color: '#EEF3EF', marginTop: 6, fontSize: 22 }]}>
-            {isPremium ? 'Premium active' : 'Unlock Premium'}
+            {isPremium ? t('settings.premiumActive') : t('settings.premiumUnlock')}
           </Text>
           <Text
             style={[
@@ -197,23 +198,26 @@ export default function SettingsScreen() {
               { color: 'rgba(232,239,233,0.7)', marginTop: 6, marginBottom: 12 },
             ]}
           >
-            Unlimited plants + server AI. Product IDs ready for App Store / Play
-            ({PREMIUM_PRODUCT_IDS.yearly}).
+            {t('settings.premiumBlurb', { productId: PREMIUM_PRODUCT_IDS.yearly })}
           </Text>
 
           <View style={styles.compareHeader}>
             <Text style={[styles.compareLabel, { color: 'rgba(232,239,233,0.45)' }]}>
-              Feature
+              {t('settings.colFeature')}
             </Text>
-            <Text style={[styles.compareCol, { color: 'rgba(232,239,233,0.45)' }]}>Free</Text>
-            <Text style={[styles.compareCol, { color: c.growth }]}>Premium</Text>
+            <Text style={[styles.compareCol, { color: 'rgba(232,239,233,0.45)' }]}>
+              {t('settings.colFree')}
+            </Text>
+            <Text style={[styles.compareCol, { color: c.growth }]}>
+              {t('settings.colPremium')}
+            </Text>
           </View>
-          {BENEFITS.map((b, i) => (
+          {benefits.map((b, i) => (
             <View
               key={b.label}
               style={[
                 styles.compareRow,
-                i < BENEFITS.length - 1 && {
+                i < benefits.length - 1 && {
                   borderBottomWidth: StyleSheet.hairlineWidth,
                   borderBottomColor: 'rgba(255,255,255,0.08)',
                 },
@@ -252,7 +256,7 @@ export default function SettingsScreen() {
                 style={{ marginTop: 16 }}
               />
               <PrimaryButton
-                label="Restore purchases"
+                label={t('settings.restore')}
                 variant="secondary"
                 onPress={onRestore}
                 style={{ marginTop: 10 }}
@@ -262,8 +266,8 @@ export default function SettingsScreen() {
             <PrimaryButton
               label={
                 settings.premiumSource === 'demo'
-                  ? 'Switch to Free (demo)'
-                  : 'Manage plan in system Settings'
+                  ? t('settings.switchFreeDemo')
+                  : t('settings.managePlan')
               }
               variant="secondary"
               onPress={() => {
@@ -271,8 +275,8 @@ export default function SettingsScreen() {
                   setPremium(false);
                 } else {
                   Alert.alert(
-                    'Manage subscription',
-                    'Cancel or change Premium in iOS Settings → Apple ID → Subscriptions, or Google Play → Payments & subscriptions.'
+                    t('settings.manageSubTitle'),
+                    t('settings.manageSubBody')
                   );
                 }
               }}
@@ -286,51 +290,55 @@ export default function SettingsScreen() {
             ]}
           >
             {__DEV__
-              ? 'Dev: purchase uses demo unlock until StoreKit / Play is linked in EAS builds.'
-              : 'Purchases process through Apple / Google when store products are live.'}
+              ? t('settings.storeFootnoteDev')
+              : t('settings.storeFootnoteProd')}
           </Text>
         </View>
 
         {/* Family */}
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <Text style={[Type.title, { color: c.text }]}>Family sharing</Text>
+          <Text style={[Type.title, { color: c.text }]}>{t('settings.familyTitle')}</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
-            Local household — assign caretakers and share care sheets. Link
-            devices from Backup &amp; sync above.
+            {t('settings.familyBlurb')}
           </Text>
           <Text style={[Type.micro, { color: c.textMuted, marginTop: 12 }]}>
-            Household name
+            {t('settings.householdName')}
           </Text>
           <TextInput
             value={householdDraft}
             onChangeText={setHouseholdDraft}
             onBlur={() => setHouseholdName(householdDraft)}
-            placeholder="e.g. Our glasshouse"
+            placeholder={t('settings.householdPlaceholder')}
             placeholderTextColor={c.textMuted}
             style={[inputStyle, { marginTop: 6 }]}
           />
           <Text style={[Type.micro, { color: c.textMuted, marginTop: 14 }]}>
-            Members
+            {t('settings.members')}
           </Text>
           {familyMembers.length === 0 ? (
             <Text style={[Type.meta, { color: c.textMuted, marginTop: 6 }]}>
-              No members yet — add partners, roommates, or kids who help water.
+              {t('settings.membersEmpty')}
             </Text>
           ) : (
             familyMembers.map((m) => (
               <View key={m.id} style={styles.memberRow}>
                 <Text style={[Type.bodySmall, { color: c.text, flex: 1 }]}>
                   {m.name}
-                  <Text style={{ color: c.textMuted }}> · {m.role}</Text>
+                  <Text style={{ color: c.textMuted }}>
+                    {' · '}
+                    {m.role === 'owner'
+                      ? t('settings.roleOwner')
+                      : t('settings.roleMember')}
+                  </Text>
                 </Text>
                 <PrimaryButton
-                  label="Remove"
+                  label={t('settings.remove')}
                   variant="ghost"
                   onPress={() =>
-                    Alert.alert('Remove member?', m.name, [
-                      { text: 'Cancel', style: 'cancel' },
+                    Alert.alert(t('settings.removeMemberTitle'), m.name, [
+                      { text: t('settings.cancel'), style: 'cancel' },
                       {
-                        text: 'Remove',
+                        text: t('settings.remove'),
                         style: 'destructive',
                         onPress: () => removeFamilyMember(m.id),
                       },
@@ -345,14 +353,14 @@ export default function SettingsScreen() {
             <TextInput
               value={memberName}
               onChangeText={setMemberName}
-              placeholder="Name"
+              placeholder={t('settings.namePlaceholder')}
               placeholderTextColor={c.textMuted}
               style={[inputStyle, { flex: 1 }]}
             />
-            <PrimaryButton label="Add" onPress={onAddMember} style={{ minWidth: 72 }} />
+            <PrimaryButton label={t('settings.add')} onPress={onAddMember} style={{ minWidth: 72 }} />
           </View>
           <PrimaryButton
-            label="Share care sheet"
+            label={t('settings.shareCareSheet')}
             variant="secondary"
             onPress={async () => {
               const due = getCareDueItems(plants, logs);
@@ -360,12 +368,12 @@ export default function SettingsScreen() {
                 dueItems: due,
                 members: familyMembers,
               });
-              if (!r.ok) Alert.alert('Share failed', r.reason);
+              if (!r.ok) Alert.alert(t('settings.shareFailed'), r.reason);
             }}
             style={{ marginTop: 12 }}
           />
           <PrimaryButton
-            label="Invite family (instructions)"
+            label={t('settings.inviteFamily')}
             variant="ghost"
             onPress={() => shareFamilyInvite(settings.householdName || 'our plants')}
             style={{ marginTop: 8 }}
@@ -373,14 +381,13 @@ export default function SettingsScreen() {
         </View>
 
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <Text style={[Type.title, { color: c.text }]}>AI assistant</Text>
+          <Text style={[Type.title, { color: c.text }]}>{t('settings.aiTitle')}</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
-            Identify plants from photos and get calm care coaching. AI runs on
-            Verdant’s servers — no keys or accounts on your device.
+            {t('settings.aiBlurb')}
           </Text>
           <Text style={[Type.meta, { color: c.textMuted, marginTop: 10 }]}>
-            Status: {isPremium ? 'Premium · AI unlocked' : 'Free · upgrade for AI'}
-            {__DEV__ ? `\nEndpoint: ${aiUrl}` : ''}
+            {isPremium ? t('settings.aiStatusPremium') : t('settings.aiStatusFree')}
+            {__DEV__ ? `\n${t('settings.aiEndpoint', { url: aiUrl })}` : ''}
           </Text>
         </View>
 
@@ -390,9 +397,9 @@ export default function SettingsScreen() {
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={[Type.title, { color: c.text }]}>Gentle notifications</Text>
+              <Text style={[Type.title, { color: c.text }]}>{t('settings.notificationsTitle')}</Text>
               <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
-                Local reminders to check soil when care is due.
+                {t('settings.notificationsBlurb')}
               </Text>
             </View>
             <Switch
@@ -402,8 +409,8 @@ export default function SettingsScreen() {
                   const ok = await ensureNotificationPermissions();
                   if (!ok) {
                     Alert.alert(
-                      'Notifications disabled',
-                      'Enable notifications in system settings to receive gentle reminders.'
+                      t('settings.notificationsDisabledTitle'),
+                      t('settings.notificationsDisabledBody')
                     );
                   }
                 }
@@ -415,20 +422,63 @@ export default function SettingsScreen() {
         </View>
 
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <Text style={[Type.title, { color: c.text }]}>About</Text>
+          <Text style={[Type.title, { color: c.text }]}>{t('settings.languageTitle')}</Text>
+          <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4, marginBottom: 6 }]}>
+            {t('settings.languageBlurb')}
+          </Text>
+          {languages.map((lang, i) => {
+            const selected = lang.code === language;
+            return (
+              <Pressable
+                key={lang.code}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onPress={() => setLanguage(lang.code)}
+                style={[
+                  styles.languageRow,
+                  i < languages.length - 1 && {
+                    borderBottomWidth: StyleSheet.hairlineWidth,
+                    borderBottomColor: c.border,
+                  },
+                ]}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      Type.bodySmall,
+                      {
+                        color: c.text,
+                        fontFamily: selected ? Fonts.bodySemi : Fonts.body,
+                      },
+                    ]}
+                  >
+                    {lang.nativeName}
+                  </Text>
+                  {lang.nativeName !== lang.englishName && (
+                    <Text style={[Type.meta, { color: c.textMuted, marginTop: 1 }]}>
+                      {lang.englishName}
+                    </Text>
+                  )}
+                </View>
+                {selected && <Check color={c.tint} size={18} strokeWidth={2.4} />}
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <Text style={[Type.title, { color: c.text }]}>{t('settings.aboutTitle')}</Text>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
-            {APP_NAME} v{APP_VERSION}{'\n'}
-            A calm, photo-first plant journal. Works fully offline — sign in
-            to back up and sync across devices.
+            {t('settings.aboutBody', { appName: APP_NAME, version: APP_VERSION })}
           </Text>
           <PrimaryButton
-            label="Privacy policy"
+            label={t('settings.privacyPolicy')}
             variant="ghost"
             onPress={() => router.push('/legal/privacy')}
             style={{ marginTop: 10 }}
           />
           <PrimaryButton
-            label="Terms of use"
+            label={t('settings.termsOfUse')}
             variant="ghost"
             onPress={() => router.push('/legal/terms')}
           />
@@ -481,5 +531,12 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 10,
     alignItems: 'center',
+  },
+  languageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    minHeight: 44,
   },
 });

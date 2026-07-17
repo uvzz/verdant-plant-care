@@ -19,6 +19,7 @@ import Colors, { APP_NAME } from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
 import { setOnboardingDone } from '@/lib/onboarding';
 import { tapLight } from '@/lib/haptics';
+import { useI18n } from '@/lib/i18n';
 
 const { width } = Dimensions.get('window');
 
@@ -83,6 +84,7 @@ function ValuePane({
   c: (typeof Colors)['dark'];
   onContinue: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <View style={styles.pane}>
       <Animated.Text entering={FadeIn.duration(400)} style={[Type.micro, styles.mark, { color: c.growth }]}>
@@ -92,14 +94,13 @@ function ValuePane({
         entering={FadeInDown.delay(80).duration(500)}
         style={[Type.displayHero, styles.headline, { color: '#EEF3EF' }]}
       >
-        Care you can{'\n'}see grow.
+        {t('welcome.valueHeadline')}
       </Animated.Text>
       <Animated.Text
         entering={FadeInDown.delay(180).duration(500)}
         style={[Type.body, styles.sub, { color: '#A8B5AE' }]}
       >
-        A calm, photo-first plant journal that asks you to check the soil before
-        watering — never blind schedules.
+        {t('welcome.valueSub')}
       </Animated.Text>
 
       <Animated.View entering={FadeInDown.delay(280).duration(500)} style={[styles.preview, { borderColor: 'rgba(255,255,255,0.1)' }]}>
@@ -121,7 +122,7 @@ function ValuePane({
           <View style={styles.previewMeta}>
             <Droplet color={c.growth} size={12} strokeWidth={2.4} />
             <Text style={[Type.meta, { color: '#A8B5AE', fontSize: 11 }]}>
-              Water in 3 days · check soil first
+              {t('welcome.previewWater')}
             </Text>
           </View>
         </View>
@@ -134,7 +135,7 @@ function ValuePane({
           { backgroundColor: c.growth, opacity: pressed ? 0.9 : 1, marginTop: 'auto' },
         ]}
       >
-        <Text style={[Type.button, { color: c.growthInk }]}>Continue</Text>
+        <Text style={[Type.button, { color: c.growthInk }]}>{t('welcome.continue')}</Text>
       </Pressable>
     </View>
   );
@@ -142,6 +143,7 @@ function ValuePane({
 
 function PrivacyPane({ c }: { c: (typeof Colors)['dark'] }) {
   const router = useRouter();
+  const { t } = useI18n();
 
   const finish = async (goAdd: boolean) => {
     await setOnboardingDone();
@@ -158,28 +160,28 @@ function PrivacyPane({ c }: { c: (typeof Colors)['dark'] }) {
 
   return (
     <View style={styles.pane}>
-      <Text style={[Type.micro, styles.mark, { color: c.growth }]}>Yours, privately</Text>
+      <Text style={[Type.micro, styles.mark, { color: c.growth }]}>{t('welcome.privacyMark')}</Text>
       <Text style={[Type.displayHero, styles.headline, { color: '#EEF3EF', fontSize: 40 }]}>
-        Private by{'\n'}default.
+        {t('welcome.privacyHeadline')}
       </Text>
 
       <View style={styles.features}>
         <Feature
           icon={<Leaf color={c.growth} size={18} strokeWidth={2.2} />}
-          title="Works fully offline"
-          body="Your plants and photos live on your device. No account needed to start."
+          title={t('welcome.offlineTitle')}
+          body={t('welcome.offlineBody')}
           c={c}
         />
         <Feature
           icon={<Lock color={c.growth} size={18} strokeWidth={2.2} />}
-          title="Sign in only to sync"
-          body="Optional Apple or Google sign-in backs up and syncs across your devices."
+          title={t('welcome.syncTitle')}
+          body={t('welcome.syncBody')}
           c={c}
         />
         <Feature
           icon={<Sparkles color={c.growth} size={18} strokeWidth={2.2} />}
-          title="Premium AI, safely"
-          body="Plant ID and coaching run on our servers — no API key ever on your phone."
+          title={t('welcome.aiTitle')}
+          body={t('welcome.aiBody')}
           c={c}
         />
       </View>
@@ -192,7 +194,7 @@ function PrivacyPane({ c }: { c: (typeof Colors)['dark'] }) {
             { backgroundColor: c.growth, opacity: pressed ? 0.9 : 1 },
           ]}
         >
-          <Text style={[Type.button, { color: c.growthInk }]}>Start your collection</Text>
+          <Text style={[Type.button, { color: c.growthInk }]}>{t('welcome.startCollection')}</Text>
         </Pressable>
         <Pressable
           onPress={finishToSettings}
@@ -200,7 +202,7 @@ function PrivacyPane({ c }: { c: (typeof Colors)['dark'] }) {
         >
           <Lock color={c.growth} size={14} strokeWidth={2.4} />
           <Text style={[Type.button, { color: c.growth, fontSize: 15 }]}>
-            Sign in to back up & sync
+            {t('welcome.signInSync')}
           </Text>
         </Pressable>
         <Pressable
@@ -208,7 +210,7 @@ function PrivacyPane({ c }: { c: (typeof Colors)['dark'] }) {
           style={({ pressed }) => [styles.btnGhost, { opacity: pressed ? 0.7 : 1 }]}
         >
           <Text style={[Type.button, { color: '#A8B5AE', fontSize: 15 }]}>
-            I already have plants
+            {t('welcome.haveePlants')}
           </Text>
         </Pressable>
       </View>
