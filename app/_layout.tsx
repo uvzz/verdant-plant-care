@@ -19,6 +19,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { PlantProvider } from '@/lib/PlantContext';
+import { I18nProvider, useI18n } from '@/lib/i18n';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -76,9 +77,11 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <PlantProvider>
-        <RootLayoutNav />
-      </PlantProvider>
+      <I18nProvider>
+        <PlantProvider>
+          <RootLayoutNav />
+        </PlantProvider>
+      </I18nProvider>
     </GestureHandlerRootView>
   );
 }
@@ -86,6 +89,7 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const c = Colors[colorScheme ?? 'light'];
+  const { t } = useI18n();
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkNav : LightNav}>
@@ -109,7 +113,7 @@ function RootLayoutNav() {
         <Stack.Screen
           name="plant/add"
           options={{
-            title: 'Add plant',
+            title: t('nav.addPlant'),
             presentation: 'modal',
             headerShadowVisible: false,
             headerStyle: { backgroundColor: c.background },
@@ -118,7 +122,7 @@ function RootLayoutNav() {
         <Stack.Screen
           name="plant/edit"
           options={{
-            title: 'Edit plant',
+            title: t('nav.editPlant'),
             presentation: 'modal',
             headerShadowVisible: false,
             headerStyle: { backgroundColor: c.background },
@@ -140,7 +144,7 @@ function RootLayoutNav() {
         <Stack.Screen
           name="plant/log"
           options={{
-            title: 'Log care',
+            title: t('nav.logCare'),
             presentation: 'modal',
             headerShadowVisible: false,
             headerStyle: { backgroundColor: c.background },
@@ -158,7 +162,7 @@ function RootLayoutNav() {
         <Stack.Screen
           name="legal/privacy"
           options={{
-            title: 'Privacy policy',
+            title: t('nav.privacy'),
             headerShadowVisible: false,
             headerStyle: { backgroundColor: c.background },
           }}
@@ -166,7 +170,7 @@ function RootLayoutNav() {
         <Stack.Screen
           name="legal/terms"
           options={{
-            title: 'Terms of use',
+            title: t('nav.terms'),
             headerShadowVisible: false,
             headerStyle: { backgroundColor: c.background },
           }}

@@ -6,11 +6,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/constants/Colors';
 import { Fonts } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
+import { useI18n } from '@/lib/i18n';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? 'light';
   const c = Colors[colorScheme];
   const insets = useSafeAreaInsets();
+  const { t } = useI18n();
 
   // Explicit height so icons + labels sit above the home indicator (not clipped).
   const bottomPad = Platform.OS === 'ios' ? Math.max(insets.bottom, 8) : 10;
@@ -57,8 +59,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Plants',
-          tabBarAccessibilityLabel: 'My plants',
+          title: t('tabs.plants'),
+          tabBarAccessibilityLabel: t('tabs.plantsA11y'),
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{ ios: 'leaf.fill', android: 'spa', web: 'spa' }}
@@ -71,8 +73,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="calendar"
         options={{
-          title: 'Care',
-          tabBarAccessibilityLabel: 'Care calendar',
+          title: t('tabs.care'),
+          tabBarAccessibilityLabel: t('tabs.careA11y'),
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{ ios: 'calendar', android: 'calendar_today', web: 'calendar_today' }}
@@ -85,8 +87,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="insights"
         options={{
-          title: 'Insights',
-          tabBarAccessibilityLabel: 'Collection insights',
+          title: t('tabs.insights'),
+          tabBarAccessibilityLabel: t('tabs.insightsA11y'),
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{
@@ -103,8 +105,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
-          tabBarAccessibilityLabel: 'Settings',
+          title: t('tabs.settings'),
+          tabBarAccessibilityLabel: t('tabs.settingsA11y'),
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{ ios: 'gearshape.fill', android: 'settings', web: 'settings' }}
