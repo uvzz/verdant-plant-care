@@ -215,10 +215,7 @@ export default function PlantDetailScreen() {
 
   const ensureAiQuota = async () => {
     if (!canUseAi) {
-      Alert.alert(
-        'Premium required',
-        'AI assist is included with Premium. Unlock Premium in Settings.'
-      );
+      router.push({ pathname: '/paywall', params: { reason: 'ai' } });
       return false;
     }
     const quota = await consumeAiUse();

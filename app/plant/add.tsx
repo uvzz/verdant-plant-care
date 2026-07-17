@@ -98,10 +98,7 @@ export default function AddPlantScreen() {
       return;
     }
     if (!canUseAi) {
-      Alert.alert(
-        'Premium required',
-        'AI plant identify is a Premium feature. Unlock Premium in Settings.'
-      );
+      router.push({ pathname: '/paywall', params: { reason: 'ai' } });
       return;
     }
     setIdentifying(true);
@@ -137,7 +134,7 @@ export default function AddPlantScreen() {
 
   const onSave = async () => {
     if (!canAddPlant) {
-      Alert.alert('Plant limit', 'Upgrade to Premium for unlimited plants.');
+      router.push({ pathname: '/paywall', params: { reason: 'limit' } });
       return;
     }
     if (name.trim().length < 2) {
