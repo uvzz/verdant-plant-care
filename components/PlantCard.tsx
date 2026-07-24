@@ -4,6 +4,13 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { PawPrint, Sprout } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
+import {
+  careColor,
+  categoryColor,
+  onHue,
+  softFill,
+  statusColor,
+} from '@/constants/Palette';
 import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { CareIcon } from '@/components/CareIcon';
@@ -33,9 +40,24 @@ export function PlantCard({
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const router = useRouter();
-  const track = filamentColor ?? c.tint;
+  const catHue = categoryColor(plant.category, scheme);
+  const overdueHue = statusColor('overdue', scheme);
+  // The due line, its icon and the water ring all share ONE colour so the card
+  // reads as a single signal: coral when late, else the colour of the care the
+  // plant is actually waiting for (blue = water, amber = feed).
+  const track = overdue
+    ? overdueHue
+    : dueType
+      ? careColor(dueType, scheme)
+      : (filamentColor ?? c.tint);
   const tox =
     plant.petToxicity && plant.petToxicity !== 'unknown' ? plant.petToxicity : null;
+  const toxHue =
+    tox === 'toxic'
+      ? overdueHue
+      : tox === 'caution'
+        ? statusColor('dueToday', scheme)
+        : statusColor('healthy', scheme);
   const imageWrapRef = useRef<View>(null);
 
   const open = () => {
@@ -73,35 +95,27 @@ export function PlantCard({
           {plant.photoUri ? (
             <Image source={{ uri: plant.photoUri }} style={styles.image} contentFit="cover" />
           ) : (
-            <View style={[styles.placeholder, { backgroundColor: c.surfaceAlt }]}>
-              <Sprout color={c.tint} size={40} strokeWidth={1.8} />
+            <View style={[styles.placeholder, { backgroundColor: softFill(catHue, scheme) }]}>
+              <Sprout color={catHue} size={40} strokeWidth={1.8} />
             </View>
           )}
+          {/* Category stripe — a specimen-label tape under the photo. It is the
+              only place the category shows on a card that already has a
+              species line, and it colour-codes the grid at a glance. */}
+          <View style={[styles.categoryStripe, { backgroundColor: catHue }]} />
           {tox ? (
-            <View
-              style={[
-                styles.petBadge,
-                {
-                  backgroundColor:
-                    tox === 'toxic' ? c.danger : tox === 'caution' ? '#C4A35A' : c.growth,
-                },
-              ]}
-            >
-              <PawPrint
-                color={tox === 'safe' ? c.growthInk : '#FFFFFF'}
-                size={12}
-                strokeWidth={2.4}
-              />
+            <View style={[styles.petBadge, { backgroundColor: toxHue }]}>
+              <PawPrint color={onHue(toxHue)} size={12} strokeWidth={2.4} />
             </View>
           ) : null}
           {typeof dueProgress === 'number' ? (
             <View style={styles.ring}>
-              <WaterRing progress={dueProgress} color={overdue ? '#E8927C' : c.growth} />
+              <WaterRing progress={dueProgress} color={track} />
             </View>
           ) : null}
           {overdue ? (
-            <View style={[styles.overdueBadge, { backgroundColor: c.danger }]}>
-              <Text style={styles.overdueText}>Due</Text>
+            <View style={[styles.overdueBadge, { backgroundColor: overdueHue }]}>
+              <Text style={[styles.overdueText, { color: onHue(overdueHue) }]}>Due</Text>
             </View>
           ) : null}
         </View>
@@ -161,6 +175,13 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   ring: { position: 'absolute', bottom: 8, right: 8 },
+  categoryStripe: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 3,
+  },
   overdueBadge: {
     position: 'absolute',
     top: 8,
@@ -170,7 +191,6 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   overdueText: {
-    color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.4,

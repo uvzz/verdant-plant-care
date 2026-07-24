@@ -2,14 +2,25 @@ import { StyleSheet, Text, View } from 'react-native';
 import { addDays, format, isSameDay, startOfDay } from 'date-fns';
 
 import Colors from '@/constants/Colors';
+import { careColor } from '@/constants/Palette';
 import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
+import type { CareLogType } from '@/lib/types';
+
+export interface WeekStripItem {
+  date: Date;
+  type: CareLogType;
+}
 
 /**
- * Horizontal 7-day strip anchoring the care calendar (Planta-style).
- * Days with due care get a dot: danger if overdue relative to today.
+ * Horizontal 7-day strip anchoring the care calendar.
+ *
+ * Each day shows one dot PER KIND of care due that day, in that care's colour
+ * — so the week reads as "blue Tuesday, blue+amber Friday" at a glance. Dots
+ * are deduplicated by type rather than counted: five waterings on one day is
+ * still one errand, and five identical dots would just look like noise.
  */
-export function WeekStrip({ dueDates }: { dueDates: Date[] }) {
+export function WeekStrip({ due }: { due: WeekStripItem[] }) {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const today = startOfDay(new Date());
@@ -19,7 +30,9 @@ export function WeekStrip({ dueDates }: { dueDates: Date[] }) {
     <View style={styles.row} accessibilityLabel="Next seven days">
       {days.map((day, i) => {
         const isToday = i === 0;
-        const dueCount = dueDates.filter((d) => isSameDay(d, day)).length;
+        const onDay = due.filter((d) => isSameDay(d.date, day));
+        const dueCount = onDay.length;
+        const types = Array.from(new Set(onDay.map((d) => d.type))).slice(0, 3);
         return (
           <View
             key={day.toISOString()}
@@ -58,18 +71,26 @@ export function WeekStrip({ dueDates }: { dueDates: Date[] }) {
             >
               {format(day, 'd')}
             </Text>
-            <View
-              style={[
-                styles.dot,
-                {
-                  backgroundColor: dueCount
-                    ? isToday
-                      ? c.growth
-                      : c.tint
-                    : 'transparent',
-                },
-              ]}
-            />
+            <View style={styles.dotRow}>
+              {types.length ? (
+                types.map((type) => (
+                  <View
+                    key={type}
+                    style={[
+                      styles.dot,
+                      {
+                        // Today's pill is a dark (light mode) / light (dark
+                        // mode) fill, where mid-tone care hues muddy. Swap to
+                        // the on-fill colour there so the dots stay visible.
+                        backgroundColor: isToday ? c.onEmphasis : careColor(type, scheme),
+                      },
+                    ]}
+                  />
+                ))
+              ) : (
+                <View style={[styles.dot, { backgroundColor: 'transparent' }]} />
+              )}
+            </View>
           </View>
         );
       })}
@@ -86,5 +107,6 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     paddingVertical: 8,
   },
-  dot: { width: 5, height: 5, borderRadius: 3, marginTop: 4 },
+  dotRow: { flexDirection: 'row', gap: 3, marginTop: 4, height: 5 },
+  dot: { width: 5, height: 5, borderRadius: 3 },
 });

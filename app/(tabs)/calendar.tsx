@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Colors from '@/constants/Colors';
+import { careColor, onHue, statusColor } from '@/constants/Palette';
 import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { EmptyState } from '@/components/EmptyState';
@@ -127,8 +128,11 @@ export default function CalendarScreen() {
         onComplete={() => onWatered(item)}
         label={item.type === 'water' ? 'Watered' : 'Fed'}
         type={item.type}
-        bg={c.growth}
-        fg={c.growthInk}
+        // The swipe panel wears the care colour, so the gesture reveals blue
+        // for a watering and amber for a feed — the action is identifiable
+        // before the label is even readable.
+        bg={careColor(item.type, scheme)}
+        fg={onHue(careColor(item.type, scheme))}
         disabled={busy}
       >
       <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
@@ -165,8 +169,8 @@ export default function CalendarScreen() {
         <View style={styles.actions}>
           <ActionChip
             label={item.type === 'water' ? 'Watered' : 'Fertilized'}
-            bg={c.growth}
-            fg={c.growthInk}
+            bg={careColor(item.type, scheme)}
+            fg={onHue(careColor(item.type, scheme))}
             disabled={busy}
             onPress={() => onWatered(item)}
           />
@@ -212,7 +216,7 @@ export default function CalendarScreen() {
           Soft nudges to check your plants — not orders to water.
         </Text>
         {plants.length > 0 ? (
-          <WeekStrip dueDates={dueItems.map((d) => d.dueDate)} />
+          <WeekStrip due={dueItems.map((d) => ({ date: d.dueDate, type: d.type }))} />
         ) : null}
       </View>
 
@@ -264,16 +268,27 @@ export default function CalendarScreen() {
               </View>
             )}
 
-            <Section title="Overdue" color={c.danger} emptyLabel="You're all caught up">
-              {overdue.map((item) => renderRow(item, c.danger, 'o'))}
+            {/* Overdue rows stay coral regardless of care type — lateness
+                outranks "what kind of care". Everything else is coloured by
+                the action it is asking for. */}
+            <Section
+              title="Overdue"
+              color={statusColor('overdue', scheme)}
+              emptyLabel="You're all caught up"
+            >
+              {overdue.map((item) => renderRow(item, statusColor('overdue', scheme), 'o'))}
             </Section>
 
-            <Section title="Today" color={c.tint} emptyLabel="No care due today">
-              {today.map((item) => renderRow(item, c.growth, 't'))}
+            <Section
+              title="Today"
+              color={statusColor('dueToday', scheme)}
+              emptyLabel="No care due today"
+            >
+              {today.map((item) => renderRow(item, careColor(item.type, scheme), 't'))}
             </Section>
 
             <Section title="Upcoming" color={c.textMuted} emptyLabel="No upcoming care">
-              {upcoming.map((item) => renderRow(item, c.tint, 'u'))}
+              {upcoming.map((item) => renderRow(item, careColor(item.type, scheme), 'u'))}
             </Section>
           </>
         )}
