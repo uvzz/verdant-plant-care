@@ -266,16 +266,36 @@ export function normalizePlant(
     notes: (raw.notes ?? '').toString().slice(0, 4000),
     createdAt,
     updatedAt,
-    lightLevel: raw.lightLevel ?? 'medium',
-    potSize: raw.potSize ?? 'medium',
-    petToxicity: raw.petToxicity ?? 'unknown',
+    lightLevel: LIGHT_LEVELS.includes(raw.lightLevel as LightLevel)
+      ? (raw.lightLevel as LightLevel)
+      : 'medium',
+    potSize: POT_SIZES.includes(raw.potSize as PotSize)
+      ? (raw.potSize as PotSize)
+      : 'medium',
+    petToxicity: PET_TOXICITY.includes(raw.petToxicity as PetToxicity)
+      ? (raw.petToxicity as PetToxicity)
+      : 'unknown',
     checkBeforeWater: raw.checkBeforeWater !== false,
     caretakerId: raw.caretakerId ?? null,
     aiGuide: raw.aiGuide ?? null,
     aiCoachHistory: Array.isArray(raw.aiCoachHistory)
-      ? raw.aiCoachHistory.slice(0, MAX_COACH_HISTORY)
+      ? raw.aiCoachHistory.slice(0, MAX_COACH_HISTORY).map((entry) => ({
+          ...entry,
+          // Same treatment as CareLog.type/Plant.category: an unknown/corrupt
+          // urgency (e.g. a future enum value round-tripped from cloud sync
+          // to an older client) must not render as the raw stored key —
+          // 'watch' mirrors the fallback lib/openrouter.ts already uses when
+          // parsing a fresh AI response's urgency field.
+          urgency: AI_URGENCY_LEVELS.includes(entry?.urgency as AiUrgency)
+            ? (entry.urgency as AiUrgency)
+            : 'watch',
+        }))
       : [],
-    aiIdentityConfidence: raw.aiIdentityConfidence ?? null,
+    aiIdentityConfidence: AI_CONFIDENCE_LEVELS.includes(
+      raw.aiIdentityConfidence as NonNullable<Plant['aiIdentityConfidence']>
+    )
+      ? (raw.aiIdentityConfidence as Plant['aiIdentityConfidence'])
+      : null,
   };
 }
 

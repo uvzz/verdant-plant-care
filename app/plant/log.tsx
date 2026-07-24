@@ -35,8 +35,7 @@ export default function LogCareScreen() {
   const typeParam = firstParam(typeRaw);
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
-  // Aliased: TYPES.map((t) => …) below already uses `t` as its loop variable.
-  const { t: translateDomain } = useI18n();
+  const { t } = useI18n();
   const router = useRouter();
   const { getPlant, addCareLog } = usePlants();
   const plant = getPlant(plantId);
@@ -61,7 +60,7 @@ export default function LogCareScreen() {
     if (!perm.granted) {
       // Same permission prompt as add.tsx/edit.tsx — reuses their shared key
       // rather than a byte-identical log.* duplicate.
-      Alert.alert(translateDomain('form.photoPermissionTitle'), translateDomain('form.photoPermissionBody'));
+      Alert.alert(t('form.photoPermissionTitle'), t('form.photoPermissionBody'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -91,11 +90,11 @@ export default function LogCareScreen() {
     if (!plant) {
       // Defensive only — the component already renders the "not found" view
       // below (and never mounts the Save button) whenever `plant` is falsy.
-      Alert.alert(translateDomain('log.plantMissingTitle'));
+      Alert.alert(t('log.plantMissingTitle'));
       return;
     }
     if (type === 'photo' && !photoUri) {
-      Alert.alert(translateDomain('log.photoRequiredTitle'), translateDomain('log.photoRequiredBody'));
+      Alert.alert(t('log.photoRequiredTitle'), t('log.photoRequiredBody'));
       return;
     }
     if (saving) return;
@@ -109,7 +108,7 @@ export default function LogCareScreen() {
       });
       router.back();
     } catch {
-      Alert.alert(translateDomain('log.saveErrorTitle'), translateDomain('log.saveErrorBody'));
+      Alert.alert(t('log.saveErrorTitle'), t('log.saveErrorBody'));
     } finally {
       setSaving(false);
     }
@@ -118,7 +117,7 @@ export default function LogCareScreen() {
   if (!plant) {
     return (
       <View style={[styles.center, { backgroundColor: c.background }]}>
-        <Text style={[Type.body, { color: c.textMuted }]}>{translateDomain('log.notFound')}</Text>
+        <Text style={[Type.body, { color: c.textMuted }]}>{t('log.notFound')}</Text>
       </View>
     );
   }
@@ -131,19 +130,19 @@ export default function LogCareScreen() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={[Type.displayM, { color: c.text }]}>{plant.name}</Text>
         <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 6, marginBottom: 16 }]}>
-          {translateDomain('log.subtitle')}
+          {t('log.subtitle')}
         </Text>
 
         <Text style={[Type.micro, { color: c.textMuted, marginBottom: 8 }]}>
-          {translateDomain('log.careTypeLabel')}
+          {t('log.careTypeLabel')}
         </Text>
         <View style={styles.typeGrid}>
-          {TYPES.map((t) => {
-            const active = t === type;
+          {TYPES.map((careType) => {
+            const active = careType === type;
             return (
               <Pressable
-                key={t}
-                onPress={() => setType(t)}
+                key={careType}
+                onPress={() => setType(careType)}
                 style={[
                   styles.typeCell,
                   {
@@ -154,7 +153,7 @@ export default function LogCareScreen() {
               >
                 <View style={{ marginBottom: 6 }}>
                   <CareIcon
-                    type={t}
+                    type={careType}
                     color={active ? c.growth : c.tint}
                     size={19}
                   />
@@ -168,7 +167,7 @@ export default function LogCareScreen() {
                     },
                   ]}
                 >
-                  {translateDomain(`domain.careType.${t}`)}
+                  {t(`domain.careType.${careType}`)}
                 </Text>
               </Pressable>
             );
@@ -176,12 +175,12 @@ export default function LogCareScreen() {
         </View>
 
         <Text style={[Type.micro, { color: c.textMuted, marginBottom: 8, marginTop: 8 }]}>
-          {translateDomain('log.noteLabel')}
+          {t('log.noteLabel')}
         </Text>
         <TextInput
           value={note}
           onChangeText={setNote}
-          placeholder={translateDomain('log.notePlaceholder')}
+          placeholder={t('log.notePlaceholder')}
           placeholderTextColor={c.textMuted}
           multiline
           style={[
@@ -196,7 +195,7 @@ export default function LogCareScreen() {
         />
 
         <Text style={[Type.micro, { color: c.textMuted, marginBottom: 8, marginTop: 8 }]}>
-          {translateDomain('log.photoLabel')}
+          {t('log.photoLabel')}
         </Text>
         <Pressable
           onPress={pickPhoto}
@@ -209,7 +208,7 @@ export default function LogCareScreen() {
             <Image source={{ uri: photoUri }} style={styles.photo} contentFit="cover" />
           ) : (
             <Text style={[Type.meta, { color: c.textMuted }]}>
-              {translateDomain('log.photoBoxPlaceholder')}
+              {t('log.photoBoxPlaceholder')}
             </Text>
           )}
         </Pressable>
@@ -218,13 +217,13 @@ export default function LogCareScreen() {
               form.camera keys — identical photo-source buttons, third screen
               to use them. */}
           <PrimaryButton
-            label={translateDomain('form.library')}
+            label={t('form.library')}
             variant="secondary"
             onPress={pickPhoto}
             style={styles.half}
           />
           <PrimaryButton
-            label={translateDomain('form.camera')}
+            label={t('form.camera')}
             variant="secondary"
             onPress={takePhoto}
             style={styles.half}
@@ -232,8 +231,8 @@ export default function LogCareScreen() {
         </View>
 
         <PrimaryButton
-          label={translateDomain('log.saveButton', {
-            careType: translateDomain(`domain.careType.${type}`),
+          label={t('log.saveButton', {
+            careType: t(`domain.careType.${type}`),
           })}
           icon={<CareIcon type={type} color={c.growthInk} size={17} />}
           onPress={onSave}

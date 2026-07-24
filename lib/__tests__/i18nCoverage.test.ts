@@ -16,7 +16,7 @@
 //      Critically, a template literal sitting directly in one of these 8
 //      props is flagged EVEN WHEN ITS STATIC TEXT HAS NO LETTERS — e.g. a
 //      bare `\` · \`` separator between two interpolations — unless every
-//      `${...}` interpolation is itself a `t(...)`/`i18nT(...)` call. The
+//      `${...}` interpolation is itself a `t(...)` call. The
 //      historical bug's static quasis were exactly `' · '`; the English
 //      text was smuggled in through a non-`t()` interpolation
 //      (`PREMIUM_DISPLAY.yearlyLabel`), so gating purely on "does the
@@ -45,7 +45,7 @@
 // A literal is only flagged if it contains at least one Unicode letter —
 // this single heuristic is most of what keeps the false-positive rate low.
 // (The one deliberate exception: a template literal directly in a
-// TARGET_PROPS slot whose interpolations aren't all t()/i18nT() calls is
+// TARGET_PROPS slot whose interpolations aren't all t() calls is
 // flagged regardless — see checkExprSlot — because that shape is exactly
 // how the historical bug hid a letters-free static separator.) Otherwise
 // this heuristic quietly and correctly clears, with no allowlist entry
@@ -186,18 +186,24 @@ function literalTextOf(
   return null;
 }
 
-/** True for `t(...)` / `i18nT(...)` — the two bound-translate-function names used in this codebase. */
+// `useI18n()` is always destructured as `const { t } = useI18n();` — `t` is
+// the one bound-translate-function name used in this codebase. Screens that
+// used to alias it (`t: translateDomain`, `t: i18nT`) to dodge a same-named
+// loop variable have had that loop variable renamed instead, so there is
+// exactly one name to check for. If a call site ever genuinely needs an
+// alias again, add its name here rather than reintroducing the ambiguity.
+/** True for `t(...)` — the bound-translate-function call shape used in this codebase. */
 function isTranslationCall(expr: ts.Expression): boolean {
   return (
     ts.isCallExpression(expr) &&
     ts.isIdentifier(expr.expression) &&
-    (expr.expression.text === 't' || expr.expression.text === 'i18nT')
+    expr.expression.text === 't'
   );
 }
 
 /**
  * True when every `${...}` interpolation in a template expression is itself
- * a `t(...)`/`i18nT(...)` call — i.e. the template is pure composition of
+ * a `t(...)` call — i.e. the template is pure composition of
  * already-translated fragments (plus static separators), not raw English.
  */
 function allSpansAreTranslationCalls(node: ts.TemplateExpression): boolean {
@@ -221,14 +227,15 @@ function scanFile(filePath: string): Finding[] {
 
   // Examines an expression sitting in a "renders as text" slot (a JSX
   // attribute value, a <Text> child expression, an Alert.alert argument).
-  // Recurses into ternary branches and `||`/`??`/`&&` fallbacks so a
-  // hardcoded literal hiding behind a condition still gets caught, e.g.
-  // `label={loading ? 'Loading…' : t('x')}` or `{overdue && 'Due'}`.
+  // Recurses into ternary branches, `||`/`??`/`&&` fallbacks, and `+`
+  // concatenation so a hardcoded literal hiding behind a condition or a
+  // string-concat still gets caught, e.g. `label={loading ? 'Loading…' :
+  // t('x')}`, `{overdue && 'Due'}`, or `label={'Due ' + n}`.
   function checkExprSlot(expr: ts.Expression, kind: string) {
     // A template literal sitting directly in one of the 8 TARGET_PROPS
     // slots (kind starts with 'jsx-attr:') is flagged unconditionally —
     // NOT gated on hasLetters — unless every one of its interpolations is
-    // itself a t()/i18nT() call. This is what actually catches the
+    // itself a t() call. This is what actually catches the
     // historical bug: `` `${PREMIUM_DISPLAY.yearlyLabel} · ${price}` ``
     // has static quasis of just `' · '` (no letters at all — the English
     // text was smuggled in through the non-t() interpolation), so gating on
@@ -254,7 +261,12 @@ function scanFile(filePath: string): Finding[] {
       ts.isBinaryExpression(expr) &&
       (expr.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
         expr.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
-        expr.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken)
+        expr.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken ||
+        // `label={'Due ' + n}` — the exact shape Constraint 3 bans. Recursing
+        // into both sides adds no noise for `t('a') + t('b')`: neither side
+        // is a literal or a further conditional/binary/paren, so neither
+        // recursive call records anything.
+        expr.operatorToken.kind === ts.SyntaxKind.PlusToken)
     ) {
       checkExprSlot(expr.left, kind);
       checkExprSlot(expr.right, kind);
@@ -386,7 +398,7 @@ function scanAll(): Finding[] {
   return files.flatMap(scanFile);
 }
 
-// --- t()/i18nT() key-existence guard (review item 2) -----------------------
+// --- t() key-existence guard (review item 2) --------------------------------
 //
 // Everything above catches hardcoded English that never went through the
 // catalog at all. It has no way to catch the inverse mistake: a call site
@@ -396,8 +408,10 @@ function scanAll(): Finding[] {
 // the ~10 hand-maintained *RawCallSites tables in i18n.test.ts only cover
 // the call sites someone remembered to add a row for). This walks every
 // .ts/.tsx file under app/, components/, and lib/ and asserts every
-// STRING-LITERAL first argument to a t(...)/i18nT(...) call names a real
-// English catalog key. Composed/dynamic keys (e.g. `` t(`domain.light.${x}`) ``)
+// STRING-LITERAL key reachable from a t(...) call's first argument — including
+// both branches of a ternary/`||`/`??`/`&&`, via collectKeyLiterals below, so
+// `t(cond ? 'a' : 'b')` checks both `'a'` and `'b'` — names a real English
+// catalog key. Composed/dynamic keys (e.g. `` t(`domain.light.${x}`) ``)
 // aren't string literals, so they're skipped here by construction — those
 // are exactly what the catalog seam tests (i18n.test.ts) exist to cover.
 
@@ -419,7 +433,38 @@ interface TCallSite {
   key: string;
 }
 
-/** Every string-literal first argument to a t(...)/i18nT(...) call in one file. */
+/**
+ * Recursively collects every string-literal expression reachable from
+ * `expr` through ternary branches and `||`/`??`/`&&` fallbacks — the same
+ * shapes checkExprSlot (above) recurses through for the hardcoded-string
+ * scan — so `t(cond ? 'a' : 'b')` yields both `'a'` and `'b'` as keys to
+ * check, rather than being skipped because the first argument isn't a bare
+ * string literal. Composed/dynamic keys (template literals, member access,
+ * etc.) still aren't literals, so they still fall through untouched here —
+ * exactly as before.
+ */
+function collectKeyLiterals(expr: ts.Expression, out: ts.StringLiteral[]): void {
+  if (ts.isStringLiteral(expr)) {
+    out.push(expr);
+    return;
+  }
+  if (ts.isConditionalExpression(expr)) {
+    collectKeyLiterals(expr.whenTrue, out);
+    collectKeyLiterals(expr.whenFalse, out);
+  } else if (
+    ts.isBinaryExpression(expr) &&
+    (expr.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
+      expr.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+      expr.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken)
+  ) {
+    collectKeyLiterals(expr.left, out);
+    collectKeyLiterals(expr.right, out);
+  } else if (ts.isParenthesizedExpression(expr)) {
+    collectKeyLiterals(expr.expression, out);
+  }
+}
+
+/** Every string-literal key reachable from a t(...) call's first argument in one file. */
 function collectTCallLiteralKeys(filePath: string): TCallSite[] {
   const rel = path.relative(ROOT, filePath).split(path.sep).join('/');
   const source = fs.readFileSync(filePath, 'utf8');
@@ -430,12 +475,16 @@ function collectTCallLiteralKeys(filePath: string): TCallSite[] {
   function visit(node: ts.Node) {
     if (ts.isCallExpression(node) && isTranslationCall(node)) {
       const [firstArg] = node.arguments;
-      if (firstArg && ts.isStringLiteral(firstArg)) {
-        out.push({
-          file: rel,
-          line: sf.getLineAndCharacterOfPosition(firstArg.getStart(sf)).line + 1,
-          key: firstArg.text,
-        });
+      if (firstArg) {
+        const literals: ts.StringLiteral[] = [];
+        collectKeyLiterals(firstArg, literals);
+        for (const lit of literals) {
+          out.push({
+            file: rel,
+            line: sf.getLineAndCharacterOfPosition(lit.getStart(sf)).line + 1,
+            key: lit.text,
+          });
+        }
       }
     }
     ts.forEachChild(node, visit);
@@ -485,7 +534,7 @@ describe('i18n coverage guard (Task 8)', () => {
   });
 });
 
-describe('t()/i18nT() call sites reference real catalog keys (Task 8 review item 2)', () => {
+describe('t() call sites reference real catalog keys (Task 8 review item 2)', () => {
   const englishKeys = new Set(Object.keys(translations.en));
 
   const callSites = [
@@ -494,12 +543,12 @@ describe('t()/i18nT() call sites reference real catalog keys (Task 8 review item
     ...collectSourceFiles(path.join(ROOT, 'lib')),
   ].flatMap(collectTCallLiteralKeys);
 
-  it('every literal key passed to t()/i18nT() exists in the English catalog', () => {
+  it('every literal key passed to t() exists in the English catalog', () => {
     const missing = callSites.filter((c) => !englishKeys.has(c.key));
     if (missing.length > 0) {
       const report = missing.map((c) => `  ${c.file}:${c.line} t(${JSON.stringify(c.key)})`).join('\n');
       throw new Error(
-        `Found ${missing.length} t()/i18nT() call site(s) referencing a key that ` +
+        `Found ${missing.length} t() call site(s) referencing a key that ` +
           `does not exist in the English catalog (renders as the raw dotted key ` +
           `on screen):\n${report}`
       );

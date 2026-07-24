@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { describe, expect, it } from 'vitest';
 import { normalizeCareLog, normalizePlant } from '../types';
 import { nextDueDate } from '../care';
-import type { CareLog, Plant } from '../types';
+import type { CareLog, Plant, StoredCoachEntry } from '../types';
 
 const EPOCH = new Date(0).toISOString();
 
@@ -57,6 +57,59 @@ describe('a corrupt care log cannot hijack the schedule', () => {
     // Format locally (like the other care tests) — nextDueDate uses startOfDay,
     // so toISOString() would read a day earlier in a UTC+ timezone.
     expect(format(nextDueDate(plant, logs, 'water'), 'yyyy-MM-dd')).toBe('2026-06-08');
+  });
+});
+
+describe('an unknown enum value degrades to its default, not the raw string', () => {
+  // Before this branch, LIGHT_LABELS[bogus] etc. were plain lookup objects,
+  // so a corrupt/future value was `undefined` and rendered blank. This
+  // branch switched display to t(`domain.light.${value}`), which falls back
+  // to the raw dotted key instead — so an unvalidated bogus value would now
+  // render the literal text "domain.light.bogus" on screen. Cloud sync
+  // round-trips these fields between app versions (an older client can
+  // receive a future enum value it doesn't know), so this is reachable, not
+  // hypothetical. Validate against the same arrays `category` already uses.
+  it('lightLevel falls back to medium', () => {
+    const p = normalizePlant({ id: 'p1', name: 'A', lightLevel: 'bogus' as Plant['lightLevel'] });
+    expect(p.lightLevel).toBe('medium');
+  });
+
+  it('potSize falls back to medium', () => {
+    const p = normalizePlant({ id: 'p1', name: 'A', potSize: 'bogus' as Plant['potSize'] });
+    expect(p.potSize).toBe('medium');
+  });
+
+  it('petToxicity falls back to unknown', () => {
+    const p = normalizePlant({ id: 'p1', name: 'A', petToxicity: 'bogus' as Plant['petToxicity'] });
+    expect(p.petToxicity).toBe('unknown');
+  });
+
+  it('aiIdentityConfidence falls back to null', () => {
+    const p = normalizePlant({
+      id: 'p1',
+      name: 'A',
+      aiIdentityConfidence: 'bogus' as Plant['aiIdentityConfidence'],
+    });
+    expect(p.aiIdentityConfidence).toBeNull();
+  });
+
+  it('aiCoachHistory[].urgency falls back to watch (matches the openrouter.ts parse fallback)', () => {
+    const p = normalizePlant({
+      id: 'p1',
+      name: 'A',
+      aiCoachHistory: [
+        {
+          id: 'c1',
+          question: 'q',
+          assessment: 'a',
+          recommendations: [],
+          urgency: 'bogus' as StoredCoachEntry['urgency'],
+          disclaimer: 'd',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+    expect(p.aiCoachHistory?.[0]?.urgency).toBe('watch');
   });
 });
 
