@@ -244,6 +244,35 @@ const en: Messages = {
   'domain.care.dueToday': 'Due today',
   'domain.care.dueTomorrow': 'Due tomorrow',
   'domain.care.inDays': 'In {count} days',
+
+  // Plants — home screen ("My Plants")
+  'plants.title': 'My Plants',
+  'plants.searchPlaceholder': 'Search name, species, room…',
+  'plants.categoryAll': 'All',
+  'plants.roomAll': 'All rooms',
+  // Subtitle line — whole-sentence keys chosen by branch (premium tier ×
+  // filtered-or-not), split one/many per Constraint 4. See
+  // lib/plantsSubtitle.ts for the selection logic.
+  'plants.subtitleFreeOne': '1 plant · Free up to {limit}',
+  'plants.subtitleFreeMany': '{count} plants · Free up to {limit}',
+  'plants.subtitlePremiumOne': '1 plant · Premium',
+  'plants.subtitlePremiumMany': '{count} plants · Premium',
+  'plants.subtitleFreeFilteredOne': '1 plant · Free up to {limit} · showing {shown}',
+  'plants.subtitleFreeFilteredMany':
+    '{count} plants · Free up to {limit} · showing {shown}',
+  'plants.subtitlePremiumFilteredOne': '1 plant · Premium · showing {shown}',
+  'plants.subtitlePremiumFilteredMany': '{count} plants · Premium · showing {shown}',
+  'plants.emptyTitle': 'Your glasshouse is quiet',
+  'plants.emptyBody':
+    'Add a plant with a portrait. Use AI identify to fill species and care intervals — then set room, light, and pot so schedules stay smart.',
+  'plants.addFirstPlant': 'Add your first plant',
+  'plants.noMatchesTitle': 'No matches',
+  'plants.noMatchesBody': 'Try another search, category, or room filter.',
+  'plants.clearFilters': 'Clear filters',
+  'plants.addPlant': 'Add a plant',
+  'plants.upgradeTitle': 'You’ve filled your {limit} free plants',
+  'plants.upgradeSubtitle': 'Go Premium for unlimited plants, AI, and cloud sync →',
+  'plants.upgradeA11y': 'Upgrade to Premium for unlimited plants',
 };
 
 const es: Messages = {
@@ -435,6 +464,35 @@ const es: Messages = {
   'domain.care.dueToday': 'Toca hoy',
   'domain.care.dueTomorrow': 'Toca mañana',
   'domain.care.inDays': 'En {count} días',
+
+  // Plants — home screen ("My Plants")
+  'plants.title': 'Mis plantas',
+  'plants.searchPlaceholder': 'Buscar nombre, especie, habitación…',
+  'plants.categoryAll': 'Todas',
+  'plants.roomAll': 'Todas las habitaciones',
+  'plants.subtitleFreeOne': '1 planta · Gratis, hasta {limit}',
+  'plants.subtitleFreeMany': '{count} plantas · Gratis, hasta {limit}',
+  'plants.subtitlePremiumOne': '1 planta · Premium',
+  'plants.subtitlePremiumMany': '{count} plantas · Premium',
+  'plants.subtitleFreeFilteredOne':
+    '1 planta · Gratis, hasta {limit} · mostrando {shown}',
+  'plants.subtitleFreeFilteredMany':
+    '{count} plantas · Gratis, hasta {limit} · mostrando {shown}',
+  'plants.subtitlePremiumFilteredOne': '1 planta · Premium · mostrando {shown}',
+  'plants.subtitlePremiumFilteredMany':
+    '{count} plantas · Premium · mostrando {shown}',
+  'plants.emptyTitle': 'Tu invernadero está tranquilo',
+  'plants.emptyBody':
+    'Añade una planta con una foto. Usa la identificación con IA para completar especie e intervalos de cuidado — luego define habitación, luz y maceta para que los calendarios sean inteligentes.',
+  'plants.addFirstPlant': 'Añade tu primera planta',
+  'plants.noMatchesTitle': 'Sin resultados',
+  'plants.noMatchesBody': 'Prueba otra búsqueda, categoría o filtro de habitación.',
+  'plants.clearFilters': 'Borrar filtros',
+  'plants.addPlant': 'Añadir planta',
+  'plants.upgradeTitle': 'Has llenado tus {limit} plantas gratuitas',
+  'plants.upgradeSubtitle':
+    'Hazte Premium para plantas ilimitadas, IA y sincronización en la nube →',
+  'plants.upgradeA11y': 'Mejora a Premium para plantas ilimitadas',
 };
 
 const fr: Messages = {
@@ -626,6 +684,35 @@ const fr: Messages = {
   'domain.care.dueToday': 'À faire aujourd’hui',
   'domain.care.dueTomorrow': 'À faire demain',
   'domain.care.inDays': 'Dans {count} jours',
+
+  // Plants — home screen ("My Plants")
+  'plants.title': 'Mes plantes',
+  'plants.searchPlaceholder': 'Rechercher nom, espèce, pièce…',
+  'plants.categoryAll': 'Toutes',
+  'plants.roomAll': 'Toutes les pièces',
+  'plants.subtitleFreeOne': '1 plante · Gratuit, jusqu’à {limit}',
+  'plants.subtitleFreeMany': '{count} plantes · Gratuit, jusqu’à {limit}',
+  'plants.subtitlePremiumOne': '1 plante · Premium',
+  'plants.subtitlePremiumMany': '{count} plantes · Premium',
+  'plants.subtitleFreeFilteredOne':
+    '1 plante · Gratuit, jusqu’à {limit} · affichage de {shown}',
+  'plants.subtitleFreeFilteredMany':
+    '{count} plantes · Gratuit, jusqu’à {limit} · affichage de {shown}',
+  'plants.subtitlePremiumFilteredOne': '1 plante · Premium · affichage de {shown}',
+  'plants.subtitlePremiumFilteredMany':
+    '{count} plantes · Premium · affichage de {shown}',
+  'plants.emptyTitle': 'Votre serre est calme',
+  'plants.emptyBody':
+    'Ajoutez une plante avec une photo. Utilisez l’identification IA pour renseigner l’espèce et les intervalles de soins — puis définissez la pièce, la lumière et le pot pour des calendriers intelligents.',
+  'plants.addFirstPlant': 'Ajoutez votre première plante',
+  'plants.noMatchesTitle': 'Aucun résultat',
+  'plants.noMatchesBody': 'Essayez une autre recherche, catégorie ou pièce.',
+  'plants.clearFilters': 'Effacer les filtres',
+  'plants.addPlant': 'Ajouter une plante',
+  'plants.upgradeTitle': 'Vous avez rempli vos {limit} plantes gratuites',
+  'plants.upgradeSubtitle':
+    'Passez à Premium pour des plantes illimitées, l’IA et la synchro cloud →',
+  'plants.upgradeA11y': 'Passer à Premium pour des plantes illimitées',
 };
 
 const de: Messages = {
@@ -817,6 +904,36 @@ const de: Messages = {
   'domain.care.dueToday': 'Heute fällig',
   'domain.care.dueTomorrow': 'Morgen fällig',
   'domain.care.inDays': 'In {count} Tagen',
+
+  // Plants — home screen ("My Plants")
+  'plants.title': 'Meine Pflanzen',
+  'plants.searchPlaceholder': 'Name, Art, Raum suchen…',
+  'plants.categoryAll': 'Alle',
+  'plants.roomAll': 'Alle Räume',
+  'plants.subtitleFreeOne': '1 Pflanze · Kostenlos, bis zu {limit}',
+  'plants.subtitleFreeMany': '{count} Pflanzen · Kostenlos, bis zu {limit}',
+  'plants.subtitlePremiumOne': '1 Pflanze · Premium',
+  'plants.subtitlePremiumMany': '{count} Pflanzen · Premium',
+  'plants.subtitleFreeFilteredOne':
+    '1 Pflanze · Kostenlos, bis zu {limit} · {shown} angezeigt',
+  'plants.subtitleFreeFilteredMany':
+    '{count} Pflanzen · Kostenlos, bis zu {limit} · {shown} angezeigt',
+  'plants.subtitlePremiumFilteredOne': '1 Pflanze · Premium · {shown} angezeigt',
+  'plants.subtitlePremiumFilteredMany':
+    '{count} Pflanzen · Premium · {shown} angezeigt',
+  'plants.emptyTitle': 'Dein Gewächshaus ist still',
+  'plants.emptyBody':
+    'Füge eine Pflanze mit einem Foto hinzu. Nutze die KI-Bestimmung, um Art und Pflegeintervalle auszufüllen — dann lege Raum, Licht und Topf fest, damit die Zeitpläne mitdenken.',
+  'plants.addFirstPlant': 'Füge deine erste Pflanze hinzu',
+  'plants.noMatchesTitle': 'Keine Treffer',
+  'plants.noMatchesBody':
+    'Versuche eine andere Suche, Kategorie oder einen anderen Raumfilter.',
+  'plants.clearFilters': 'Filter zurücksetzen',
+  'plants.addPlant': 'Pflanze hinzufügen',
+  'plants.upgradeTitle': 'Du hast deine {limit} kostenlosen Pflanzen gefüllt',
+  'plants.upgradeSubtitle':
+    'Hol dir Premium für unbegrenzte Pflanzen, KI und Cloud-Sync →',
+  'plants.upgradeA11y': 'Auf Premium upgraden für unbegrenzte Pflanzen',
 };
 
 export const translations: Record<LanguageCode, Messages> = { en, es, fr, de };

@@ -23,6 +23,7 @@ import { getCareDueItems, listRooms, relativeCareLabel } from '@/lib/care';
 import { usePlants } from '@/lib/PlantContext';
 import { useI18n } from '@/lib/i18n';
 import { translateLabel } from '@/lib/i18n/core';
+import { plantsSubtitleLabel } from '@/lib/plantsSubtitle';
 import type { PlantCategory } from '@/lib/types';
 import { PLANT_CATEGORIES } from '@/lib/types';
 
@@ -84,13 +85,25 @@ export default function MyPlantsScreen() {
     });
   }, [plants, query, category, room]);
 
+  const subtitle = translateLabel(
+    t,
+    plantsSubtitleLabel({
+      count: plants.length,
+      shown: filtered.length,
+      isPremium: settings.isPremium,
+      freeLimit,
+    })
+  );
+
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: c.background }]}>
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <View style={{ flex: 1 }}>
             <Text style={[Type.micro, { color: c.tint }]}>{APP_NAME}</Text>
-            <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>My Plants</Text>
+            <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>
+              {t('plants.title')}
+            </Text>
           </View>
         </View>
         <View style={styles.skeletonGrid}>
@@ -112,11 +125,11 @@ export default function MyPlantsScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <View style={{ flex: 1 }}>
           <Text style={[Type.micro, { color: c.tint }]}>{APP_NAME}</Text>
-          <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>My Plants</Text>
+          <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>
+            {t('plants.title')}
+          </Text>
           <Text style={[Type.meta, { color: c.textMuted, marginTop: 4 }]}>
-            {plants.length} plant{plants.length === 1 ? '' : 's'}
-            {!settings.isPremium ? ` · Free up to ${freeLimit}` : ' · Premium'}
-            {filtered.length !== plants.length ? ` · showing ${filtered.length}` : ''}
+            {subtitle}
           </Text>
         </View>
         <Pressable
@@ -145,7 +158,7 @@ export default function MyPlantsScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search name, species, room…"
+            placeholder={t('plants.searchPlaceholder')}
             placeholderTextColor={c.textMuted}
             style={[
               styles.search,
@@ -210,7 +223,7 @@ export default function MyPlantsScreen() {
                       },
                     ]}
                   >
-                    {item}
+                    {isAll ? t('plants.categoryAll') : t(`domain.category.${item}`)}
                   </Text>
                 </Pressable>
               );
@@ -245,7 +258,7 @@ export default function MyPlantsScreen() {
                         },
                       ]}
                     >
-                      {item === 'All' ? 'All rooms' : item}
+                      {item === 'All' ? t('plants.roomAll') : item}
                     </Text>
                   </Pressable>
                 );
@@ -259,8 +272,8 @@ export default function MyPlantsScreen() {
         <>
           <EmptyState
             icon={<Sprout color="#FFFFFF" size={36} strokeWidth={1.8} />}
-            title="Your glasshouse is quiet"
-            body="Add a plant with a portrait. Use AI identify to fill species and care intervals — then set room, light, and pot so schedules stay smart."
+            title={t('plants.emptyTitle')}
+            body={t('plants.emptyBody')}
           />
           <View style={styles.emptyCta}>
             <Pressable
@@ -270,16 +283,18 @@ export default function MyPlantsScreen() {
                 { backgroundColor: c.growth, opacity: pressed ? 0.9 : 1 },
               ]}
             >
-              <Text style={[Type.button, { color: c.growthInk }]}>Add your first plant</Text>
+              <Text style={[Type.button, { color: c.growthInk }]}>
+                {t('plants.addFirstPlant')}
+              </Text>
             </Pressable>
           </View>
         </>
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<Search color="#FFFFFF" size={36} strokeWidth={1.8} />}
-          title="No matches"
-          body="Try another search, category, or room filter."
-          actionLabel="Clear filters"
+          title={t('plants.noMatchesTitle')}
+          body={t('plants.noMatchesBody')}
+          actionLabel={t('plants.clearFilters')}
           onAction={() => {
             setQuery('');
             setCategory('All');
@@ -326,7 +341,7 @@ export default function MyPlantsScreen() {
               <Pressable
                 onPress={() => router.push('/plant/add')}
                 accessibilityRole="button"
-                accessibilityLabel="Add a plant"
+                accessibilityLabel={t('plants.addPlant')}
                 style={({ pressed }) => [
                   styles.ghostAdd,
                   {
@@ -338,14 +353,14 @@ export default function MyPlantsScreen() {
               >
                 <Plus color={c.tint} size={20} strokeWidth={2.2} />
                 <Text style={[Type.meta, { color: c.textMuted, marginTop: 6 }]}>
-                  Add a plant
+                  {t('plants.addPlant')}
                 </Text>
               </Pressable>
             ) : !canAddPlant ? (
               <Link href={{ pathname: "/paywall", params: { reason: "limit" } }} asChild>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Upgrade to Premium for unlimited plants"
+                  accessibilityLabel={t('plants.upgradeA11y')}
                   style={[
                     styles.upgradeBanner,
                     { backgroundColor: c.heroSurface, borderColor: c.heroSurface },
@@ -354,11 +369,11 @@ export default function MyPlantsScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Sparkles color={c.growth} size={16} strokeWidth={2.2} />
                     <Text style={[Type.title, { color: '#EEF3EF', fontSize: 15 }]}>
-                      You’ve filled your {freeLimit} free plants
+                      {t('plants.upgradeTitle', { limit: freeLimit })}
                     </Text>
                   </View>
                   <Text style={[Type.meta, { color: 'rgba(232,239,233,0.7)', marginTop: 4 }]}>
-                    Go Premium for unlimited plants, AI, and cloud sync →
+                    {t('plants.upgradeSubtitle')}
                   </Text>
                 </Pressable>
               </Link>
