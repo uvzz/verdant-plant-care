@@ -5,6 +5,7 @@ import Colors from '@/constants/Colors';
 import { careColor } from '@/constants/Palette';
 import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
+import { useI18n } from '@/lib/i18n';
 import type { CareLogType } from '@/lib/types';
 
 export interface WeekStripItem {
@@ -23,16 +24,24 @@ export interface WeekStripItem {
 export function WeekStrip({ due }: { due: WeekStripItem[] }) {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
+  const { t } = useI18n();
   const today = startOfDay(new Date());
   const days = Array.from({ length: 7 }, (_, i) => addDays(today, i));
 
   return (
-    <View style={styles.row} accessibilityLabel="Next seven days">
+    <View style={styles.row} accessibilityLabel={t('calendar.weekStripA11y')}>
       {days.map((day, i) => {
         const isToday = i === 0;
         const onDay = due.filter((d) => isSameDay(d.date, day));
         const dueCount = onDay.length;
         const types = Array.from(new Set(onDay.map((d) => d.type))).slice(0, 3);
+        const date = format(day, 'EEEE d');
+        const dayA11yLabel =
+          dueCount === 0
+            ? t('calendar.weekStripDayNone', { date })
+            : dueCount === 1
+              ? t('calendar.weekStripDayOne', { date })
+              : t('calendar.weekStripDayMany', { date, count: dueCount });
         return (
           <View
             key={day.toISOString()}
@@ -43,9 +52,7 @@ export function WeekStrip({ due }: { due: WeekStripItem[] }) {
                 borderColor: isToday ? c.emphasis : c.border,
               },
             ]}
-            accessibilityLabel={`${format(day, 'EEEE d')}${
-              dueCount ? `, ${dueCount} due` : ''
-            }`}
+            accessibilityLabel={dayA11yLabel}
           >
             <Text
               style={[

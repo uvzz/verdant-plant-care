@@ -17,11 +17,36 @@ import { effectiveWaterIntervalDays, type CareLabel } from './care';
  * would read as already-done when the row is actually asking for the action.
  * Extracted to one function so the meta line and accessibility label can't
  * drift onto different words for the same row.
+ *
+ * Keys live under `domain.careAction.*` (not `calendar.*`) since the plant
+ * detail screen's due-card titles need the identical present-tense words —
+ * shared vocabulary, not something scoped to the calendar screen.
  */
 export function careVerbLabel(type: CareDueItem['type']): CareLabel {
   return {
-    key: type === 'water' ? 'calendar.careTypeWater' : 'calendar.careTypeFertilize',
+    key: type === 'water' ? 'domain.careAction.water' : 'domain.careAction.fertilize',
   };
+}
+
+/**
+ * Row meta line under the plant name — "{careVerb} · {relative}" or, when
+ * the plant has a location, "{careVerb} · {relative} · {location}". Chosen
+ * by branch (never assembled from glued fragments) and takes the *already
+ * translated* `careVerb`/`relative` words as params, mirroring
+ * `plantsSubtitleLabel`'s pattern of a pure, unit-testable descriptor the
+ * screen renders via `translateLabel(t, label)`.
+ */
+export function rowMetaLabel(
+  item: CareDueItem,
+  careVerb: string,
+  relative: string
+): CareLabel {
+  return item.plant.location
+    ? {
+        key: 'calendar.rowMetaWithLocation',
+        params: { careVerb, relative, location: item.plant.location },
+      }
+    : { key: 'calendar.rowMeta', params: { careVerb, relative } };
 }
 
 /**

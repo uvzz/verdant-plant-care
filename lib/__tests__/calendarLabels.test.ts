@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { careVerbLabel, intervalHintLabel } from '../calendarLabels';
+import { careVerbLabel, intervalHintLabel, rowMetaLabel } from '../calendarLabels';
 import { normalizePlant } from '../types';
 import type { CareDueItem, Plant } from '../types';
 
@@ -32,11 +32,11 @@ function dueItem(partial: Partial<CareDueItem> & { plant: Plant }): CareDueItem 
 
 describe('careVerbLabel', () => {
   it('picks the water key for a water item', () => {
-    expect(careVerbLabel('water')).toEqual({ key: 'calendar.careTypeWater' });
+    expect(careVerbLabel('water')).toEqual({ key: 'domain.careAction.water' });
   });
 
   it('picks the fertilize key for a fertilize item', () => {
-    expect(careVerbLabel('fertilize')).toEqual({ key: 'calendar.careTypeFertilize' });
+    expect(careVerbLabel('fertilize')).toEqual({ key: 'domain.careAction.fertilize' });
   });
 });
 
@@ -104,6 +104,26 @@ describe('intervalHintLabel', () => {
     expect(intervalHintLabel(item)).toEqual({
       key: 'calendar.intervalFertilize',
       params: { days: 21 },
+    });
+  });
+});
+
+describe('rowMetaLabel', () => {
+  it('picks the with-location key and passes the location through when the plant has one', () => {
+    const p = plant({ id: 'p5', name: 'Fern', location: 'Kitchen' });
+    const item = dueItem({ plant: p, type: 'water' });
+    expect(rowMetaLabel(item, 'Water', 'Due today')).toEqual({
+      key: 'calendar.rowMetaWithLocation',
+      params: { careVerb: 'Water', relative: 'Due today', location: 'Kitchen' },
+    });
+  });
+
+  it('picks the plain key when the plant has no location', () => {
+    const p = plant({ id: 'p6', name: 'Cactus', location: '' });
+    const item = dueItem({ plant: p, type: 'fertilize' });
+    expect(rowMetaLabel(item, 'Fertilize', 'In 3 days')).toEqual({
+      key: 'calendar.rowMeta',
+      params: { careVerb: 'Fertilize', relative: 'In 3 days' },
     });
   });
 });

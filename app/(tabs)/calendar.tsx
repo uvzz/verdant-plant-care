@@ -16,7 +16,7 @@ import { SwipeToComplete } from '@/components/SwipeToComplete';
 import { CalendarDays } from 'lucide-react-native';
 import { tapLight, tapSuccess } from '@/lib/haptics';
 import { getCareDueItems, relativeCareLabel } from '@/lib/care';
-import { careVerbLabel, intervalHintLabel } from '@/lib/calendarLabels';
+import { careVerbLabel, intervalHintLabel, rowMetaLabel } from '@/lib/calendarLabels';
 import { scheduleGentleReminders } from '@/lib/notifications';
 import { usePlants } from '@/lib/PlantContext';
 import { useI18n } from '@/lib/i18n';
@@ -121,13 +121,7 @@ export default function CalendarScreen() {
     const careVerb = translateLabel(t, careVerbLabel(item.type));
     const relative = translateLabel(t, relativeCareLabel(item.daysUntil));
     const intervalHint = translateLabel(t, intervalHintLabel(item));
-    const meta = item.plant.location
-      ? t('calendar.rowMetaWithLocation', {
-          careVerb,
-          relative,
-          location: item.plant.location,
-        })
-      : t('calendar.rowMeta', { careVerb, relative });
+    const meta = translateLabel(t, rowMetaLabel(item, careVerb, relative));
 
     return (
       <Animated.View

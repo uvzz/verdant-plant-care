@@ -1,18 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { relativeCareLabel } from '../care';
-import { careVerbLabel, intervalHintLabel } from '../calendarLabels';
+import { careVerbLabel, intervalHintLabel, rowMetaLabel } from '../calendarLabels';
 import {
   interpolate,
   isSupportedLanguage,
   resolveLanguage,
   translate,
   translateLabel,
+  type TranslateParams,
 } from '../i18n/core';
 import { SUPPORTED_LANGUAGES, translations } from '../i18n/translations';
 import { plantsSubtitleLabel } from '../plantsSubtitle';
 import {
   CARE_LOG_TYPES,
   LIGHT_LEVELS,
+  MOISTURE_SNOOZE_DAYS,
   PET_TOXICITY,
   PLANT_CATEGORIES,
   POT_SIZES,
@@ -236,6 +238,40 @@ describe('catalog seam — label descriptors always render as real text', () => 
     }),
   ];
 
+  // `rowMetaLabel` (lib/calendarLabels.ts) is the same kind of descriptor,
+  // extracted from app/(tabs)/calendar.tsx so its location-present/absent
+  // branch is covered by this seam loop too.
+  const rowMetaItems: CareDueItem[] = [
+    testDueItem({
+      plant: testPlant({ id: 'p4', name: 'Pothos', location: 'Living room' }),
+      type: 'water',
+    }),
+    testDueItem({
+      plant: testPlant({ id: 'p5', name: 'Snake plant', location: '' }),
+      type: 'fertilize',
+      daysUntil: 3,
+    }),
+  ];
+
+  // The remaining keys app/(tabs)/calendar.tsx calls via raw `t(key, params)`
+  // rather than through a descriptor function — not covered by any branch
+  // loop above. Each entry's `params` mirrors exactly what the screen passes
+  // at that call site, so a param-name typo in a catalog placeholder (e.g.
+  // `{verb}` where the screen passes `careVerb`) fails here even though
+  // every language still agrees with every other language (catalog
+  // integrity, above, only compares languages to each other, never to the
+  // call site).
+  const rawCallSites: Array<{ key: string; params: TranslateParams }> = [
+    {
+      key: 'calendar.rowA11yLabel',
+      params: { name: 'Fern', careVerb: 'Water', relative: 'Due today' },
+    },
+    { key: 'calendar.philosophyBody', params: { days: MOISTURE_SNOOZE_DAYS } },
+    { key: 'calendar.toastWatered', params: { name: 'Fern' } },
+    { key: 'calendar.toastFed', params: { name: 'Fern' } },
+    { key: 'calendar.toastSnoozed', params: { name: 'Fern', days: MOISTURE_SNOOZE_DAYS } },
+  ];
+
   for (const { code } of SUPPORTED_LANGUAGES) {
     describe(code, () => {
       it('renders every plantsSubtitleLabel branch as real text', () => {
@@ -271,6 +307,31 @@ describe('catalog seam — label descriptors always render as real text', () => 
           const rendered = translate(code, label.key, label.params);
           expect(rendered, `${code} ${label.key}`).not.toBe(label.key);
           expect(rendered, `${code} ${label.key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every rowMetaLabel branch as real text', () => {
+        for (const item of rowMetaItems) {
+          const careVerb = translateLabel(
+            (key, params) => translate(code, key, params),
+            careVerbLabel(item.type)
+          );
+          const relative = translateLabel(
+            (key, params) => translate(code, key, params),
+            relativeCareLabel(item.daysUntil)
+          );
+          const label = rowMetaLabel(item, careVerb, relative);
+          const rendered = translate(code, label.key, label.params);
+          expect(rendered, `${code} ${label.key}`).not.toBe(label.key);
+          expect(rendered, `${code} ${label.key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every raw t() call site in calendar.tsx as real text', () => {
+        for (const { key, params } of rawCallSites) {
+          const rendered = translate(code, key, params);
+          expect(rendered, `${code} ${key}`).not.toBe(key);
+          expect(rendered, `${code} ${key}`).not.toContain('{');
         }
       });
     });

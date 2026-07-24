@@ -229,6 +229,13 @@ const en: Messages = {
   'domain.careType.note': 'Note',
   'domain.careType.photo': 'Photo',
   'domain.careType.check': 'Soil check',
+  // Present-tense care-action words ("Water" / "Fertilize") — shared by the
+  // Care calendar row meta line/accessibility label (see careVerbLabel in
+  // lib/calendarLabels.ts) and the plant detail screen's due-card titles.
+  // Deliberately distinct from the past-tense domain.careType.* above, which
+  // labels a *completed* log entry (action chips, history badges).
+  'domain.careAction.water': 'Water',
+  'domain.careAction.fertilize': 'Fertilize',
   'domain.category.Houseplant': 'Houseplant',
   'domain.category.Orchid': 'Orchid',
   'domain.category.Succulent': 'Succulent',
@@ -278,6 +285,14 @@ const en: Messages = {
   'calendar.eyebrow': 'Care calendar',
   'calendar.title': 'Gentle reminders',
   'calendar.subtitle': 'Soft nudges to check your plants — not orders to water.',
+  // Week strip — the 7-day accessibility strip above the list
+  // (components/WeekStrip.tsx). `{date}` is fed in from the untouched
+  // `format(day, 'EEEE d')` call; distinct none/one/many keys per
+  // Constraint 4 rather than pluralizing "due" at render time.
+  'calendar.weekStripA11y': 'Next seven days',
+  'calendar.weekStripDayNone': '{date}',
+  'calendar.weekStripDayOne': '{date}, 1 due',
+  'calendar.weekStripDayMany': '{date}, {count} due',
   'calendar.emptyStateTitle': 'Nothing scheduled yet',
   'calendar.emptyStateBody':
     'Add plants with water and fertilize intervals to build a calm care calendar.',
@@ -297,11 +312,6 @@ const en: Messages = {
   'calendar.emptyOverdue': 'You’re all caught up',
   'calendar.emptyToday': 'No care due today',
   'calendar.emptyUpcoming': 'No upcoming care',
-  // Present-tense care-type word for a row's meta line + accessibility
-  // label — see careVerbLabel in lib/calendarLabels.ts for why this is
-  // distinct from the past-tense domain.careType.* used on the action chips.
-  'calendar.careTypeWater': 'Water',
-  'calendar.careTypeFertilize': 'Fertilize',
   // Row meta line under the plant name ("Water · Due today" /
   // "Water · Due today · Living room") and the row accessibilityLabel —
   // single keys with placeholders, never assembled from glued fragments.
@@ -506,6 +516,8 @@ const es: Messages = {
   'domain.careType.note': 'Nota',
   'domain.careType.photo': 'Foto',
   'domain.careType.check': 'Revisión de tierra',
+  'domain.careAction.water': 'Regar',
+  'domain.careAction.fertilize': 'Abonar',
   'domain.category.Houseplant': 'Planta de interior',
   'domain.category.Orchid': 'Orquídea',
   'domain.category.Succulent': 'Suculenta',
@@ -553,6 +565,10 @@ const es: Messages = {
   'calendar.eyebrow': 'Calendario de cuidados',
   'calendar.title': 'Recordatorios suaves',
   'calendar.subtitle': 'Avisos suaves para revisar tus plantas — no órdenes de riego.',
+  'calendar.weekStripA11y': 'Próximos siete días',
+  'calendar.weekStripDayNone': '{date}',
+  'calendar.weekStripDayOne': '{date}, 1 pendiente',
+  'calendar.weekStripDayMany': '{date}, {count} pendientes',
   'calendar.emptyStateTitle': 'Nada programado aún',
   'calendar.emptyStateBody':
     'Añade plantas con intervalos de riego y abono para crear un calendario de cuidados tranquilo.',
@@ -561,15 +577,13 @@ const es: Messages = {
   'calendar.philosophyBody':
     'Mete un dedo en la tierra. Si sigue húmeda, toca Aún húmeda (+{days}d). Desliza una tarjeta a la derecha para registrar el riego. Los intervalos también se adaptan a la maceta y la luz.',
   'calendar.philosophyCollapsed':
-    'Desliza una tarjeta a la derecha para registrar · revisa la tierra antes de regar',
-  'calendar.sectionOverdue': 'Atrasado',
+    'Desliza para registrar · revisa la tierra antes de regar',
+  'calendar.sectionOverdue': 'Atrasados',
   'calendar.sectionToday': 'Hoy',
   'calendar.sectionUpcoming': 'Próximos',
   'calendar.emptyOverdue': 'Estás al día',
   'calendar.emptyToday': 'Sin cuidados para hoy',
   'calendar.emptyUpcoming': 'Sin cuidados próximos',
-  'calendar.careTypeWater': 'Regar',
-  'calendar.careTypeFertilize': 'Abonar',
   'calendar.rowMeta': '{careVerb} · {relative}',
   'calendar.rowMetaWithLocation': '{careVerb} · {relative} · {location}',
   'calendar.rowA11yLabel':
@@ -579,11 +593,11 @@ const es: Messages = {
     '~cada {days}d (según luz/maceta) · revisa la tierra primero',
   'calendar.intervalFertilize': 'cada {days}d',
   'calendar.actionStillMoist': 'Aún húmeda',
-  'calendar.actionLog': 'Registrar',
+  'calendar.actionLog': 'Anotar',
   'calendar.actionDetails': 'Detalles',
   'calendar.swipeFed': 'Abonada',
-  'calendar.toastWatered': '{name} regada',
-  'calendar.toastFed': '{name} abonada',
+  'calendar.toastWatered': 'Riego registrado · {name}',
+  'calendar.toastFed': 'Abono registrado · {name}',
   'calendar.toastSnoozed': '{name} · pospuesta {days}d',
   'calendar.toastError': 'No se pudo guardar — inténtalo de nuevo',
 };
@@ -764,6 +778,8 @@ const fr: Messages = {
   'domain.careType.note': 'Note',
   'domain.careType.photo': 'Photo',
   'domain.careType.check': 'Contrôle de la terre',
+  'domain.careAction.water': 'Arroser',
+  'domain.careAction.fertilize': 'Fertiliser',
   'domain.category.Houseplant': 'Plante d’intérieur',
   'domain.category.Orchid': 'Orchidée',
   'domain.category.Succulent': 'Plante grasse',
@@ -809,9 +825,13 @@ const fr: Messages = {
 
   // Calendar — Care calendar screen ("Gentle reminders")
   'calendar.eyebrow': 'Calendrier de soins',
-  'calendar.title': 'Rappels tout en douceur',
+  'calendar.title': 'Rappels en douceur',
   'calendar.subtitle':
     'De petits rappels pour vérifier vos plantes — jamais des ordres d’arrosage.',
+  'calendar.weekStripA11y': 'Sept prochains jours',
+  'calendar.weekStripDayNone': '{date}',
+  'calendar.weekStripDayOne': '{date}, 1 à faire',
+  'calendar.weekStripDayMany': '{date}, {count} à faire',
   'calendar.emptyStateTitle': 'Rien de prévu pour l’instant',
   'calendar.emptyStateBody':
     'Ajoutez des plantes avec des intervalles d’arrosage et de fertilisation pour créer un calendrier de soins apaisant.',
@@ -820,15 +840,13 @@ const fr: Messages = {
   'calendar.philosophyBody':
     'Plongez un doigt dans la terre. Si elle est encore humide, touchez Encore humide (+{days}j). Glissez une carte vers la droite pour noter l’arrosage. Les intervalles s’adaptent aussi au pot et à la lumière.',
   'calendar.philosophyCollapsed':
-    'Glissez une carte vers la droite pour noter · vérifiez la terre avant d’arroser',
+    'Glissez pour noter · vérifiez la terre avant d’arroser',
   'calendar.sectionOverdue': 'En retard',
   'calendar.sectionToday': 'Aujourd’hui',
   'calendar.sectionUpcoming': 'À venir',
   'calendar.emptyOverdue': 'Tout est à jour',
   'calendar.emptyToday': 'Aucun soin prévu aujourd’hui',
   'calendar.emptyUpcoming': 'Aucun soin à venir',
-  'calendar.careTypeWater': 'Arroser',
-  'calendar.careTypeFertilize': 'Fertiliser',
   'calendar.rowMeta': '{careVerb} · {relative}',
   'calendar.rowMetaWithLocation': '{careVerb} · {relative} · {location}',
   'calendar.rowA11yLabel':
@@ -841,8 +859,8 @@ const fr: Messages = {
   'calendar.actionLog': 'Noter',
   'calendar.actionDetails': 'Détails',
   'calendar.swipeFed': 'Nourrie',
-  'calendar.toastWatered': '{name} arrosée',
-  'calendar.toastFed': '{name} nourrie',
+  'calendar.toastWatered': 'Arrosage noté · {name}',
+  'calendar.toastFed': 'Engrais noté · {name}',
   'calendar.toastSnoozed': '{name} · reportée {days}j',
   'calendar.toastError': 'Échec de l’enregistrement — réessayez',
 };
@@ -1023,6 +1041,8 @@ const de: Messages = {
   'domain.careType.note': 'Notiz',
   'domain.careType.photo': 'Foto',
   'domain.careType.check': 'Erde geprüft',
+  'domain.careAction.water': 'Gießen',
+  'domain.careAction.fertilize': 'Düngen',
   'domain.category.Houseplant': 'Zimmerpflanze',
   'domain.category.Orchid': 'Orchidee',
   'domain.category.Succulent': 'Sukkulente',
@@ -1072,23 +1092,25 @@ const de: Messages = {
   'calendar.title': 'Sanfte Erinnerungen',
   'calendar.subtitle':
     'Sanfte Hinweise, nach deinen Pflanzen zu sehen — keine Gießbefehle.',
+  'calendar.weekStripA11y': 'Nächste sieben Tage',
+  'calendar.weekStripDayNone': '{date}',
+  'calendar.weekStripDayOne': '{date}, 1 fällig',
+  'calendar.weekStripDayMany': '{date}, {count} fällig',
   'calendar.emptyStateTitle': 'Noch nichts geplant',
   'calendar.emptyStateBody':
-    'Füge Pflanzen mit Gieß- und Düngeintervallen hinzu, für einen ruhigen Pflegekalender.',
+    'Füge Pflanzen mit Gieß- und Düngeintervallen hinzu, um einen ruhigen Pflegekalender aufzubauen.',
   'calendar.emptyStateAction': 'Pflanze hinzufügen',
   'calendar.philosophyTitle': 'Vor dem Gießen prüfen',
   'calendar.philosophyBody':
     'Stecke einen Finger in die Erde. Ist sie noch feucht, tippe auf Noch feucht (+{days}T). Wische eine Karte nach rechts, um das Gießen zu notieren. Die Intervalle passen sich außerdem an Topfgröße und Licht an.',
   'calendar.philosophyCollapsed':
-    'Karte nach rechts wischen zum Notieren · vor dem Gießen die Erde prüfen',
+    'Wischen zum Notieren · vor dem Gießen Erde prüfen',
   'calendar.sectionOverdue': 'Überfällig',
   'calendar.sectionToday': 'Heute',
   'calendar.sectionUpcoming': 'Bevorstehend',
   'calendar.emptyOverdue': 'Alles erledigt',
   'calendar.emptyToday': 'Heute keine Pflege fällig',
   'calendar.emptyUpcoming': 'Keine Pflege in Sicht',
-  'calendar.careTypeWater': 'Gießen',
-  'calendar.careTypeFertilize': 'Düngen',
   'calendar.rowMeta': '{careVerb} · {relative}',
   'calendar.rowMetaWithLocation': '{careVerb} · {relative} · {location}',
   'calendar.rowA11yLabel':
