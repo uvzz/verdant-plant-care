@@ -174,7 +174,7 @@ export default function AddPlantScreen() {
       }
       router.replace(`/plant/${result.plant.id}`);
     } catch {
-      Alert.alert(t('form.addFailedTitle'), t('form.addFailedBody'));
+      Alert.alert(t('form.addFailedTitle'), t('form.retryBody'));
     } finally {
       setSaving(false);
     }

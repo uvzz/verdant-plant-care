@@ -563,6 +563,13 @@ const en: Messages = {
   // direction; not a behaviour change (same permission prompt either way).
   'form.photoPermissionTitle': 'Permission needed',
   'form.photoPermissionBody': 'Allow photo library access to add a plant photo.',
+  // Shared "try again" retry body — used by both the add-failed alert
+  // (app/plant/add.tsx) and the edit-save-failed alert (app/plant/edit.tsx).
+  // Previously two byte-identical form.addFailedBody/form.editSaveFailedBody
+  // keys per language; consolidated to one, since only the titles
+  // (form.addFailedTitle vs form.editSaveFailedTitle) are legitimately
+  // different.
+  'form.retryBody': 'Try again in a moment.',
 
   // Add plant screen (app/plant/add.tsx) only.
   'form.photoPlaceholderAdd': 'Tap to choose a photo',
@@ -602,13 +609,19 @@ const en: Messages = {
   // result.reason from lib/PlantContext.tsx, untranslated — see report) and
   // the generic catch-block fallback below.
   'form.addFailedTitle': 'Could not add plant',
-  'form.addFailedBody': 'Try again in a moment.',
 
   // Edit plant screen (app/plant/edit.tsx) only.
   'form.notFound': 'Plant not found.',
   'form.photoPlaceholderEdit': 'Add photo',
   'form.labelBaseWaterDays': 'Base water (days)',
-  'form.waterRhythmHint':
+  // One/many split (Constraint 4) — previewInterval comes from
+  // effectiveWaterIntervalDays() (lib/care.ts), which can round down to 1,
+  // and this key spells out the plural word "days" rather than using an
+  // abbreviated {days}d suffix (contrast calendar.intervalWater, which never
+  // splits one/many because its suffix is abbreviated).
+  'form.waterRhythmHintOne':
+    'Effective water rhythm ≈ every day (adjusted for light + pot — beats blind schedules that overwater).',
+  'form.waterRhythmHintMany':
     'Effective water rhythm ≈ every {days} days (adjusted for light + pot — beats blind schedules that overwater).',
   'form.checkBeforeWaterTitle': 'Check soil before watering',
   // {stillMoist} is the already-translated calendar.actionStillMoist value,
@@ -622,7 +635,6 @@ const en: Messages = {
   'form.caretakerAnyone': 'Anyone',
   'form.saveButtonEdit': 'Save changes',
   'form.editSaveFailedTitle': 'Could not save',
-  'form.editSaveFailedBody': 'Try again in a moment.',
 
   // components/DateField.tsx — rendered exclusively by these two screens
   // (no other screen uses it), so its hardcoded strings are folded into
@@ -1049,6 +1061,7 @@ const es: Messages = {
   'form.photoPermissionTitle': 'Permiso necesario',
   'form.photoPermissionBody':
     'Permite el acceso a la galería para añadir una foto de la planta.',
+  'form.retryBody': 'Inténtalo de nuevo en un momento.',
 
   'form.photoPlaceholderAdd': 'Toca para elegir una foto',
   'form.aiIdentifyLoading': 'Identificando…',
@@ -1074,21 +1087,21 @@ const es: Messages = {
   'form.identifyFailedTitle': 'Error de identificación con IA',
   'form.unknownError': 'Error desconocido',
   'form.addFailedTitle': 'No se pudo añadir la planta',
-  'form.addFailedBody': 'Inténtalo de nuevo en un momento.',
 
   'form.notFound': 'Planta no encontrada.',
   'form.photoPlaceholderEdit': 'Añadir foto',
   'form.labelBaseWaterDays': 'Riego base (días)',
-  'form.waterRhythmHint':
+  'form.waterRhythmHintOne':
+    'Ritmo de riego real ≈ cada día (ajustado por luz y maceta — mejor que los horarios ciegos que sobrerriegan).',
+  'form.waterRhythmHintMany':
     'Ritmo de riego real ≈ cada {days} días (ajustado por luz y maceta — mejor que los horarios ciegos que sobrerriegan).',
   'form.checkBeforeWaterTitle': 'Revisa la tierra antes de regar',
   'form.checkBeforeWaterBody':
-    'El calendario ofrece el aplazamiento «{stillMoist}» — la diferencia clave entre Verdant y Planta.',
+    'El calendario ofrece el aplazamiento «{stillMoist}» — la diferencia clave entre Verdant y la app Planta.',
   'form.labelCaretaker': 'Cuidador familiar',
   'form.caretakerAnyone': 'Cualquiera',
   'form.saveButtonEdit': 'Guardar cambios',
   'form.editSaveFailedTitle': 'No se pudo guardar',
-  'form.editSaveFailedBody': 'Inténtalo de nuevo en un momento.',
 
   'form.datePickerLabel': 'Elegir fecha',
   'form.datePickerDone': 'Listo',
@@ -1503,16 +1516,17 @@ const fr: Messages = {
   'form.labelPotSize': 'Taille du pot',
   'form.labelPetSafety': 'Sécurité animaux',
   'form.labelAcquiredDate': 'Date d’acquisition',
-  'form.labelFertilizeDays': 'Engrais tous les (jours)',
+  'form.labelFertilizeDays': 'Engrais (jours)',
   'form.labelNotes': 'Notes',
   'form.placeholderLocation': 'ex. Salon · fenêtre est',
   'form.library': 'Galerie',
-  'form.camera': 'Caméra',
+  'form.camera': 'Appareil photo',
   'form.nameRequiredTitle': 'Nom requis',
   'form.nameRequiredBody': 'Donnez un nom à votre plante (2 caractères minimum).',
   'form.photoPermissionTitle': 'Autorisation requise',
   'form.photoPermissionBody':
-    'Autorisez l’accès à la photothèque pour ajouter une photo de la plante.',
+    'Autorisez l’accès à la galerie pour ajouter une photo de la plante.',
+  'form.retryBody': 'Réessayez dans un instant.',
 
   'form.photoPlaceholderAdd': 'Touchez pour choisir une photo',
   'form.aiIdentifyLoading': 'Identification…',
@@ -1526,7 +1540,7 @@ const fr: Messages = {
     '{commonName} ({scientificName}) · Confiance : {confidence} · Lumière : {light} · {pets}',
   'form.placeholderName': 'ex. Lune',
   'form.placeholderSpecies': 'ex. Philodendron hederaceum',
-  'form.labelWaterDays': 'Arroser tous les (jours)',
+  'form.labelWaterDays': 'Arrosage (jours)',
   'form.scheduleHint':
     'Les plannings s’adaptent à la lumière et à la taille du pot. Le calendrier vérifie avant d’arroser (pas un « arroser maintenant » aveugle comme la plupart des applis).',
   'form.placeholderNotes': 'Terreau, provenance…',
@@ -1538,21 +1552,21 @@ const fr: Messages = {
   'form.identifyFailedTitle': 'Échec de l’identification par IA',
   'form.unknownError': 'Erreur inconnue',
   'form.addFailedTitle': 'Impossible d’ajouter la plante',
-  'form.addFailedBody': 'Réessayez dans un instant.',
 
   'form.notFound': 'Plante introuvable.',
   'form.photoPlaceholderEdit': 'Ajouter une photo',
   'form.labelBaseWaterDays': 'Arrosage de base (jours)',
-  'form.waterRhythmHint':
+  'form.waterRhythmHintOne':
+    'Rythme d’arrosage réel ≈ tous les jours (ajusté selon la lumière et le pot — mieux que les plannings aveugles qui noient les plantes).',
+  'form.waterRhythmHintMany':
     'Rythme d’arrosage réel ≈ tous les {days} jours (ajusté selon la lumière et le pot — mieux que les plannings aveugles qui noient les plantes).',
   'form.checkBeforeWaterTitle': 'Vérifiez la terre avant d’arroser',
   'form.checkBeforeWaterBody':
     'Le calendrier propose le report « {stillMoist} » — la différence essentielle entre Verdant et Planta.',
   'form.labelCaretaker': 'Responsable familial',
-  'form.caretakerAnyone': 'N’importe qui',
+  'form.caretakerAnyone': 'Indifférent',
   'form.saveButtonEdit': 'Enregistrer les modifications',
   'form.editSaveFailedTitle': 'Échec de l’enregistrement',
-  'form.editSaveFailedBody': 'Réessayez dans un instant.',
 
   'form.datePickerLabel': 'Choisir une date',
   'form.datePickerDone': 'Terminé',
@@ -1977,7 +1991,8 @@ const de: Messages = {
   'form.nameRequiredBody': 'Gib deiner Pflanze einen Namen (mind. 2 Zeichen).',
   'form.photoPermissionTitle': 'Berechtigung erforderlich',
   'form.photoPermissionBody':
-    'Erlaube den Zugriff auf die Fotomediathek, um ein Pflanzenfoto hinzuzufügen.',
+    'Erlaube den Zugriff auf die Galerie, um ein Pflanzenfoto hinzuzufügen.',
+  'form.retryBody': 'Versuche es gleich noch einmal.',
 
   'form.photoPlaceholderAdd': 'Tippen, um ein Foto zu wählen',
   'form.aiIdentifyLoading': 'Wird bestimmt…',
@@ -2003,21 +2018,21 @@ const de: Messages = {
   'form.identifyFailedTitle': 'KI-Bestimmung fehlgeschlagen',
   'form.unknownError': 'Unbekannter Fehler',
   'form.addFailedTitle': 'Pflanze konnte nicht hinzugefügt werden',
-  'form.addFailedBody': 'Versuche es gleich noch einmal.',
 
   'form.notFound': 'Pflanze nicht gefunden.',
   'form.photoPlaceholderEdit': 'Foto hinzufügen',
   'form.labelBaseWaterDays': 'Basis-Gießen (Tage)',
-  'form.waterRhythmHint':
+  'form.waterRhythmHintOne':
+    'Tatsächlicher Gießrhythmus ≈ jeden Tag (angepasst an Licht und Topf — besser als blinde Zeitpläne, die zu viel gießen).',
+  'form.waterRhythmHintMany':
     'Tatsächlicher Gießrhythmus ≈ alle {days} Tage (angepasst an Licht und Topf — besser als blinde Zeitpläne, die zu viel gießen).',
   'form.checkBeforeWaterTitle': 'Erde vor dem Gießen prüfen',
   'form.checkBeforeWaterBody':
     'Der Kalender zeigt die Verschiebung „{stillMoist}“ — der zentrale Unterschied zwischen Verdant und Planta.',
   'form.labelCaretaker': 'Pflegeperson (Familie)',
-  'form.caretakerAnyone': 'Alle',
+  'form.caretakerAnyone': 'Beliebig',
   'form.saveButtonEdit': 'Änderungen speichern',
   'form.editSaveFailedTitle': 'Konnte nicht gespeichert werden',
-  'form.editSaveFailedBody': 'Versuche es gleich noch einmal.',
 
   'form.datePickerLabel': 'Datum wählen',
   'form.datePickerDone': 'Fertig',

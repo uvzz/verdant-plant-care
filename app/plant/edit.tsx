@@ -163,7 +163,7 @@ export default function EditPlantScreen() {
       });
       router.back();
     } catch {
-      Alert.alert(t('form.editSaveFailedTitle'), t('form.editSaveFailedBody'));
+      Alert.alert(t('form.editSaveFailedTitle'), t('form.retryBody'));
     } finally {
       setSaving(false);
     }
@@ -300,7 +300,9 @@ export default function EditPlantScreen() {
           </View>
         </View>
         <Text style={[Type.meta, { color: c.tint, marginBottom: 12 }]}>
-          {t('form.waterRhythmHint', { days: previewInterval })}
+          {previewInterval === 1
+            ? t('form.waterRhythmHintOne')
+            : t('form.waterRhythmHintMany', { days: previewInterval })}
         </Text>
 
         <Pressable

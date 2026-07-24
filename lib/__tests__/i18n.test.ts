@@ -399,9 +399,11 @@ describe('catalog seam — label descriptors always render as real text', () => 
         pets: 'Pet-safe',
       },
     },
-    // edit.tsx's effective water rhythm hint — {days} is the computed
-    // effectiveWaterIntervalDays() preview.
-    { key: 'form.waterRhythmHint', params: { days: 6 } },
+    // edit.tsx's effective water rhythm hint — one/many split since
+    // effectiveWaterIntervalDays() can round down to 1 (Constraint 4).
+    // {days} is the computed preview; the One variant has no placeholder.
+    { key: 'form.waterRhythmHintOne', params: {} },
+    { key: 'form.waterRhythmHintMany', params: { days: 6 } },
     // edit.tsx's check-before-water toggle body. {stillMoist} is the
     // already-translated calendar.actionStillMoist value.
     { key: 'form.checkBeforeWaterBody', params: { stillMoist: 'Still moist' } },
