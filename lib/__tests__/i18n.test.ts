@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { relativeCareLabel } from '../care';
+import { careVerbLabel, intervalHintLabel } from '../calendarLabels';
 import {
   interpolate,
   isSupportedLanguage,
@@ -15,6 +16,9 @@ import {
   PET_TOXICITY,
   PLANT_CATEGORIES,
   POT_SIZES,
+  normalizePlant,
+  type CareDueItem,
+  type Plant,
 } from '../types';
 
 describe('interpolate', () => {
@@ -181,6 +185,57 @@ describe('catalog seam — label descriptors always render as real text', () => 
   // negative-one, negative-many, zero, one, many
   const careDaysUntil = [-1, -5, 0, 1, 5];
 
+  // `careVerbLabel` and `intervalHintLabel` (lib/calendarLabels.ts) are the
+  // same kind of pure branch-selecting descriptor, added for the Care
+  // calendar screen — cover them here too so a typo'd key or mismatched
+  // placeholder can't ship unnoticed.
+  function testPlant(partial: Partial<Plant> & { id: string; name: string }): Plant {
+    return normalizePlant({
+      species: '',
+      category: 'Houseplant',
+      photoUri: null,
+      acquiredDate: '2026-01-01',
+      location: '',
+      waterIntervalDays: 7,
+      fertilizeIntervalDays: 30,
+      notes: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      ...partial,
+    });
+  }
+
+  function testDueItem(
+    partial: Partial<CareDueItem> & { plant: Plant }
+  ): CareDueItem {
+    return {
+      type: 'water',
+      dueDate: new Date('2026-06-08'),
+      daysUntil: 0,
+      overdue: false,
+      effectiveIntervalDays: 7,
+      ...partial,
+    };
+  }
+
+  const careVerbTypes: Array<CareDueItem['type']> = ['water', 'fertilize'];
+
+  const intervalHintItems: CareDueItem[] = [
+    testDueItem({
+      plant: testPlant({ id: 'p1', name: 'Fern', checkBeforeWater: true }),
+      type: 'water',
+    }),
+    testDueItem({
+      plant: testPlant({ id: 'p2', name: 'Cactus', checkBeforeWater: false }),
+      type: 'water',
+    }),
+    testDueItem({
+      plant: testPlant({ id: 'p3', name: 'Orchid' }),
+      type: 'fertilize',
+      effectiveIntervalDays: 21,
+    }),
+  ];
+
   for (const { code } of SUPPORTED_LANGUAGES) {
     describe(code, () => {
       it('renders every plantsSubtitleLabel branch as real text', () => {
@@ -195,6 +250,24 @@ describe('catalog seam — label descriptors always render as real text', () => 
       it('renders every relativeCareLabel branch as real text', () => {
         for (const daysUntil of careDaysUntil) {
           const label = relativeCareLabel(daysUntil);
+          const rendered = translate(code, label.key, label.params);
+          expect(rendered, `${code} ${label.key}`).not.toBe(label.key);
+          expect(rendered, `${code} ${label.key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every careVerbLabel branch as real text', () => {
+        for (const type of careVerbTypes) {
+          const label = careVerbLabel(type);
+          const rendered = translate(code, label.key, label.params);
+          expect(rendered, `${code} ${label.key}`).not.toBe(label.key);
+          expect(rendered, `${code} ${label.key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every intervalHintLabel branch as real text', () => {
+        for (const item of intervalHintItems) {
+          const label = intervalHintLabel(item);
           const rendered = translate(code, label.key, label.params);
           expect(rendered, `${code} ${label.key}`).not.toBe(label.key);
           expect(rendered, `${code} ${label.key}`).not.toContain('{');

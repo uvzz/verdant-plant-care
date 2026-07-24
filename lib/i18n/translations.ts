@@ -273,6 +273,61 @@ const en: Messages = {
   'plants.upgradeTitle': 'You’ve filled your {limit} free plants',
   'plants.upgradeSubtitle': 'Go Premium for unlimited plants, AI, and cloud sync →',
   'plants.upgradeA11y': 'Upgrade to Premium for unlimited plants',
+
+  // Calendar — Care calendar screen ("Gentle reminders")
+  'calendar.eyebrow': 'Care calendar',
+  'calendar.title': 'Gentle reminders',
+  'calendar.subtitle': 'Soft nudges to check your plants — not orders to water.',
+  'calendar.emptyStateTitle': 'Nothing scheduled yet',
+  'calendar.emptyStateBody':
+    'Add plants with water and fertilize intervals to build a calm care calendar.',
+  'calendar.emptyStateAction': 'Add a plant',
+  // Philosophy card — full version (new users) and its one-line collapsed
+  // form once the user has logged a handful of care actions (see
+  // `experienced` in calendar.tsx). `{days}` is MOISTURE_SNOOZE_DAYS —
+  // interpolated, never spliced into the string (Constraint 3).
+  'calendar.philosophyTitle': 'Check before water',
+  'calendar.philosophyBody':
+    'Stick a finger in the soil. If it’s still damp, tap Still moist (+{days}d). Swipe a card right to log watering. Intervals also adapt to pot size and light.',
+  'calendar.philosophyCollapsed': 'Swipe a card right to log · check soil before watering',
+  // Section headings + each section's empty label
+  'calendar.sectionOverdue': 'Overdue',
+  'calendar.sectionToday': 'Today',
+  'calendar.sectionUpcoming': 'Upcoming',
+  'calendar.emptyOverdue': 'You’re all caught up',
+  'calendar.emptyToday': 'No care due today',
+  'calendar.emptyUpcoming': 'No upcoming care',
+  // Present-tense care-type word for a row's meta line + accessibility
+  // label — see careVerbLabel in lib/calendarLabels.ts for why this is
+  // distinct from the past-tense domain.careType.* used on the action chips.
+  'calendar.careTypeWater': 'Water',
+  'calendar.careTypeFertilize': 'Fertilize',
+  // Row meta line under the plant name ("Water · Due today" /
+  // "Water · Due today · Living room") and the row accessibilityLabel —
+  // single keys with placeholders, never assembled from glued fragments.
+  'calendar.rowMeta': '{careVerb} · {relative}',
+  'calendar.rowMetaWithLocation': '{careVerb} · {relative} · {location}',
+  'calendar.rowA11yLabel':
+    '{name}, {careVerb}, {relative}. Tap for plant, long-press to log.',
+  // Interval hint line — see intervalHintLabel in lib/calendarLabels.ts.
+  'calendar.intervalWater': '~every {days}d (light/pot-aware)',
+  'calendar.intervalWaterCheckFirst':
+    '~every {days}d (light/pot-aware) · check soil first',
+  'calendar.intervalFertilize': 'every {days}d',
+  // Action chips + swipe-to-complete labels. Keep these tight — the chips
+  // sit several-to-a-row on narrow screens.
+  'calendar.actionStillMoist': 'Still moist',
+  'calendar.actionLog': 'Log',
+  'calendar.actionDetails': 'Details',
+  // "Fed" is the swipe panel's short label for a fertilize action (the swipe
+  // panel is narrower than the chip row); "Watered" reuses
+  // domain.careType.water since the two are identical words.
+  'calendar.swipeFed': 'Fed',
+  // Toasts
+  'calendar.toastWatered': 'Watered {name}',
+  'calendar.toastFed': 'Fed {name}',
+  'calendar.toastSnoozed': '{name} · snoozed {days}d',
+  'calendar.toastError': 'Could not save — try again',
 };
 
 const es: Messages = {
@@ -493,6 +548,44 @@ const es: Messages = {
   'plants.upgradeSubtitle':
     'Hazte Premium para plantas ilimitadas, IA y sincronización en la nube →',
   'plants.upgradeA11y': 'Mejora a Premium para plantas ilimitadas',
+
+  // Calendar — Care calendar screen ("Gentle reminders")
+  'calendar.eyebrow': 'Calendario de cuidados',
+  'calendar.title': 'Recordatorios suaves',
+  'calendar.subtitle': 'Avisos suaves para revisar tus plantas — no órdenes de riego.',
+  'calendar.emptyStateTitle': 'Nada programado aún',
+  'calendar.emptyStateBody':
+    'Añade plantas con intervalos de riego y abono para crear un calendario de cuidados tranquilo.',
+  'calendar.emptyStateAction': 'Añadir planta',
+  'calendar.philosophyTitle': 'Revisa antes de regar',
+  'calendar.philosophyBody':
+    'Mete un dedo en la tierra. Si sigue húmeda, toca Aún húmeda (+{days}d). Desliza una tarjeta a la derecha para registrar el riego. Los intervalos también se adaptan a la maceta y la luz.',
+  'calendar.philosophyCollapsed':
+    'Desliza una tarjeta a la derecha para registrar · revisa la tierra antes de regar',
+  'calendar.sectionOverdue': 'Atrasado',
+  'calendar.sectionToday': 'Hoy',
+  'calendar.sectionUpcoming': 'Próximos',
+  'calendar.emptyOverdue': 'Estás al día',
+  'calendar.emptyToday': 'Sin cuidados para hoy',
+  'calendar.emptyUpcoming': 'Sin cuidados próximos',
+  'calendar.careTypeWater': 'Regar',
+  'calendar.careTypeFertilize': 'Abonar',
+  'calendar.rowMeta': '{careVerb} · {relative}',
+  'calendar.rowMetaWithLocation': '{careVerb} · {relative} · {location}',
+  'calendar.rowA11yLabel':
+    '{name}, {careVerb}, {relative}. Toca para ver la planta, mantén pulsado para registrar.',
+  'calendar.intervalWater': '~cada {days}d (según luz/maceta)',
+  'calendar.intervalWaterCheckFirst':
+    '~cada {days}d (según luz/maceta) · revisa la tierra primero',
+  'calendar.intervalFertilize': 'cada {days}d',
+  'calendar.actionStillMoist': 'Aún húmeda',
+  'calendar.actionLog': 'Registrar',
+  'calendar.actionDetails': 'Detalles',
+  'calendar.swipeFed': 'Abonada',
+  'calendar.toastWatered': '{name} regada',
+  'calendar.toastFed': '{name} abonada',
+  'calendar.toastSnoozed': '{name} · pospuesta {days}d',
+  'calendar.toastError': 'No se pudo guardar — inténtalo de nuevo',
 };
 
 const fr: Messages = {
@@ -713,6 +806,45 @@ const fr: Messages = {
   'plants.upgradeSubtitle':
     'Passez à Premium pour des plantes illimitées, l’IA et la synchro cloud →',
   'plants.upgradeA11y': 'Passer à Premium pour des plantes illimitées',
+
+  // Calendar — Care calendar screen ("Gentle reminders")
+  'calendar.eyebrow': 'Calendrier de soins',
+  'calendar.title': 'Rappels tout en douceur',
+  'calendar.subtitle':
+    'De petits rappels pour vérifier vos plantes — jamais des ordres d’arrosage.',
+  'calendar.emptyStateTitle': 'Rien de prévu pour l’instant',
+  'calendar.emptyStateBody':
+    'Ajoutez des plantes avec des intervalles d’arrosage et de fertilisation pour créer un calendrier de soins apaisant.',
+  'calendar.emptyStateAction': 'Ajouter une plante',
+  'calendar.philosophyTitle': 'Vérifiez avant d’arroser',
+  'calendar.philosophyBody':
+    'Plongez un doigt dans la terre. Si elle est encore humide, touchez Encore humide (+{days}j). Glissez une carte vers la droite pour noter l’arrosage. Les intervalles s’adaptent aussi au pot et à la lumière.',
+  'calendar.philosophyCollapsed':
+    'Glissez une carte vers la droite pour noter · vérifiez la terre avant d’arroser',
+  'calendar.sectionOverdue': 'En retard',
+  'calendar.sectionToday': 'Aujourd’hui',
+  'calendar.sectionUpcoming': 'À venir',
+  'calendar.emptyOverdue': 'Tout est à jour',
+  'calendar.emptyToday': 'Aucun soin prévu aujourd’hui',
+  'calendar.emptyUpcoming': 'Aucun soin à venir',
+  'calendar.careTypeWater': 'Arroser',
+  'calendar.careTypeFertilize': 'Fertiliser',
+  'calendar.rowMeta': '{careVerb} · {relative}',
+  'calendar.rowMetaWithLocation': '{careVerb} · {relative} · {location}',
+  'calendar.rowA11yLabel':
+    '{name}, {careVerb}, {relative}. Touchez pour voir la plante, appui long pour noter.',
+  'calendar.intervalWater': '~tous les {days}j (selon lumière/pot)',
+  'calendar.intervalWaterCheckFirst':
+    '~tous les {days}j (selon lumière/pot) · vérifiez la terre d’abord',
+  'calendar.intervalFertilize': 'tous les {days}j',
+  'calendar.actionStillMoist': 'Encore humide',
+  'calendar.actionLog': 'Noter',
+  'calendar.actionDetails': 'Détails',
+  'calendar.swipeFed': 'Nourrie',
+  'calendar.toastWatered': '{name} arrosée',
+  'calendar.toastFed': '{name} nourrie',
+  'calendar.toastSnoozed': '{name} · reportée {days}j',
+  'calendar.toastError': 'Échec de l’enregistrement — réessayez',
 };
 
 const de: Messages = {
@@ -934,6 +1066,45 @@ const de: Messages = {
   'plants.upgradeSubtitle':
     'Hol dir Premium für unbegrenzte Pflanzen, KI und Cloud-Sync →',
   'plants.upgradeA11y': 'Für unbegrenzte Pflanzen auf Premium upgraden',
+
+  // Calendar — Care calendar screen ("Gentle reminders")
+  'calendar.eyebrow': 'Pflegekalender',
+  'calendar.title': 'Sanfte Erinnerungen',
+  'calendar.subtitle':
+    'Sanfte Hinweise, nach deinen Pflanzen zu sehen — keine Gießbefehle.',
+  'calendar.emptyStateTitle': 'Noch nichts geplant',
+  'calendar.emptyStateBody':
+    'Füge Pflanzen mit Gieß- und Düngeintervallen hinzu, für einen ruhigen Pflegekalender.',
+  'calendar.emptyStateAction': 'Pflanze hinzufügen',
+  'calendar.philosophyTitle': 'Vor dem Gießen prüfen',
+  'calendar.philosophyBody':
+    'Stecke einen Finger in die Erde. Ist sie noch feucht, tippe auf Noch feucht (+{days}T). Wische eine Karte nach rechts, um das Gießen zu notieren. Die Intervalle passen sich außerdem an Topfgröße und Licht an.',
+  'calendar.philosophyCollapsed':
+    'Karte nach rechts wischen zum Notieren · vor dem Gießen die Erde prüfen',
+  'calendar.sectionOverdue': 'Überfällig',
+  'calendar.sectionToday': 'Heute',
+  'calendar.sectionUpcoming': 'Bevorstehend',
+  'calendar.emptyOverdue': 'Alles erledigt',
+  'calendar.emptyToday': 'Heute keine Pflege fällig',
+  'calendar.emptyUpcoming': 'Keine Pflege in Sicht',
+  'calendar.careTypeWater': 'Gießen',
+  'calendar.careTypeFertilize': 'Düngen',
+  'calendar.rowMeta': '{careVerb} · {relative}',
+  'calendar.rowMetaWithLocation': '{careVerb} · {relative} · {location}',
+  'calendar.rowA11yLabel':
+    '{name}, {careVerb}, {relative}. Tippen für die Pflanze, lange drücken zum Notieren.',
+  'calendar.intervalWater': '~alle {days}T (licht-/topfabhängig)',
+  'calendar.intervalWaterCheckFirst':
+    '~alle {days}T (licht-/topfabhängig) · zuerst Erde prüfen',
+  'calendar.intervalFertilize': 'alle {days}T',
+  'calendar.actionStillMoist': 'Noch feucht',
+  'calendar.actionLog': 'Notieren',
+  'calendar.actionDetails': 'Details',
+  'calendar.swipeFed': 'Gedüngt',
+  'calendar.toastWatered': '{name} gegossen',
+  'calendar.toastFed': '{name} gedüngt',
+  'calendar.toastSnoozed': '{name} · verschoben um {days}T',
+  'calendar.toastError': 'Konnte nicht gespeichert werden — bitte erneut versuchen',
 };
 
 export const translations: Record<LanguageCode, Messages> = { en, es, fr, de };
