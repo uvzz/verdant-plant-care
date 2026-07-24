@@ -2,9 +2,18 @@ import { View, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Droplet } from 'lucide-react-native';
 
+import { onHue, withAlpha } from '@/constants/Palette';
+
 /**
- * Circular water-progress ring overlaid on plant photos (Greg-style).
- * progress 0 → just watered, 1 → due now (or overdue).
+ * Circular care-progress badge overlaid on a plant card.
+ * progress 0 → just cared for, 1 → due now (or overdue).
+ *
+ * The disc is filled with the care colour itself rather than a neutral dark
+ * scrim. The scrim version worked over photos but turned into a grey blob on
+ * the tinted no-photo placeholder, and it kept the badge outside the app's
+ * colour language. Filling with the hue means the arc and icon have to invert
+ * against it — hence `onHue` — but the badge now reads as "water" or "late"
+ * at thumbnail size on any background.
  */
 export function WaterRing({
   progress,
@@ -20,18 +29,28 @@ export function WaterRing({
   const clamped = Math.min(1, Math.max(0, progress));
   const r = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * r;
+  const fg = onHue(color);
 
   return (
     <View
-      style={[styles.wrap, { width: size, height: size, borderRadius: size / 2 }]}
-      accessibilityLabel={`Water progress ${Math.round(clamped * 100)}%`}
+      style={[
+        styles.wrap,
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: color,
+          shadowColor: color,
+        },
+      ]}
+      accessibilityLabel={`Care progress ${Math.round(clamped * 100)}%`}
     >
-      <Svg width={size} height={size}>
+      <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
         <Circle
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke="rgba(255,255,255,0.35)"
+          stroke={withAlpha(fg === '#FFFFFF' ? '#FFFFFF' : '#0F1612', 0.28)}
           strokeWidth={strokeWidth}
           fill="none"
         />
@@ -39,7 +58,7 @@ export function WaterRing({
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke={color}
+          stroke={fg}
           strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={circumference}
@@ -48,20 +67,18 @@ export function WaterRing({
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </Svg>
-      <View style={StyleSheet.absoluteFill}>
-        <View style={styles.icon}>
-          <Droplet color="#FFFFFF" size={size * 0.42} strokeWidth={2.4} />
-        </View>
-      </View>
+      <Droplet color={fg} size={size * 0.42} strokeWidth={2.4} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: 'rgba(15,22,18,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  icon: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

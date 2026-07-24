@@ -14,6 +14,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { PlantCardSkeleton } from '@/components/Skeleton';
 
 import Colors, { APP_NAME } from '@/constants/Colors';
+import { categoryColor, onHue, softBorder, softFill } from '@/constants/Palette';
 import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { EmptyState } from '@/components/EmptyState';
@@ -163,17 +164,31 @@ export default function MyPlantsScreen() {
             contentContainerStyle={styles.chips}
             renderItem={({ item }) => {
               const active = item === category;
+              // "All" is not a category, so it keeps the neutral inverted pill.
+              // Real categories wear their own hue: a soft wash when idle, the
+              // full hue when selected. This row is the app's colour key —
+              // once learned here, the same hues read on cards and log rows.
+              const isAll = item === 'All';
+              const hue = isAll ? c.emphasis : categoryColor(item, scheme);
               return (
                 <Pressable
                   onPress={() => setCategory(item)}
                   style={[
                     styles.chip,
                     {
-                      // Active pill inverts the page so it's high-contrast in
-                      // BOTH themes. A raw `night` fill == background in dark
-                      // mode and made the selected chip vanish.
-                      backgroundColor: active ? c.emphasis : c.surface,
-                      borderColor: active ? c.emphasis : c.border,
+                      // Active pill stays high-contrast in BOTH themes. A raw
+                      // `night` fill == background in dark mode and made the
+                      // selected chip vanish.
+                      backgroundColor: active
+                        ? hue
+                        : isAll
+                          ? c.surface
+                          : softFill(hue, scheme),
+                      borderColor: active
+                        ? hue
+                        : isAll
+                          ? c.border
+                          : softBorder(hue, scheme),
                     },
                   ]}
                 >
@@ -181,7 +196,13 @@ export default function MyPlantsScreen() {
                     style={[
                       Type.meta,
                       {
-                        color: active ? c.onEmphasis : c.text,
+                        color: active
+                          ? isAll
+                            ? c.onEmphasis
+                            : onHue(hue)
+                          : isAll
+                            ? c.text
+                            : hue,
                         fontFamily: Fonts.bodySemi,
                       },
                     ]}

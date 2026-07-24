@@ -17,6 +17,13 @@ import { TextSkeleton } from '@/components/Skeleton';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 import Colors, { APP_NAME } from '@/constants/Colors';
+import {
+  careColor,
+  categoryColor,
+  softBorder,
+  softFill,
+  statusColor,
+} from '@/constants/Palette';
 import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { PrimaryButton } from '@/components/PrimaryButton';
@@ -101,14 +108,43 @@ export default function InsightsScreen() {
         ) : (
           <>
             <View style={styles.grid}>
-              <StatTile label="Plants" value={String(stats.plantCount)} c={c} index={0} />
-              <StatTile label="Care logs" value={String(stats.totalLogs)} c={c} index={1} />
-              <StatTile label="Streak" value={`${stats.careStreakDays}d`} c={c} index={2} />
+              <StatTile
+                label="Plants"
+                value={String(stats.plantCount)}
+                c={c}
+                index={0}
+                hue={statusColor('healthy', scheme)}
+                scheme={scheme}
+              />
+              <StatTile
+                label="Care logs"
+                value={String(stats.totalLogs)}
+                c={c}
+                index={1}
+                hue={careColor('water', scheme)}
+                scheme={scheme}
+              />
+              <StatTile
+                label="Streak"
+                value={`${stats.careStreakDays}d`}
+                c={c}
+                index={2}
+                hue={careColor('fertilize', scheme)}
+                scheme={scheme}
+              />
               <StatTile
                 label="Overdue"
                 value={String(stats.overdueCount)}
                 c={c}
                 index={3}
+                scheme={scheme}
+                // Only burn the alarm colour when something IS overdue —
+                // a permanently red "0" trains the user to ignore it.
+                hue={
+                  stats.overdueCount > 0
+                    ? statusColor('overdue', scheme)
+                    : statusColor('healthy', scheme)
+                }
                 danger={stats.overdueCount > 0}
                 onPress={
                   stats.overdueCount > 0
@@ -137,25 +173,33 @@ export default function InsightsScreen() {
               <Text style={[Type.title, { color: c.text }]}>Breakdown</Text>
               <View style={styles.breakdownRow}>
                 <BreakdownStat
-                  icon={<Droplet color={c.tint} size={14} strokeWidth={2.2} />}
+                  icon={
+                    <Droplet color={careColor('water', scheme)} size={14} strokeWidth={2.2} />
+                  }
                   value={stats.waters}
                   label="water"
                   c={c}
                 />
                 <BreakdownStat
-                  icon={<Sprout color={c.tint} size={14} strokeWidth={2.2} />}
+                  icon={
+                    <Sprout color={careColor('fertilize', scheme)} size={14} strokeWidth={2.2} />
+                  }
                   value={stats.fertilizes}
                   label="feed"
                   c={c}
                 />
                 <BreakdownStat
-                  icon={<NotebookPen color={c.tint} size={14} strokeWidth={2.2} />}
+                  icon={
+                    <NotebookPen color={careColor('note', scheme)} size={14} strokeWidth={2.2} />
+                  }
                   value={stats.notes}
                   label="notes"
                   c={c}
                 />
                 <BreakdownStat
-                  icon={<Camera color={c.tint} size={14} strokeWidth={2.2} />}
+                  icon={
+                    <Camera color={careColor('photo', scheme)} size={14} strokeWidth={2.2} />
+                  }
                   value={stats.photos}
                   label="photos"
                   c={c}
@@ -167,11 +211,19 @@ export default function InsightsScreen() {
                 </Text>
               ) : null}
               {stats.categoryBreakdown.length > 0 ? (
-                <View style={{ marginTop: 10, gap: 4 }}>
+                <View style={{ marginTop: 10, gap: 6 }}>
                   {stats.categoryBreakdown.map((row) => (
-                    <Text key={row.category} style={[Type.meta, { color: c.textMuted }]}>
-                      {row.category} · {row.count}
-                    </Text>
+                    <View key={row.category} style={styles.legendRow}>
+                      <View
+                        style={[
+                          styles.legendDot,
+                          { backgroundColor: categoryColor(row.category, scheme) },
+                        ]}
+                      />
+                      <Text style={[Type.meta, { color: c.textMuted }]}>
+                        {row.category} · {row.count}
+                      </Text>
+                    </View>
                   ))}
                 </View>
               ) : null}
@@ -255,6 +307,8 @@ function StatTile({
   danger,
   onPress,
   index = 0,
+  hue,
+  scheme,
 }: {
   label: string;
   value: string;
@@ -262,15 +316,20 @@ function StatTile({
   danger?: boolean;
   onPress?: () => void;
   index?: number;
+  /** Accent for the tile. Tints the fill, the border and the number. */
+  hue: string;
+  scheme: 'light' | 'dark';
 }) {
+  const tileStyle = {
+    backgroundColor: softFill(hue, scheme),
+    borderColor: softBorder(hue, scheme),
+  };
   const body = (
     <>
-      <Text style={[Type.displayM, { color: danger ? c.danger : c.text, fontSize: 26 }]}>
-        {value}
-      </Text>
+      <Text style={[Type.displayM, { color: hue, fontSize: 26 }]}>{value}</Text>
       <Text style={[Type.meta, { color: c.textMuted, marginTop: 4 }]}>{label}</Text>
       {onPress && danger ? (
-        <Text style={[Type.meta, { color: c.tint, marginTop: 4, fontSize: 10 }]}>
+        <Text style={[Type.meta, { color: hue, marginTop: 4, fontSize: 10 }]}>
           Tap for care list
         </Text>
       ) : null}
@@ -286,7 +345,7 @@ function StatTile({
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${value}`}
-        style={[styles.tile, { backgroundColor: c.surface, borderColor: c.border }]}
+        style={[styles.tile, tileStyle]}
       >
         {body}
       </AnimatedPressable>
@@ -296,7 +355,7 @@ function StatTile({
     <Animated.View
       entering={entering}
       accessibilityLabel={`${label}: ${value}`}
-      style={[styles.tile, { backgroundColor: c.surface, borderColor: c.border }]}
+      style={[styles.tile, tileStyle]}
     >
       {body}
     </Animated.View>
@@ -308,6 +367,8 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingBottom: 8 },
   scroll: { padding: 16, gap: 12, paddingBottom: 40 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  legendRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
   tile: {
     width: '48%',
     flexGrow: 1,

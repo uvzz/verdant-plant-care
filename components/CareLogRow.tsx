@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import Colors from '@/constants/Colors';
+import { careColor, softFill } from '@/constants/Palette';
 import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { CareIcon } from '@/components/CareIcon';
@@ -16,6 +17,9 @@ export function CareLogRow({
 }) {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
+  // Each log type carries its own hue, so a history list scans as a coloured
+  // timeline instead of a wall of identical grey badges.
+  const hue = careColor(log.type, scheme);
 
   const confirmDelete = () => {
     if (!onDelete) return;
@@ -34,8 +38,8 @@ export function CareLogRow({
       onLongPress={onDelete ? confirmDelete : undefined}
       style={[styles.row, { backgroundColor: c.surface, borderColor: c.border }]}
     >
-      <View style={[styles.badge, { backgroundColor: c.surfaceAlt }]}>
-        <CareIcon type={log.type} color={c.tint} size={17} />
+      <View style={[styles.badge, { backgroundColor: softFill(hue, scheme) }]}>
+        <CareIcon type={log.type} color={hue} size={17} />
       </View>
       <View style={styles.content}>
         <Text style={[Type.title, { color: c.text, fontSize: 15 }]}>

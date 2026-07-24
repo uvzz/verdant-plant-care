@@ -15,6 +15,13 @@ import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-rout
 import { differenceInCalendarDays, startOfDay } from 'date-fns';
 
 import Colors from '@/constants/Colors';
+import {
+  careColor,
+  categoryColor,
+  softBorder,
+  softFill,
+  statusColor,
+} from '@/constants/Palette';
 import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { CareLogRow } from '@/components/CareLogRow';
@@ -202,6 +209,11 @@ export default function PlantDetailScreen() {
   const fertDays = differenceInCalendarDays(fertDue, today);
   const ageDays = plantAgeDays(plant);
 
+  const catHue = categoryColor(plant.category, scheme);
+  const waterHue = careColor('water', scheme);
+  const fertHue = careColor('fertilize', scheme);
+  const overdueHue = statusColor('overdue', scheme);
+
   const galleryUris = [
     ...(plant.photoUri ? [{ uri: plant.photoUri, key: 'hero', label: 'Portrait' }] : []),
     ...photos
@@ -355,8 +367,14 @@ export default function PlantDetailScreen() {
             {plant.photoUri ? (
               <Image source={{ uri: plant.photoUri }} style={styles.hero} contentFit="cover" />
             ) : (
-              <View style={[styles.hero, styles.heroEmpty, { backgroundColor: c.surfaceAlt }]}>
-                <Sprout color={c.tint} size={64} strokeWidth={1.6} />
+              <View
+                style={[
+                  styles.hero,
+                  styles.heroEmpty,
+                  { backgroundColor: softFill(catHue, scheme) },
+                ]}
+              >
+                <Sprout color={catHue} size={64} strokeWidth={1.6} />
               </View>
             )}
             </Animated.View>
@@ -371,11 +389,16 @@ export default function PlantDetailScreen() {
               style={StyleSheet.absoluteFill}
             />
             <View style={styles.heroOverlay}>
-              <Text style={[Type.micro, { color: 'rgba(255,255,255,0.85)' }]}>
-                {plant.category}
-                {plant.location ? ` · ${plant.location}` : ''}
-                {ageDays > 0 ? ` · ${ageDays}d with you` : ''}
-              </Text>
+              <View style={styles.heroMetaRow}>
+                {/* Category dot — the same hue the plant wears in the grid,
+                    carried through to its own screen. */}
+                <View style={[styles.heroDot, { backgroundColor: catHue }]} />
+                <Text style={[Type.micro, { color: 'rgba(255,255,255,0.85)' }]}>
+                  {plant.category}
+                  {plant.location ? ` · ${plant.location}` : ''}
+                  {ageDays > 0 ? ` · ${ageDays}d with you` : ''}
+                </Text>
+              </View>
               <Text
                 style={[Type.displayM, { color: '#fff', fontSize: 28, marginTop: 4 }]}
                 numberOfLines={2}
@@ -428,28 +451,43 @@ export default function PlantDetailScreen() {
             />
             <MetaChip
               label={`~${effectiveWaterIntervalDays(plant)}d water rhythm`}
-              bg={c.surfaceAlt}
-              fg={c.tint}
+              bg={softFill(waterHue, scheme)}
+              fg={waterHue}
             />
           </View>
 
+          {/* The two due cards are the screen's headline. Each is washed in its
+              own care colour and flips to coral once late, so "is anything
+              wrong here?" is answerable from across the room. */}
           <View style={styles.dueRow}>
             <DueCard
-              icon={<Droplet color={c.tint} size={18} strokeWidth={2.2} />}
+              icon={
+                <Droplet
+                  color={waterDays < 0 ? overdueHue : waterHue}
+                  size={18}
+                  strokeWidth={2.2}
+                />
+              }
               title="Water"
               value={formatRelativeCare(waterDays)}
-              accent={waterDays < 0 ? c.danger : waterDays === 0 ? c.growth : c.tint}
-              bg={c.surface}
-              border={c.border}
+              accent={waterDays < 0 ? overdueHue : waterHue}
+              bg={softFill(waterDays < 0 ? overdueHue : waterHue, scheme)}
+              border={softBorder(waterDays < 0 ? overdueHue : waterHue, scheme)}
               muted={c.textMuted}
             />
             <DueCard
-              icon={<Sprout color={c.tint} size={18} strokeWidth={2.2} />}
+              icon={
+                <Sprout
+                  color={fertDays < 0 ? overdueHue : fertHue}
+                  size={18}
+                  strokeWidth={2.2}
+                />
+              }
               title="Fertilize"
               value={formatRelativeCare(fertDays)}
-              accent={fertDays < 0 ? c.danger : c.text}
-              bg={c.surface}
-              border={c.border}
+              accent={fertDays < 0 ? overdueHue : fertHue}
+              bg={softFill(fertDays < 0 ? overdueHue : fertHue, scheme)}
+              border={softBorder(fertDays < 0 ? overdueHue : fertHue, scheme)}
               muted={c.textMuted}
             />
           </View>
@@ -869,6 +907,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
   },
+  heroMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  heroDot: { width: 7, height: 7, borderRadius: 4 },
   body: { padding: 16, gap: 12 },
   toast: {
     borderRadius: 12,
