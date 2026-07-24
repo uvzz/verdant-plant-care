@@ -466,6 +466,20 @@ describe('catalog seam — label descriptors always render as real text', () => 
     { key: 'settings.syncLinkedBodyMany', params: { count: 3 } },
   ];
 
+  // The interpolated `camera.flashA11y` key app/camera.tsx calls via raw
+  // `t(key, params)` (Task 7b) — the only interpolated key on the camera
+  // overlay screen. {mode} is the already-translated domain.flash.* value
+  // for the currently-selected FlashMode, composed via a placeholder rather
+  // than the `Flash ${flash}` template literal it replaces (Constraint 3 +
+  // the raw-enum-leak defect that motivated this task). All three flash
+  // states are covered since each is a distinct branch, not a one/many
+  // count split.
+  const cameraRawCallSites: Array<{ key: string; params: TranslateParams }> = [
+    { key: 'camera.flashA11y', params: { mode: 'Off' } },
+    { key: 'camera.flashA11y', params: { mode: 'On' } },
+    { key: 'camera.flashA11y', params: { mode: 'Auto' } },
+  ];
+
   for (const { code } of SUPPORTED_LANGUAGES) {
     describe(code, () => {
       it('renders every plantsSubtitleLabel branch as real text', () => {
@@ -612,6 +626,14 @@ describe('catalog seam — label descriptors always render as real text', () => 
 
       it('renders every raw t() call site in CloudSyncCard.tsx as real text', () => {
         for (const { key, params } of cloudSyncRawCallSites) {
+          const rendered = translate(code, key, params);
+          expect(rendered, `${code} ${key}`).not.toBe(key);
+          expect(rendered, `${code} ${key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every raw t() call site in camera.tsx as real text', () => {
+        for (const { key, params } of cameraRawCallSites) {
           const rendered = translate(code, key, params);
           expect(rendered, `${code} ${key}`).not.toBe(key);
           expect(rendered, `${code} ${key}`).not.toContain('{');

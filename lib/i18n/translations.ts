@@ -275,6 +275,14 @@ const en: Messages = {
   'domain.urgency.watch': 'Watch',
   'domain.urgency.soon': 'Soon',
   'domain.urgency.urgent': 'Urgent',
+  // Domain — camera flash mode (app/camera.tsx, Task 7b). Screen-local
+  // component state, not persisted/synced, but the same rule applies as the
+  // stored enums above (Constraint 2): the FlashMode value itself ('off' /
+  // 'on' / 'auto') stays untranslated in state, comparisons, and the native
+  // CameraView prop — only this display label is localized.
+  'domain.flash.off': 'Off',
+  'domain.flash.on': 'On',
+  'domain.flash.auto': 'Auto',
 
   // Plants — home screen ("My Plants")
   'plants.title': 'My Plants',
@@ -783,6 +791,39 @@ const en: Messages = {
   'notFound.title': 'Oops!',
   'notFound.body': 'This screen doesn’t exist.',
   'notFound.link': 'Go to home screen!',
+
+  // Camera overlay (app/camera.tsx, Task 7b) — reachable from the Camera
+  // button (form.camera) on add.tsx/edit.tsx/log.tsx. "Library"/"Camera"
+  // photo-source buttons, the photo-permission alert, and the generic
+  // Cancel label already exist as form.library/form.camera/
+  // form.photoPermissionTitle/form.photoPermissionBody/settings.cancel —
+  // none of this screen's own strings duplicate those, except the Back
+  // button's accessibilityLabel, which reuses settings.cancel directly
+  // (its semantic action *is* cancel, distinct from the visible "Back"
+  // label) rather than adding a second byte-identical "Cancel" key.
+  'camera.permissionTitle': 'Camera access',
+  'camera.permissionBody':
+    'Verdant needs the camera for plant portraits and progress photos. Photos stay on your device.',
+  'camera.permissionAllow': 'Allow camera',
+  'camera.permissionDismiss': 'Not now',
+  'camera.closeA11y': 'Close camera',
+  'camera.titleLive': 'Glasshouse camera',
+  'camera.titleReview': 'Review portrait',
+  // Rebuilt from a `Flash ${flash}` template literal (Constraint 3 + a raw
+  // enum leak — flash is a persisted-shape FlashMode value, Constraint 2).
+  // {mode} is the already-translated domain.flash.* label, composed via a
+  // placeholder rather than splicing the raw stored value in, mirroring
+  // insights.statA11yLabel's "{label}: {value}" pattern.
+  'camera.flashA11y': 'Flash: {mode}',
+  'camera.tip': 'Fill the frame with a leaf or whole plant · bright, even light works best',
+  'camera.retake': 'Retake',
+  'camera.retakeA11y': 'Retake photo',
+  'camera.usePhoto': 'Use photo',
+  'camera.usePhotoA11y': 'Use this photo',
+  'camera.flip': 'Flip',
+  'camera.flipA11y': 'Flip camera',
+  'camera.captureA11y': 'Take photo',
+  'camera.back': 'Back',
 };
 
 const es: Messages = {
@@ -986,6 +1027,9 @@ const es: Messages = {
   'domain.urgency.watch': 'Vigilar',
   'domain.urgency.soon': 'Pronto',
   'domain.urgency.urgent': 'Urgente',
+  'domain.flash.off': 'Apagado',
+  'domain.flash.on': 'Activado',
+  'domain.flash.auto': 'Automático',
 
   // Plants — home screen ("My Plants")
   'plants.title': 'Mis plantas',
@@ -1322,6 +1366,26 @@ const es: Messages = {
   'notFound.title': '¡Ups!',
   'notFound.body': 'Esta pantalla no existe.',
   'notFound.link': 'Ir a la pantalla de inicio',
+
+  'camera.permissionTitle': 'Acceso a la cámara',
+  'camera.permissionBody':
+    'Verdant necesita la cámara para retratos de plantas y fotos de progreso. Las fotos se quedan en tu dispositivo.',
+  'camera.permissionAllow': 'Permitir cámara',
+  'camera.permissionDismiss': 'Ahora no',
+  'camera.closeA11y': 'Cerrar cámara',
+  'camera.titleLive': 'Cámara del invernadero',
+  'camera.titleReview': 'Revisar retrato',
+  'camera.flashA11y': 'Flash: {mode}',
+  'camera.tip':
+    'Encuadra una hoja o la planta entera · la luz brillante y uniforme funciona mejor',
+  'camera.retake': 'Repetir',
+  'camera.retakeA11y': 'Repetir foto',
+  'camera.usePhoto': 'Usar foto',
+  'camera.usePhotoA11y': 'Usar esta foto',
+  'camera.flip': 'Girar',
+  'camera.flipA11y': 'Girar cámara',
+  'camera.captureA11y': 'Tomar foto',
+  'camera.back': 'Atrás',
 };
 
 const fr: Messages = {
@@ -1525,6 +1589,9 @@ const fr: Messages = {
   'domain.urgency.watch': 'À surveiller',
   'domain.urgency.soon': 'Bientôt',
   'domain.urgency.urgent': 'Urgent',
+  'domain.flash.off': 'Désactivé',
+  'domain.flash.on': 'Activé',
+  'domain.flash.auto': 'Automatique',
 
   // Plants — home screen ("My Plants")
   'plants.title': 'Mes plantes',
@@ -1863,6 +1930,28 @@ const fr: Messages = {
   'notFound.title': 'Oups !',
   'notFound.body': 'Cet écran n’existe pas.',
   'notFound.link': 'Retour à l’accueil',
+
+  // "Appareil photo", not "caméra" — a stills camera, matching form.camera
+  // above (a review already corrected this elsewhere in the catalog).
+  'camera.permissionTitle': 'Accès à l’appareil photo',
+  'camera.permissionBody':
+    'Verdant a besoin de l’appareil photo pour les portraits de plantes et les photos de progression. Les photos restent sur votre appareil.',
+  'camera.permissionAllow': 'Autoriser l’appareil photo',
+  'camera.permissionDismiss': 'Pas maintenant',
+  'camera.closeA11y': 'Fermer l’appareil photo',
+  'camera.titleLive': 'Appareil photo de la serre',
+  'camera.titleReview': 'Vérifier le portrait',
+  'camera.flashA11y': 'Flash : {mode}',
+  'camera.tip':
+    'Cadrez une feuille ou la plante entière · une lumière vive et homogène fonctionne mieux',
+  'camera.retake': 'Reprendre',
+  'camera.retakeA11y': 'Reprendre la photo',
+  'camera.usePhoto': 'Utiliser la photo',
+  'camera.usePhotoA11y': 'Utiliser cette photo',
+  'camera.flip': 'Inverser',
+  'camera.flipA11y': 'Changer d’appareil photo',
+  'camera.captureA11y': 'Prendre une photo',
+  'camera.back': 'Retour',
 };
 
 const de: Messages = {
@@ -2066,6 +2155,9 @@ const de: Messages = {
   'domain.urgency.watch': 'Beobachten',
   'domain.urgency.soon': 'Bald',
   'domain.urgency.urgent': 'Dringend',
+  'domain.flash.off': 'Aus',
+  'domain.flash.on': 'An',
+  'domain.flash.auto': 'Automatisch',
 
   // Plants — home screen ("My Plants")
   'plants.title': 'Meine Pflanzen',
@@ -2405,6 +2497,26 @@ const de: Messages = {
   'notFound.title': 'Hoppla!',
   'notFound.body': 'Diesen Bildschirm gibt es nicht.',
   'notFound.link': 'Zur Startseite',
+
+  'camera.permissionTitle': 'Kamerazugriff',
+  'camera.permissionBody':
+    'Verdant braucht die Kamera für Pflanzenporträts und Fortschrittsfotos. Fotos bleiben auf deinem Gerät.',
+  'camera.permissionAllow': 'Kamera erlauben',
+  'camera.permissionDismiss': 'Nicht jetzt',
+  'camera.closeA11y': 'Kamera schließen',
+  'camera.titleLive': 'Gewächshaus-Kamera',
+  'camera.titleReview': 'Porträt prüfen',
+  'camera.flashA11y': 'Blitz: {mode}',
+  'camera.tip':
+    'Fülle den Rahmen mit einem Blatt oder der ganzen Pflanze · helles, gleichmäßiges Licht wirkt am besten',
+  'camera.retake': 'Wiederholen',
+  'camera.retakeA11y': 'Foto wiederholen',
+  'camera.usePhoto': 'Foto verwenden',
+  'camera.usePhotoA11y': 'Dieses Foto verwenden',
+  'camera.flip': 'Wechseln',
+  'camera.flipA11y': 'Kamera wechseln',
+  'camera.captureA11y': 'Foto aufnehmen',
+  'camera.back': 'Zurück',
 };
 
 export const translations: Record<LanguageCode, Messages> = { en, es, fr, de };
