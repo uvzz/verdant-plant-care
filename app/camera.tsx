@@ -394,7 +394,7 @@ export default function CameraScreen() {
                 { opacity: pressed ? 0.85 : 1 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel={t('settings.cancel')}
+              accessibilityLabel={t('camera.back')}
             >
               <Text style={{ fontSize: 20 }}>←</Text>
               <Text style={[Type.meta, { color: 'rgba(238,243,239,0.75)', marginTop: 2 }]}>

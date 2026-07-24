@@ -1382,8 +1382,8 @@ const es: Messages = {
   'camera.retakeA11y': 'Repetir foto',
   'camera.usePhoto': 'Usar foto',
   'camera.usePhotoA11y': 'Usar esta foto',
-  'camera.flip': 'Girar',
-  'camera.flipA11y': 'Girar cámara',
+  'camera.flip': 'Cambiar',
+  'camera.flipA11y': 'Cambiar cámara',
   'camera.captureA11y': 'Tomar foto',
   'camera.back': 'Atrás',
 };
@@ -1944,7 +1944,7 @@ const fr: Messages = {
   'camera.flashA11y': 'Flash : {mode}',
   'camera.tip':
     'Cadrez une feuille ou la plante entière · une lumière vive et homogène fonctionne mieux',
-  'camera.retake': 'Reprendre',
+  'camera.retake': 'Refaire',
   'camera.retakeA11y': 'Reprendre la photo',
   'camera.usePhoto': 'Utiliser la photo',
   'camera.usePhotoA11y': 'Utiliser cette photo',
@@ -2509,7 +2509,7 @@ const de: Messages = {
   'camera.flashA11y': 'Blitz: {mode}',
   'camera.tip':
     'Fülle den Rahmen mit einem Blatt oder der ganzen Pflanze · helles, gleichmäßiges Licht wirkt am besten',
-  'camera.retake': 'Wiederholen',
+  'camera.retake': 'Erneut',
   'camera.retakeA11y': 'Foto wiederholen',
   'camera.usePhoto': 'Foto verwenden',
   'camera.usePhotoA11y': 'Dieses Foto verwenden',

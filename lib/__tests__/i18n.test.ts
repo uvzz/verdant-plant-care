@@ -28,6 +28,14 @@ import {
   type Plant,
 } from '../types';
 
+// Camera flash mode (app/camera.tsx) — screen-local FlashMode state, not a
+// lib/types.ts-exported enum like PLANT_CATEGORIES/LIGHT_LEVELS/etc., so it
+// has no existing constant to import. Mirrors the cycle at camera.tsx:269
+// (expo-camera's 'screen' mode is never reachable there). Shared by the
+// "domain vocabulary coverage" groups array and the flash-mode a11y seam
+// test below, so both stay in sync with the screen's actual FlashMode set.
+const FLASH_MODES = ['off', 'on', 'auto'] as const;
+
 describe('interpolate', () => {
   it('fills known placeholders', () => {
     expect(interpolate('{count} of {limit}', { count: 2, limit: 5 })).toBe('2 of 5');
@@ -155,6 +163,11 @@ describe('domain vocabulary coverage', () => {
     // persisted, displayed values (Constraint 2).
     { prefix: 'domain.confidence', values: AI_CONFIDENCE_LEVELS },
     { prefix: 'domain.urgency', values: AI_URGENCY_LEVELS },
+    // Added per Task 7b review — domain.flash was previously left out of
+    // this array despite being a shipped domain-vocabulary group (see
+    // app/camera.tsx's flash toggle and lib/i18n/translations.ts's
+    // domain.flash.* block).
+    { prefix: 'domain.flash', values: FLASH_MODES },
   ];
 
   it('every enum value has a catalog key in every shipped language', () => {
@@ -480,6 +493,16 @@ describe('catalog seam — label descriptors always render as real text', () => 
     { key: 'camera.flashA11y', params: { mode: 'Auto' } },
   ];
 
+  // The camera screen's flash toggle composes TWO t() calls — the outer
+  // `camera.flashA11y` and an inner `domain.flash.${flash}` lookup (see
+  // app/camera.tsx:269 for the cycle FLASH_MODES above mirrors — expo-
+  // camera's 'screen' mode is never reachable there). `cameraRawCallSites`
+  // above only covers the outer call with a hardcoded English literal for
+  // {mode}, so the inner `t(\`domain.flash.${flash}\`)` lookup is never
+  // actually executed by any test. Because `t()` is typed `(key: string,
+  // …)`, TypeScript can't catch a composed-key typo/rename either. The test
+  // below exercises the real composition end to end, per language.
+
   for (const { code } of SUPPORTED_LANGUAGES) {
     describe(code, () => {
       it('renders every plantsSubtitleLabel branch as real text', () => {
@@ -637,6 +660,16 @@ describe('catalog seam — label descriptors always render as real text', () => 
           const rendered = translate(code, key, params);
           expect(rendered, `${code} ${key}`).not.toBe(key);
           expect(rendered, `${code} ${key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every camera flash-mode a11y label as real text', () => {
+        for (const mode of FLASH_MODES) {
+          const rendered = translate(code, 'camera.flashA11y', {
+            mode: translate(code, `domain.flash.${mode}`),
+          });
+          expect(rendered, `${code} ${mode}`).not.toContain('domain.flash');
+          expect(rendered, `${code} ${mode}`).not.toContain('{');
         }
       });
     });

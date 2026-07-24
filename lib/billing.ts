@@ -35,7 +35,6 @@ export type StoreProductInfo = {
 
 export const PREMIUM_DISPLAY = {
   yearlyPriceHint: '$29.99/year',
-  lifetimeLabel: 'Premium · lifetime',
   lifetimePriceHint: '$59.99 once',
 } as const;
 

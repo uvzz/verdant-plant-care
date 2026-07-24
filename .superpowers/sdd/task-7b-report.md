@@ -194,10 +194,15 @@ is no live call site left. Removed the field from `lib/billing.ts`:
  } as const;
 ```
 
-`yearlyPriceHint`/`lifetimeLabel`/`lifetimePriceHint` are all still
-referenced (`app/paywall.tsx`, `app/(tabs)/settings.tsx`) — left untouched
-per the brief. `lib/__tests__/billing.test.ts` (4 tests) doesn't reference
-`yearlyLabel` at all and still passes unchanged.
+**Correction (added during the Task 7b review-fix pass — see the report
+appended at the end of this file): the line below was wrong.**
+`yearlyPriceHint`/`lifetimePriceHint` are still referenced (`app/paywall.tsx`,
+`app/(tabs)/settings.tsx`) and were left untouched per the brief, but
+`lifetimeLabel` was **not** still referenced — its only hit anywhere in the
+repo was its own declaration. That's exactly what the very next paragraph
+below already said; this line contradicted it. `lib/__tests__/billing.test.ts`
+(4 tests) doesn't reference `yearlyLabel` or `lifetimeLabel` at all and still
+passes unchanged.
 
 **Aside, out of this task's scope**: `PREMIUM_DISPLAY.lifetimeLabel` also
 appears to have zero live call sites (only its own declaration matched a
@@ -205,6 +210,8 @@ grep across `app/`, `lib/`, `components/`). The brief named only
 `yearlyLabel` for removal, and this predates Task 7b's changes (not
 something this task's localization work caused), so it was left in place
 rather than pulled into scope here. Worth a follow-up look.
+**Update: this follow-up landed in the Task 7b review-fix pass — see the
+report appended at the end of this file. `lifetimeLabel` is now deleted.**
 
 ## Verification
 
@@ -224,6 +231,143 @@ catalog has exactly 20 new top-level keys under `camera.*`/`domain.flash.*`
 (3 `domain.flash.*` + 17 `camera.*`), and `es`/`fr`/`de` each define exactly
 the same 20 keys (enforced by the "catalog integrity" key-set-parity test,
 which is part of the 251 passing).
+
+## Commit
+
+Committed on `feat/complete-localization`.
+
+---
+
+# Task 7b review-fix report
+
+Status: **DONE**
+
+Five items from the Task 7b code review, applied on `feat/complete-localization`.
+
+## 1. `domain.flash.*` composed-key seam gap (Important)
+
+`app/camera.tsx:273`'s `accessibilityLabel={t('camera.flashA11y', { mode: t(\`domain.flash.${flash}\`) })}`
+makes an inner composed-key `t()` call that no test ever actually executed —
+`cameraRawCallSites` in `lib/__tests__/i18n.test.ts` only covered the outer
+call with a hardcoded English literal (`mode: 'Off'`), and `domain.flash`
+was missing from the `domain vocabulary coverage` `groups` array. Since
+`t()` is typed `(key: string, …)`, TypeScript gives no protection on a
+composed key either.
+
+Fixed both gaps:
+- Added a module-level `FLASH_MODES = ['off', 'on', 'auto'] as const` (no
+  existing exported constant to reuse — it's screen-local `FlashMode`
+  state, not a `lib/types.ts` enum).
+- Added `{ prefix: 'domain.flash', values: FLASH_MODES }` to the `domain
+  vocabulary coverage` `groups` array.
+- Added a new per-language test, `renders every camera flash-mode a11y
+  label as real text`, that composes the key exactly as the screen does
+  (`translate(code, 'camera.flashA11y', { mode: translate(code,
+  \`domain.flash.${mode}\`) })`) for all three flash modes, and asserts the
+  result contains neither `'domain.flash'` nor `'{'`.
+
+**Deliberate-rename verification (what I actually saw):** temporarily
+renamed `domain.flash.*` → `domain.flashMode.*` for all three keys in all
+four language blocks in `lib/i18n/translations.ts` (a real rename would
+touch every language to preserve parity, so this is the realistic failure
+mode, not a single-language typo). Ran the full suite:
+- **New test failed as intended**, once per language (4 failures) — e.g.
+  `AssertionError: es off: expected 'Flash: domain.flash.off' not to
+  contain 'domain.flash'`, and likewise for en/fr/de (`Blitz:
+  domain.flash.off`, etc.).
+- The `domain vocabulary coverage` test **also failed** (now that
+  `domain.flash` is in its `groups` array) — a second, independent signal
+  catching the same rename.
+- `catalog integrity` (key-set parity) stayed green, as the review predicted
+  — all four languages still agreed with each other.
+- `npx tsc --noEmit` stayed clean — no type error on the composed key, as
+  the review predicted.
+- All 251 pre-existing tests stayed green; only the two flash-related test
+  groups (5 assertions total: 4 new + 1 existing) failed.
+Reverted the rename (`git checkout -- lib/i18n/translations.ts`) and
+re-ran — back to fully green. The test catches the exact bug it targets.
+
+## 2. German/French `camera.retake` overflow (Important)
+
+`styles.secondaryCtl` is a fixed `width: 72` with no `numberOfLines`, and
+`Wiederholen`/`Reprendre` overflow/near-overflow it per the review's TTF
+measurements. Changed only the two catalog values, `camera.retakeA11y` left
+untouched in both languages (accessibility strings have no width
+constraint):
+- `lib/i18n/translations.ts`: de `camera.retake` `'Wiederholen'` →
+  `'Erneut'`; fr `camera.retake` `'Reprendre'` → `'Refaire'`.
+
+## 3. Back button label-in-name violation (Minor)
+
+`app/camera.tsx:397` set the Back button's `accessibilityLabel` to
+`t('settings.cancel')` while its visible text is `t('camera.back')` —
+violates WCAG 2.5.3 (a voice-control user saying "tap Zurück" wouldn't
+match "Abbrechen"). Changed the one prop:
+`accessibilityLabel={t('camera.back')}`. This also drops the cross-screen
+`settings.cancel` coupling the original Task 7b report called out.
+
+## 4. Spanish `camera.flip` wording (Minor)
+
+`'Girar'` means rotate; the control switches front/rear cameras, not
+rotates. Spanish platform convention is *Cambiar cámara* (French/German
+already used "switch"/"change" wording). Changed:
+`lib/i18n/translations.ts` es `camera.flip` `'Girar'` → `'Cambiar'`;
+`camera.flipA11y` `'Girar cámara'` → `'Cambiar cámara'`.
+
+## 5. Dead `PREMIUM_DISPLAY.lifetimeLabel` (Minor)
+
+Grepped the whole repo (excluding `node_modules`) for `lifetimeLabel` before
+touching anything — the only hit was its own declaration at
+`lib/billing.ts:38`. Deleted it from `lib/billing.ts`; left
+`yearlyPriceHint`/`lifetimePriceHint` and the rest of `PREMIUM_DISPLAY`
+untouched. This also fixes a factual error in the report above this one
+(now corrected inline): it claimed `lifetimeLabel` was "still referenced,"
+which contradicted the report's own aside a few lines later that it had
+zero live call sites.
+
+## Constraints honored
+
+- All four languages (en/es/fr/de) still have exact key-set parity with
+  identical placeholders per key — enforced by `catalog integrity`, still
+  passing. No keys were added or removed, only five existing string values
+  changed (de/fr `camera.retake`, es `camera.flip`/`camera.flipA11y`) plus
+  one deletion from a plain TS object (`lifetimeLabel`, not part of the
+  i18n catalog).
+- `StyleSheet.create`, colours, and layout in `app/camera.tsx` untouched —
+  confirmed via `git diff app/camera.tsx`: the only changed line is the
+  `accessibilityLabel` prop in item 3.
+- No existing test was weakened — the `i18n.test.ts` diff is purely
+  additive (one new module-level constant, one new `groups` entry, one new
+  per-language `it` block); every pre-existing assertion is untouched.
+
+## Verification
+
+```
+npx vitest run
+```
+```
+ Test Files  21 passed (21)
+      Tests  255 passed (255)
+```
+Up from 251 before this pass (+4: the new per-language flash-mode a11y
+test, one per language — mirrors the existing per-language test-count
+pattern in this file).
+
+```
+npx tsc --noEmit
+```
+Clean, no output, exit 0.
+
+## Files changed
+
+- `app/camera.tsx` — 1 line (`accessibilityLabel` on the Back button).
+- `lib/i18n/translations.ts` — 5 string-value edits (de/fr `camera.retake`;
+  es `camera.flip`/`camera.flipA11y`), no key additions/removals.
+- `lib/billing.ts` — 1 line deleted (`lifetimeLabel`).
+- `lib/__tests__/i18n.test.ts` — additive only: 1 module-level constant, 1
+  `groups` array entry, 1 new per-language `it` block.
+- `.superpowers/sdd/task-7b-report.md` — corrected the `lifetimeLabel`
+  factual error in the original report; this report appended.
 
 ## Commit
 
