@@ -102,8 +102,10 @@ export default function PlantDetailScreen() {
   } = usePlants();
   const plant = getPlant(id);
   const [tab, setTab] = useState<'log' | 'gallery' | 'ai'>('log');
-  const [question, setQuestion] = useState(
-    'How is this plant doing? What should I do next?'
+  // Lazy initializer: runs once on mount only, so a later language change
+  // never overwrites text the user has already typed into the field.
+  const [question, setQuestion] = useState(() =>
+    i18nT('detail.coachDefaultQuestion')
   );
   const [coachLoading, setCoachLoading] = useState(false);
   const [guideLoading, setGuideLoading] = useState(false);
@@ -267,16 +269,23 @@ export default function PlantDetailScreen() {
     setCoachLoading(true);
     try {
       if (!(await ensureAiQuota())) return;
+      // CareLog.note (Constraint 11) stays raw, but this question is the
+      // user's own editable free text — never keyed, compared, or used for
+      // sync reconciliation — so its translated fallback is fine to persist
+      // (see review item 5). Computed once so the literal appears a single
+      // time rather than being repeated at both use sites below.
+      const effectiveQuestion =
+        question.trim() || i18nT('detail.coachDefaultQuestionShort');
       const result = await askCareCoach({
         plant,
         logs: plantLogs,
-        question: question.trim() || 'How is this plant doing?',
+        question: effectiveQuestion,
         photoUri: plant.photoUri,
       });
       setCoach(result);
       const entry: StoredCoachEntry = {
         id: createId(),
-        question: question.trim() || 'How is this plant doing?',
+        question: effectiveQuestion,
         assessment: result.assessment,
         recommendations: result.recommendations,
         urgency: result.urgency,
@@ -463,7 +472,7 @@ export default function PlantDetailScreen() {
                 style={[Type.latin, { color: 'rgba(255,255,255,0.9)', marginTop: 2 }]}
                 numberOfLines={1}
               >
-                {plant.species || plant.category}
+                {plant.species || i18nT(`domain.category.${plant.category}`)}
               </Text>
             </View>
           </View>

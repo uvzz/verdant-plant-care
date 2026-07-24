@@ -25,10 +25,10 @@ export function CareLogRow({
 
   const confirmDelete = () => {
     if (!onDelete) return;
-    Alert.alert('Delete entry?', 'Remove this care log item.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('detail.logRowDeleteTitle'), t('detail.logRowDeleteBody'), [
+      { text: t('detail.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('detail.logRowDeleteAction'),
         style: 'destructive',
         onPress: () => onDelete(log.id),
       },
@@ -57,7 +57,7 @@ export function CareLogRow({
         ) : null}
         {onDelete ? (
           <Text style={[Type.meta, { color: c.textMuted, marginTop: 4, fontSize: 10 }]}>
-            Long-press to delete
+            {t('detail.logRowLongPressHint')}
           </Text>
         ) : null}
       </View>

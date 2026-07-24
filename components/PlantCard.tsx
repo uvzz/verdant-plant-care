@@ -129,7 +129,7 @@ export function PlantCard({
             {plant.name}
           </Text>
           <Text style={[Type.latin, { color: c.textMuted, fontSize: 12 }]} numberOfLines={1}>
-            {plant.species || plant.category}
+            {plant.species || t(`domain.category.${plant.category}`)}
           </Text>
           <View style={styles.subtitleRow}>
             {subtitle && dueType ? (
@@ -139,7 +139,7 @@ export function PlantCard({
               style={[Type.meta, { color: subtitle ? track : c.textMuted, fontSize: 11 }]}
               numberOfLines={1}
             >
-              {subtitle || plant.location || plant.category}
+              {subtitle || plant.location || t(`domain.category.${plant.category}`)}
             </Text>
           </View>
           {tox ? (

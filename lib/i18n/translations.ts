@@ -452,6 +452,14 @@ const en: Messages = {
   // Care log tab
   'detail.logEmpty':
     'No care entries yet. Log watering, feeding, notes, and photos as you go.',
+  // CareLogRow (components/CareLogRow.tsx) — the delete-confirmation alert
+  // and long-press hint for a single care-log row. Rendered only by this
+  // screen's Care log tab; treated as this task's territory per the
+  // WeekStrip precedent (.superpowers/sdd/progress.md).
+  'detail.logRowDeleteTitle': 'Delete entry?',
+  'detail.logRowDeleteBody': 'Remove this care log item.',
+  'detail.logRowDeleteAction': 'Delete',
+  'detail.logRowLongPressHint': 'Long-press to delete',
   // Progress (gallery) tab
   'detail.galleryEmpty': 'Add a portrait or care photos to watch growth over time.',
   'detail.galleryPortraitLabel': 'Portrait',
@@ -488,6 +496,12 @@ const en: Messages = {
   'detail.coachTitle': 'Care coach',
   'detail.coachBody': 'Uses log history and portrait. Answers are saved on this plant.',
   'detail.coachPlaceholder': 'e.g. Yellow tips on new leaves — what should I check?',
+  // Seeds the coach TextInput's initial value (Constraint: user's own
+  // editable free text, never persisted/synced without user intent — see
+  // review item 5) and the short fallback used when the user clears the
+  // field before submitting.
+  'detail.coachDefaultQuestion': 'How is this plant doing? What should I do next?',
+  'detail.coachDefaultQuestionShort': 'How is this plant doing?',
   'detail.coachButtonIdle': 'Ask care coach',
   'detail.coachButtonLoading': 'Thinking…',
   // {urgency} is the already-translated domain.urgency.* value.
@@ -511,10 +525,14 @@ const en: Messages = {
   'detail.aiUpdatedTitle': 'Updated from AI',
   // {commonName}/{scientificName} are raw AI-returned text (Constraint 9);
   // {confidence}/{light}/{pets} are already-translated domain.* values.
+  // {pets} is the already-translated domain.pet.* value, which is itself
+  // self-labelled ('Pets: unknown', 'Pet-safe', 'Toxic to pets', …) — no
+  // "Pets:" prefix here, unlike {light} (domain.light.* is NOT
+  // self-labelled, e.g. 'Bright indirect', so 'Light: {light}' stays as is).
   'detail.aiUpdatedBody':
-    '{commonName}\nConfidence: {confidence}\nLight: {light} · Pets: {pets}',
+    '{commonName}\nConfidence: {confidence}\nLight: {light} · {pets}',
   'detail.aiUpdatedBodyWithScientific':
-    '{commonName} · {scientificName}\nConfidence: {confidence}\nLight: {light} · Pets: {pets}',
+    '{commonName} · {scientificName}\nConfidence: {confidence}\nLight: {light} · {pets}',
 };
 
 const es: Messages = {
@@ -843,8 +861,8 @@ const es: Messages = {
   'detail.heroMetaLocation': '{category} · {location}',
   'detail.heroMetaAge': '{category} · {age}',
   'detail.heroMetaLocationAge': '{category} · {location} · {age}',
-  'detail.heroAgeOne': '1 día contigo',
-  'detail.heroAgeMany': '{days} días contigo',
+  'detail.heroAgeOne': '1 d contigo',
+  'detail.heroAgeMany': '{days} d contigo',
   'detail.waterRhythmChip': 'Riego ~{days}d',
   'detail.actionWateredHint': 'Abre el registro de cuidados para anotar el riego',
   'detail.actionStillMoist': 'Aún húmeda',
@@ -861,6 +879,10 @@ const es: Messages = {
   'detail.tabAi': 'Ayuda IA',
   'detail.logEmpty':
     'Aún no hay registros de cuidado. Anota riegos, abonos, notas y fotos a medida que avances.',
+  'detail.logRowDeleteTitle': '¿Eliminar entrada?',
+  'detail.logRowDeleteBody': 'Se eliminará este registro de cuidado.',
+  'detail.logRowDeleteAction': 'Eliminar',
+  'detail.logRowLongPressHint': 'Mantén pulsado para eliminar',
   'detail.galleryEmpty':
     'Añade un retrato o fotos de cuidado para ver el crecimiento con el tiempo.',
   'detail.galleryPortraitLabel': 'Retrato',
@@ -889,6 +911,9 @@ const es: Messages = {
     'Usa el historial de cuidados y el retrato. Las respuestas se guardan en esta planta.',
   'detail.coachPlaceholder':
     'p. ej. Puntas amarillas en hojas nuevas — ¿qué debería revisar?',
+  'detail.coachDefaultQuestion':
+    '¿Cómo está esta planta? ¿Qué debería hacer a continuación?',
+  'detail.coachDefaultQuestionShort': '¿Cómo está esta planta?',
   'detail.coachButtonIdle': 'Preguntar al asesor',
   'detail.coachButtonLoading': 'Pensando…',
   'detail.coachUrgency': 'Urgencia · {urgency}',
@@ -903,9 +928,9 @@ const es: Messages = {
   'detail.unknownError': 'Error desconocido',
   'detail.aiUpdatedTitle': 'Actualizado con IA',
   'detail.aiUpdatedBody':
-    '{commonName}\nConfianza: {confidence}\nLuz: {light} · Mascotas: {pets}',
+    '{commonName}\nConfianza: {confidence}\nLuz: {light} · {pets}',
   'detail.aiUpdatedBodyWithScientific':
-    '{commonName} · {scientificName}\nConfianza: {confidence}\nLuz: {light} · Mascotas: {pets}',
+    '{commonName} · {scientificName}\nConfianza: {confidence}\nLuz: {light} · {pets}',
 };
 
 const fr: Messages = {
@@ -1235,12 +1260,12 @@ const fr: Messages = {
   'detail.heroMetaLocation': '{category} · {location}',
   'detail.heroMetaAge': '{category} · {age}',
   'detail.heroMetaLocationAge': '{category} · {location} · {age}',
-  'detail.heroAgeOne': '1 jour avec vous',
-  'detail.heroAgeMany': '{days} jours avec vous',
+  'detail.heroAgeOne': '1 j avec vous',
+  'detail.heroAgeMany': '{days} j avec vous',
   'detail.waterRhythmChip': 'Arrosage ~{days}j',
   'detail.actionWateredHint': 'Ouvre le journal de soins pour noter l’arrosage',
   'detail.actionStillMoist': 'Encore humide',
-  'detail.actionSaving': 'Sauvegarde…',
+  'detail.actionSaving': 'Enregistrement…',
   'detail.actionMoistHint':
     'Note un contrôle de terre et retarde le rappel d’arrosage',
   'detail.toastSnoozed': 'Reporté ~{days} jours · revérifiez la terre plus tard',
@@ -1253,6 +1278,10 @@ const fr: Messages = {
   'detail.tabAi': 'Aide IA',
   'detail.logEmpty':
     'Aucun soin noté pour l’instant. Notez arrosages, engrais, notes et photos au fil du temps.',
+  'detail.logRowDeleteTitle': 'Supprimer l’entrée ?',
+  'detail.logRowDeleteBody': 'Supprime cette entrée du journal de soins.',
+  'detail.logRowDeleteAction': 'Supprimer',
+  'detail.logRowLongPressHint': 'Appui long pour supprimer',
   'detail.galleryEmpty':
     'Ajoutez un portrait ou des photos de soins pour observer la croissance dans le temps.',
   'detail.galleryPortraitLabel': 'Portrait',
@@ -1282,6 +1311,9 @@ const fr: Messages = {
     'Utilise l’historique des soins et le portrait. Les réponses sont enregistrées sur cette plante.',
   'detail.coachPlaceholder':
     'ex. Pointes jaunes sur les nouvelles feuilles — que dois-je vérifier ?',
+  'detail.coachDefaultQuestion':
+    'Comment va cette plante ? Que devrais-je faire ensuite ?',
+  'detail.coachDefaultQuestionShort': 'Comment va cette plante ?',
   'detail.coachButtonIdle': 'Demander au coach',
   'detail.coachButtonLoading': 'Réflexion…',
   'detail.coachUrgency': 'Urgence · {urgency}',
@@ -1296,9 +1328,9 @@ const fr: Messages = {
   'detail.unknownError': 'Erreur inconnue',
   'detail.aiUpdatedTitle': 'Mis à jour par l’IA',
   'detail.aiUpdatedBody':
-    '{commonName}\nConfiance : {confidence}\nLumière : {light} · Animaux : {pets}',
+    '{commonName}\nConfiance : {confidence}\nLumière : {light} · {pets}',
   'detail.aiUpdatedBodyWithScientific':
-    '{commonName} · {scientificName}\nConfiance : {confidence}\nLumière : {light} · Animaux : {pets}',
+    '{commonName} · {scientificName}\nConfiance : {confidence}\nLumière : {light} · {pets}',
 };
 
 const de: Messages = {
@@ -1629,8 +1661,8 @@ const de: Messages = {
   'detail.heroMetaLocation': '{category} · {location}',
   'detail.heroMetaAge': '{category} · {age}',
   'detail.heroMetaLocationAge': '{category} · {location} · {age}',
-  'detail.heroAgeOne': '1 Tag bei dir',
-  'detail.heroAgeMany': '{days} Tage bei dir',
+  'detail.heroAgeOne': '1 T bei dir',
+  'detail.heroAgeMany': '{days} T bei dir',
   'detail.waterRhythmChip': 'Gießrhythmus ~{days}T',
   'detail.actionWateredHint': 'Öffnet den Pflegeeintrag, um das Gießen zu notieren',
   'detail.actionStillMoist': 'Noch feucht',
@@ -1643,10 +1675,14 @@ const de: Messages = {
   'detail.actionFed': 'Gedüngt',
   'detail.actionNotePhoto': 'Notiz / Foto',
   'detail.tabLog': 'Einträge',
-  'detail.tabGallery': 'Verlauf',
+  'detail.tabGallery': 'Wachstum',
   'detail.tabAi': 'KI-Hilfe',
   'detail.logEmpty':
     'Noch keine Pflegeeinträge. Notiere Gießen, Düngen, Notizen und Fotos nach und nach.',
+  'detail.logRowDeleteTitle': 'Eintrag löschen?',
+  'detail.logRowDeleteBody': 'Entfernt diesen Pflegeeintrag.',
+  'detail.logRowDeleteAction': 'Löschen',
+  'detail.logRowLongPressHint': 'Lange drücken zum Löschen',
   'detail.galleryEmpty':
     'Füge ein Foto oder Pflegefotos hinzu, um das Wachstum über die Zeit zu sehen.',
   'detail.galleryPortraitLabel': 'Porträt',
@@ -1676,6 +1712,9 @@ const de: Messages = {
     'Nutzt Pflegeverlauf und Foto. Antworten werden auf dieser Pflanze gespeichert.',
   'detail.coachPlaceholder':
     'z. B. Gelbe Spitzen an neuen Blättern — was sollte ich prüfen?',
+  'detail.coachDefaultQuestion':
+    'Wie geht es dieser Pflanze? Was sollte ich als Nächstes tun?',
+  'detail.coachDefaultQuestionShort': 'Wie geht es dieser Pflanze?',
   'detail.coachButtonIdle': 'Coach fragen',
   'detail.coachButtonLoading': 'Denkt nach…',
   'detail.coachUrgency': 'Dringlichkeit · {urgency}',
@@ -1690,9 +1729,9 @@ const de: Messages = {
   'detail.unknownError': 'Unbekannter Fehler',
   'detail.aiUpdatedTitle': 'Von KI aktualisiert',
   'detail.aiUpdatedBody':
-    '{commonName}\nSicherheit: {confidence}\nLicht: {light} · Haustiere: {pets}',
+    '{commonName}\nSicherheit: {confidence}\nLicht: {light} · {pets}',
   'detail.aiUpdatedBodyWithScientific':
-    '{commonName} · {scientificName}\nSicherheit: {confidence}\nLicht: {light} · Haustiere: {pets}',
+    '{commonName} · {scientificName}\nSicherheit: {confidence}\nLicht: {light} · {pets}',
 };
 
 export const translations: Record<LanguageCode, Messages> = { en, es, fr, de };

@@ -183,11 +183,14 @@ export const CARE_LOG_TYPES: CareLogType[] = [
  * `Plant.aiIdentityConfidence` / `PlantIdResult.confidence` values — like
  * the enum arrays above, this is a persisted, displayed value (Constraint
  * 2: never render the raw stored value, only its `domain.confidence.*`
- * catalog label). No dedicated exported type for the underlying union
- * exists elsewhere in the codebase, so this array is typed inline rather
- * than introduce one.
+ * catalog label). Typed against `Plant['aiIdentityConfidence']` (the
+ * `PlantIdResult.confidence` union in lib/openrouter.ts is structurally
+ * identical) rather than inlining a fourth uncoupled copy of the union —
+ * if a level is ever added there, this array's type stops compiling
+ * instead of silently staying green while `domain.confidence.<new>` is
+ * missing from the catalog.
  */
-export const AI_CONFIDENCE_LEVELS: Array<'high' | 'medium' | 'low'> = [
+export const AI_CONFIDENCE_LEVELS: Array<NonNullable<Plant['aiIdentityConfidence']>> = [
   'high',
   'medium',
   'low',
