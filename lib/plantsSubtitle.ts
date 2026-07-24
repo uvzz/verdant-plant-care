@@ -7,11 +7,12 @@
  * is no plural engine. Pure + no `t()` import, mirroring `relativeCareLabel`
  * in `lib/care.ts`, so the branch selection is unit-testable and the screen
  * renders it via `translateLabel(t, label)` from `lib/i18n/core`.
+ *
+ * Reuses `CareLabel` from `lib/care.ts` rather than declaring its own
+ * structurally-identical `{ key, params? }` shape — the two were drifting
+ * duplicates that only compiled against `translateLabel` by accident.
  */
-export interface PlantsSubtitleLabel {
-  key: string;
-  params?: Record<string, string | number>;
-}
+import type { CareLabel } from './care';
 
 export function plantsSubtitleLabel(state: {
   /** Total plants owned (before filtering). */
@@ -20,7 +21,7 @@ export function plantsSubtitleLabel(state: {
   shown: number;
   isPremium: boolean;
   freeLimit: number;
-}): PlantsSubtitleLabel {
+}): CareLabel {
   const { count, shown, isPremium, freeLimit } = state;
   const isOne = count === 1;
   const isFiltered = shown !== count;

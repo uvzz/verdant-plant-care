@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { relativeCareLabel } from '../care';
 import {
   interpolate,
   isSupportedLanguage,
@@ -7,6 +8,7 @@ import {
   translateLabel,
 } from '../i18n/core';
 import { SUPPORTED_LANGUAGES, translations } from '../i18n/translations';
+import { plantsSubtitleLabel } from '../plantsSubtitle';
 import {
   CARE_LOG_TYPES,
   LIGHT_LEVELS,
@@ -149,4 +151,55 @@ describe('domain vocabulary coverage', () => {
       }
     }
   });
+});
+
+describe('catalog seam — label descriptors always render as real text', () => {
+  // `plantsSubtitleLabel` and `relativeCareLabel` return `{ key, params? }`
+  // descriptors, and `plantsSubtitle.test.ts` / `care.test.ts` only assert
+  // those descriptors against literal object expectations — neither imports
+  // the catalog. That leaves a gap: a typo'd key, or a param name that
+  // doesn't match the catalog's placeholder, would still satisfy those
+  // tests but ship a raw dotted key (e.g. "plants.subtitleFreOne") or an
+  // unfilled placeholder (e.g. "showing {shown}") on screen. The
+  // catalog-integrity tests above can't catch this either, since a typo'd
+  // key present in all four languages still has parity. These tests close
+  // that seam by actually running the descriptors through `translate()`.
+
+  // One state per whole-sentence subtitle key — mirrors the branch inputs
+  // in plantsSubtitle.test.ts so all 8 catalog keys are exercised.
+  const subtitleStates: Array<Parameters<typeof plantsSubtitleLabel>[0]> = [
+    { count: 1, shown: 1, isPremium: false, freeLimit: 5 }, // subtitleFreeOne
+    { count: 3, shown: 3, isPremium: false, freeLimit: 5 }, // subtitleFreeMany
+    { count: 1, shown: 1, isPremium: true, freeLimit: 5 }, // subtitlePremiumOne
+    { count: 8, shown: 8, isPremium: true, freeLimit: 5 }, // subtitlePremiumMany
+    { count: 1, shown: 0, isPremium: false, freeLimit: 5 }, // subtitleFreeFilteredOne
+    { count: 6, shown: 2, isPremium: false, freeLimit: 5 }, // subtitleFreeFilteredMany
+    { count: 1, shown: 0, isPremium: true, freeLimit: 5 }, // subtitlePremiumFilteredOne
+    { count: 8, shown: 4, isPremium: true, freeLimit: 5 }, // subtitlePremiumFilteredMany
+  ];
+
+  // negative-one, negative-many, zero, one, many
+  const careDaysUntil = [-1, -5, 0, 1, 5];
+
+  for (const { code } of SUPPORTED_LANGUAGES) {
+    describe(code, () => {
+      it('renders every plantsSubtitleLabel branch as real text', () => {
+        for (const state of subtitleStates) {
+          const label = plantsSubtitleLabel(state);
+          const rendered = translate(code, label.key, label.params);
+          expect(rendered, `${code} ${label.key}`).not.toBe(label.key);
+          expect(rendered, `${code} ${label.key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every relativeCareLabel branch as real text', () => {
+        for (const daysUntil of careDaysUntil) {
+          const label = relativeCareLabel(daysUntil);
+          const rendered = translate(code, label.key, label.params);
+          expect(rendered, `${code} ${label.key}`).not.toBe(label.key);
+          expect(rendered, `${code} ${label.key}`).not.toContain('{');
+        }
+      });
+    });
+  }
 });

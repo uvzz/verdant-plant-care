@@ -690,17 +690,17 @@ const fr: Messages = {
   'plants.searchPlaceholder': 'Rechercher nom, espèce, pièce…',
   'plants.categoryAll': 'Toutes',
   'plants.roomAll': 'Toutes les pièces',
-  'plants.subtitleFreeOne': '1 plante · Gratuit, jusqu’à {limit}',
-  'plants.subtitleFreeMany': '{count} plantes · Gratuit, jusqu’à {limit}',
+  'plants.subtitleFreeOne': '1 plante · Gratuit : {limit}',
+  'plants.subtitleFreeMany': '{count} plantes · Gratuit : {limit}',
   'plants.subtitlePremiumOne': '1 plante · Premium',
   'plants.subtitlePremiumMany': '{count} plantes · Premium',
   'plants.subtitleFreeFilteredOne':
-    '1 plante · Gratuit, jusqu’à {limit} · affichage de {shown}',
+    '1 plante · Gratuit : {limit} · {shown} affichées',
   'plants.subtitleFreeFilteredMany':
-    '{count} plantes · Gratuit, jusqu’à {limit} · affichage de {shown}',
-  'plants.subtitlePremiumFilteredOne': '1 plante · Premium · affichage de {shown}',
+    '{count} plantes · Gratuit : {limit} · {shown} affichées',
+  'plants.subtitlePremiumFilteredOne': '1 plante · Premium · {shown} affichées',
   'plants.subtitlePremiumFilteredMany':
-    '{count} plantes · Premium · affichage de {shown}',
+    '{count} plantes · Premium · {shown} affichées',
   'plants.emptyTitle': 'Votre serre est calme',
   'plants.emptyBody':
     'Ajoutez une plante avec une photo. Utilisez l’identification IA pour renseigner l’espèce et les intervalles de soins — puis définissez la pièce, la lumière et le pot pour des calendriers intelligents.',
@@ -709,7 +709,7 @@ const fr: Messages = {
   'plants.noMatchesBody': 'Essayez une autre recherche, catégorie ou pièce.',
   'plants.clearFilters': 'Effacer les filtres',
   'plants.addPlant': 'Ajouter une plante',
-  'plants.upgradeTitle': 'Vous avez rempli vos {limit} plantes gratuites',
+  'plants.upgradeTitle': 'Vos {limit} plantes gratuites sont pleines',
   'plants.upgradeSubtitle':
     'Passez à Premium pour des plantes illimitées, l’IA et la synchro cloud →',
   'plants.upgradeA11y': 'Passer à Premium pour des plantes illimitées',
@@ -910,17 +910,17 @@ const de: Messages = {
   'plants.searchPlaceholder': 'Name, Art, Raum suchen…',
   'plants.categoryAll': 'Alle',
   'plants.roomAll': 'Alle Räume',
-  'plants.subtitleFreeOne': '1 Pflanze · Kostenlos, bis zu {limit}',
-  'plants.subtitleFreeMany': '{count} Pflanzen · Kostenlos, bis zu {limit}',
+  'plants.subtitleFreeOne': '1 Pflanze · Kostenlos: {limit}',
+  'plants.subtitleFreeMany': '{count} Pflanzen · Kostenlos: {limit}',
   'plants.subtitlePremiumOne': '1 Pflanze · Premium',
   'plants.subtitlePremiumMany': '{count} Pflanzen · Premium',
   'plants.subtitleFreeFilteredOne':
-    '1 Pflanze · Kostenlos, bis zu {limit} · {shown} angezeigt',
+    '1 Pflanze · Kostenlos: {limit} · {shown} sichtbar',
   'plants.subtitleFreeFilteredMany':
-    '{count} Pflanzen · Kostenlos, bis zu {limit} · {shown} angezeigt',
-  'plants.subtitlePremiumFilteredOne': '1 Pflanze · Premium · {shown} angezeigt',
+    '{count} Pflanzen · Kostenlos: {limit} · {shown} sichtbar',
+  'plants.subtitlePremiumFilteredOne': '1 Pflanze · Premium · {shown} sichtbar',
   'plants.subtitlePremiumFilteredMany':
-    '{count} Pflanzen · Premium · {shown} angezeigt',
+    '{count} Pflanzen · Premium · {shown} sichtbar',
   'plants.emptyTitle': 'Dein Gewächshaus ist still',
   'plants.emptyBody':
     'Füge eine Pflanze mit einem Foto hinzu. Nutze die KI-Bestimmung, um Art und Pflegeintervalle auszufüllen — dann lege Raum, Licht und Topf fest, damit die Zeitpläne mitdenken.',
@@ -930,10 +930,10 @@ const de: Messages = {
     'Versuche eine andere Suche, Kategorie oder einen anderen Raumfilter.',
   'plants.clearFilters': 'Filter zurücksetzen',
   'plants.addPlant': 'Pflanze hinzufügen',
-  'plants.upgradeTitle': 'Du hast deine {limit} kostenlosen Pflanzen gefüllt',
+  'plants.upgradeTitle': 'Deine {limit} Gratis-Pflanzen sind voll',
   'plants.upgradeSubtitle':
     'Hol dir Premium für unbegrenzte Pflanzen, KI und Cloud-Sync →',
-  'plants.upgradeA11y': 'Auf Premium upgraden für unbegrenzte Pflanzen',
+  'plants.upgradeA11y': 'Für unbegrenzte Pflanzen auf Premium upgraden',
 };
 
 export const translations: Record<LanguageCode, Messages> = { en, es, fr, de };
