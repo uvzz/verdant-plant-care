@@ -374,6 +374,39 @@ describe('catalog seam — label descriptors always render as real text', () => 
     },
   ];
 
+  // The interpolated `form.*` keys app/plant/add.tsx and app/plant/edit.tsx
+  // call via raw `t(key, params)` — no descriptor function was extracted
+  // since each is a simple presence/absence dispatch (scientificName
+  // present or not), not a count branch, mirroring insights.tsx's inline
+  // ternaries. Each entry's `params` mirrors exactly what the screen passes
+  // at that call site (see "catalog seam" comment above).
+  const formRawCallSites: Array<{ key: string; params: TranslateParams }> = [
+    // add.tsx's AI-identify result hint. {commonName}/{scientificName} are
+    // raw AI-returned text (Constraints 9/11); {confidence}/{light}/{pets}
+    // are the already-translated domain.confidence.*/domain.light.*/
+    // domain.pet.* values.
+    {
+      key: 'form.aiHintResult',
+      params: { commonName: 'Fern', confidence: 'High', light: 'Bright indirect', pets: 'Pet-safe' },
+    },
+    {
+      key: 'form.aiHintResultWithScientific',
+      params: {
+        commonName: 'Fern',
+        scientificName: 'Nephrolepis exaltata',
+        confidence: 'High',
+        light: 'Bright indirect',
+        pets: 'Pet-safe',
+      },
+    },
+    // edit.tsx's effective water rhythm hint — {days} is the computed
+    // effectiveWaterIntervalDays() preview.
+    { key: 'form.waterRhythmHint', params: { days: 6 } },
+    // edit.tsx's check-before-water toggle body. {stillMoist} is the
+    // already-translated calendar.actionStillMoist value.
+    { key: 'form.checkBeforeWaterBody', params: { stillMoist: 'Still moist' } },
+  ];
+
   for (const { code } of SUPPORTED_LANGUAGES) {
     describe(code, () => {
       it('renders every plantsSubtitleLabel branch as real text', () => {
@@ -479,6 +512,14 @@ describe('catalog seam — label descriptors always render as real text', () => 
 
       it('renders every raw t() call site in plant/[id].tsx as real text', () => {
         for (const { key, params } of detailRawCallSites) {
+          const rendered = translate(code, key, params);
+          expect(rendered, `${code} ${key}`).not.toBe(key);
+          expect(rendered, `${code} ${key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every raw t() call site in add.tsx/edit.tsx as real text', () => {
+        for (const { key, params } of formRawCallSites) {
           const rendered = translate(code, key, params);
           expect(rendered, `${code} ${key}`).not.toBe(key);
           expect(rendered, `${code} ${key}`).not.toContain('{');

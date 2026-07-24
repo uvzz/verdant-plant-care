@@ -533,6 +533,104 @@ const en: Messages = {
     '{commonName}\nConfidence: {confidence}\nLight: {light} · {pets}',
   'detail.aiUpdatedBodyWithScientific':
     '{commonName} · {scientificName}\nConfidence: {confidence}\nLight: {light} · {pets}',
+
+  // Form — Add / Edit plant screens (app/plant/add.tsx, app/plant/edit.tsx).
+  // Shared field labels, placeholders, and alerts used by BOTH screens live
+  // first (Task 6 brief: put shared labels under form.* and use them from
+  // both files rather than duplicating a near-identical key per screen).
+  // Category/light/pot/pet picker option text reuses domain.* from Task 1 —
+  // no new keys needed for those.
+  'form.labelName': 'Name',
+  'form.labelSpecies': 'Species',
+  'form.labelCategory': 'Category',
+  'form.labelLocation': 'Room / location',
+  'form.labelLight': 'Light at this spot',
+  'form.labelPotSize': 'Pot size',
+  'form.labelPetSafety': 'Pet safety',
+  'form.labelAcquiredDate': 'Acquired date',
+  'form.labelFertilizeDays': 'Fertilize every (days)',
+  'form.labelNotes': 'Notes',
+  'form.placeholderLocation': 'e.g. Living room · east window',
+  'form.library': 'Library',
+  'form.camera': 'Camera',
+  // Shared validation alert — identical copy on both screens.
+  'form.nameRequiredTitle': 'Name required',
+  'form.nameRequiredBody': 'Give your plant a name (at least 2 characters).',
+  // Shared photo-permission alert. add.tsx and edit.tsx previously had
+  // slightly different wording for the same dialog ("Allow photo library
+  // access." vs "Allow photo library access to add a plant photo.") —
+  // consolidated to one shared key per the brief's "reuse, never duplicate"
+  // direction; not a behaviour change (same permission prompt either way).
+  'form.photoPermissionTitle': 'Permission needed',
+  'form.photoPermissionBody': 'Allow photo library access to add a plant photo.',
+
+  // Add plant screen (app/plant/add.tsx) only.
+  'form.photoPlaceholderAdd': 'Tap to choose a photo',
+  'form.aiIdentifyLoading': 'Identifying…',
+  'form.aiIdentifyButtonPremium': 'AI identify plant (Premium)',
+  'form.aiIdentifyButtonPremiumOnly': 'AI identify (Premium only)',
+  'form.aiIdentifyHint':
+    'Premium: AI fills name, species, category, and intervals from your photo. Key stays on Verdant’s servers.',
+  // AI identify result summary line. {commonName}/{scientificName} are raw
+  // AI-returned text (Constraints 9/11 — never translated);
+  // {confidence}/{light}/{pets} are the already-translated
+  // domain.confidence.*/domain.light.*/domain.pet.* values. Mirrors
+  // detail.aiUpdatedBody's exact wording convention ("Confidence:
+  // {confidence}", "Light: {light} · {pets}" with {pets} self-labelled and
+  // no extra prefix), just joined with · instead of newlines to fit this
+  // screen's single-line hint.
+  'form.aiHintResult':
+    '{commonName} · Confidence: {confidence} · Light: {light} · {pets}',
+  'form.aiHintResultWithScientific':
+    '{commonName} ({scientificName}) · Confidence: {confidence} · Light: {light} · {pets}',
+  'form.placeholderName': 'e.g. Moonlight',
+  'form.placeholderSpecies': 'e.g. Philodendron hederaceum',
+  'form.labelWaterDays': 'Water every (days)',
+  'form.scheduleHint':
+    'Schedules adapt to light + pot size. Calendar uses check-before-water (not blind “water now” like most care apps).',
+  'form.placeholderNotes': 'Soil mix, provenance…',
+  'form.saveButtonAdd': 'Save plant',
+  'form.photoNeededTitle': 'Photo needed',
+  'form.photoNeededBody': 'Add a plant photo first, then run AI identify.',
+  'form.aiLimitTitle': 'AI limit',
+  'form.identifyFailedTitle': 'AI identify failed',
+  // Fallback for a thrown error with no .message (Constraint 9: the
+  // message itself, when present, is dynamic/AI-related and stays
+  // untranslated — only this fallback and the Alert title are ours).
+  'form.unknownError': 'Unknown error',
+  // Title reused for both the addPlant()-rejected path (body = dynamic
+  // result.reason from lib/PlantContext.tsx, untranslated — see report) and
+  // the generic catch-block fallback below.
+  'form.addFailedTitle': 'Could not add plant',
+  'form.addFailedBody': 'Try again in a moment.',
+
+  // Edit plant screen (app/plant/edit.tsx) only.
+  'form.notFound': 'Plant not found.',
+  'form.photoPlaceholderEdit': 'Add photo',
+  'form.labelBaseWaterDays': 'Base water (days)',
+  'form.waterRhythmHint':
+    'Effective water rhythm ≈ every {days} days (adjusted for light + pot — beats blind schedules that overwater).',
+  'form.checkBeforeWaterTitle': 'Check soil before watering',
+  // {stillMoist} is the already-translated calendar.actionStillMoist value,
+  // composed via a placeholder rather than gluing raw text (Constraint 3) —
+  // mirrors insights.subtitle's {tail} pattern of embedding a pre-translated
+  // fragment. "Planta" is the competitor app's brand name — kept verbatim
+  // in every language.
+  'form.checkBeforeWaterBody':
+    'Calendar shows “{stillMoist}” snooze — core Verdant vs Planta difference.',
+  'form.labelCaretaker': 'Family caretaker',
+  'form.caretakerAnyone': 'Anyone',
+  'form.saveButtonEdit': 'Save changes',
+  'form.editSaveFailedTitle': 'Could not save',
+  'form.editSaveFailedBody': 'Try again in a moment.',
+
+  // components/DateField.tsx — rendered exclusively by these two screens
+  // (no other screen uses it), so its hardcoded strings are folded into
+  // this task rather than left for Task 7/8, mirroring the WeekStrip
+  // (Task 3) / CareLogRow (Task 5) precedent for a single-owner component.
+  'form.datePickerLabel': 'Pick a date',
+  'form.datePickerDone': 'Done',
+  'form.datePickerDoneA11y': 'Done choosing date',
 };
 
 const es: Messages = {
@@ -931,6 +1029,70 @@ const es: Messages = {
     '{commonName}\nConfianza: {confidence}\nLuz: {light} · {pets}',
   'detail.aiUpdatedBodyWithScientific':
     '{commonName} · {scientificName}\nConfianza: {confidence}\nLuz: {light} · {pets}',
+
+  // Form — Add / Edit plant screens
+  'form.labelName': 'Nombre',
+  'form.labelSpecies': 'Especie',
+  'form.labelCategory': 'Categoría',
+  'form.labelLocation': 'Habitación / ubicación',
+  'form.labelLight': 'Luz en este lugar',
+  'form.labelPotSize': 'Tamaño de maceta',
+  'form.labelPetSafety': 'Seguridad para mascotas',
+  'form.labelAcquiredDate': 'Fecha de adquisición',
+  'form.labelFertilizeDays': 'Abonar cada (días)',
+  'form.labelNotes': 'Notas',
+  'form.placeholderLocation': 'p. ej. Salón · ventana este',
+  'form.library': 'Galería',
+  'form.camera': 'Cámara',
+  'form.nameRequiredTitle': 'Nombre obligatorio',
+  'form.nameRequiredBody': 'Ponle un nombre a tu planta (al menos 2 caracteres).',
+  'form.photoPermissionTitle': 'Permiso necesario',
+  'form.photoPermissionBody':
+    'Permite el acceso a la galería para añadir una foto de la planta.',
+
+  'form.photoPlaceholderAdd': 'Toca para elegir una foto',
+  'form.aiIdentifyLoading': 'Identificando…',
+  'form.aiIdentifyButtonPremium': 'Identificar con IA (Premium)',
+  'form.aiIdentifyButtonPremiumOnly': 'Identificar con IA (solo Premium)',
+  'form.aiIdentifyHint':
+    'Premium: la IA completa nombre, especie, categoría e intervalos a partir de tu foto. La clave permanece en los servidores de Verdant.',
+  'form.aiHintResult':
+    '{commonName} · Confianza: {confidence} · Luz: {light} · {pets}',
+  'form.aiHintResultWithScientific':
+    '{commonName} ({scientificName}) · Confianza: {confidence} · Luz: {light} · {pets}',
+  'form.placeholderName': 'p. ej. Luna',
+  'form.placeholderSpecies': 'p. ej. Philodendron hederaceum',
+  'form.labelWaterDays': 'Regar cada (días)',
+  'form.scheduleHint':
+    'Los horarios se adaptan a la luz y el tamaño de la maceta. El calendario revisa antes de regar (no un «regar ahora» ciego como la mayoría de apps de cuidado).',
+  'form.placeholderNotes': 'Sustrato, procedencia…',
+  'form.saveButtonAdd': 'Guardar planta',
+  'form.photoNeededTitle': 'Falta una foto',
+  'form.photoNeededBody':
+    'Añade primero una foto de la planta y luego usa la identificación con IA.',
+  'form.aiLimitTitle': 'Límite de IA',
+  'form.identifyFailedTitle': 'Error de identificación con IA',
+  'form.unknownError': 'Error desconocido',
+  'form.addFailedTitle': 'No se pudo añadir la planta',
+  'form.addFailedBody': 'Inténtalo de nuevo en un momento.',
+
+  'form.notFound': 'Planta no encontrada.',
+  'form.photoPlaceholderEdit': 'Añadir foto',
+  'form.labelBaseWaterDays': 'Riego base (días)',
+  'form.waterRhythmHint':
+    'Ritmo de riego real ≈ cada {days} días (ajustado por luz y maceta — mejor que los horarios ciegos que sobrerriegan).',
+  'form.checkBeforeWaterTitle': 'Revisa la tierra antes de regar',
+  'form.checkBeforeWaterBody':
+    'El calendario ofrece el aplazamiento «{stillMoist}» — la diferencia clave entre Verdant y Planta.',
+  'form.labelCaretaker': 'Cuidador familiar',
+  'form.caretakerAnyone': 'Cualquiera',
+  'form.saveButtonEdit': 'Guardar cambios',
+  'form.editSaveFailedTitle': 'No se pudo guardar',
+  'form.editSaveFailedBody': 'Inténtalo de nuevo en un momento.',
+
+  'form.datePickerLabel': 'Elegir fecha',
+  'form.datePickerDone': 'Listo',
+  'form.datePickerDoneA11y': 'Terminar de elegir la fecha',
 };
 
 const fr: Messages = {
@@ -1331,6 +1493,70 @@ const fr: Messages = {
     '{commonName}\nConfiance : {confidence}\nLumière : {light} · {pets}',
   'detail.aiUpdatedBodyWithScientific':
     '{commonName} · {scientificName}\nConfiance : {confidence}\nLumière : {light} · {pets}',
+
+  // Form — Add / Edit plant screens
+  'form.labelName': 'Nom',
+  'form.labelSpecies': 'Espèce',
+  'form.labelCategory': 'Catégorie',
+  'form.labelLocation': 'Pièce / emplacement',
+  'form.labelLight': 'Lumière à cet endroit',
+  'form.labelPotSize': 'Taille du pot',
+  'form.labelPetSafety': 'Sécurité animaux',
+  'form.labelAcquiredDate': 'Date d’acquisition',
+  'form.labelFertilizeDays': 'Engrais tous les (jours)',
+  'form.labelNotes': 'Notes',
+  'form.placeholderLocation': 'ex. Salon · fenêtre est',
+  'form.library': 'Galerie',
+  'form.camera': 'Caméra',
+  'form.nameRequiredTitle': 'Nom requis',
+  'form.nameRequiredBody': 'Donnez un nom à votre plante (2 caractères minimum).',
+  'form.photoPermissionTitle': 'Autorisation requise',
+  'form.photoPermissionBody':
+    'Autorisez l’accès à la photothèque pour ajouter une photo de la plante.',
+
+  'form.photoPlaceholderAdd': 'Touchez pour choisir une photo',
+  'form.aiIdentifyLoading': 'Identification…',
+  'form.aiIdentifyButtonPremium': 'Identifier par IA (Premium)',
+  'form.aiIdentifyButtonPremiumOnly': 'Identifier par IA (Premium uniquement)',
+  'form.aiIdentifyHint':
+    'Premium : l’IA renseigne le nom, l’espèce, la catégorie et les intervalles à partir de votre photo. La clé reste sur les serveurs de Verdant.',
+  'form.aiHintResult':
+    '{commonName} · Confiance : {confidence} · Lumière : {light} · {pets}',
+  'form.aiHintResultWithScientific':
+    '{commonName} ({scientificName}) · Confiance : {confidence} · Lumière : {light} · {pets}',
+  'form.placeholderName': 'ex. Lune',
+  'form.placeholderSpecies': 'ex. Philodendron hederaceum',
+  'form.labelWaterDays': 'Arroser tous les (jours)',
+  'form.scheduleHint':
+    'Les plannings s’adaptent à la lumière et à la taille du pot. Le calendrier vérifie avant d’arroser (pas un « arroser maintenant » aveugle comme la plupart des applis).',
+  'form.placeholderNotes': 'Terreau, provenance…',
+  'form.saveButtonAdd': 'Enregistrer la plante',
+  'form.photoNeededTitle': 'Photo requise',
+  'form.photoNeededBody':
+    'Ajoutez d’abord une photo de la plante, puis lancez l’identification par IA.',
+  'form.aiLimitTitle': 'Limite IA',
+  'form.identifyFailedTitle': 'Échec de l’identification par IA',
+  'form.unknownError': 'Erreur inconnue',
+  'form.addFailedTitle': 'Impossible d’ajouter la plante',
+  'form.addFailedBody': 'Réessayez dans un instant.',
+
+  'form.notFound': 'Plante introuvable.',
+  'form.photoPlaceholderEdit': 'Ajouter une photo',
+  'form.labelBaseWaterDays': 'Arrosage de base (jours)',
+  'form.waterRhythmHint':
+    'Rythme d’arrosage réel ≈ tous les {days} jours (ajusté selon la lumière et le pot — mieux que les plannings aveugles qui noient les plantes).',
+  'form.checkBeforeWaterTitle': 'Vérifiez la terre avant d’arroser',
+  'form.checkBeforeWaterBody':
+    'Le calendrier propose le report « {stillMoist} » — la différence essentielle entre Verdant et Planta.',
+  'form.labelCaretaker': 'Responsable familial',
+  'form.caretakerAnyone': 'N’importe qui',
+  'form.saveButtonEdit': 'Enregistrer les modifications',
+  'form.editSaveFailedTitle': 'Échec de l’enregistrement',
+  'form.editSaveFailedBody': 'Réessayez dans un instant.',
+
+  'form.datePickerLabel': 'Choisir une date',
+  'form.datePickerDone': 'Terminé',
+  'form.datePickerDoneA11y': 'Terminer le choix de la date',
 };
 
 const de: Messages = {
@@ -1732,6 +1958,70 @@ const de: Messages = {
     '{commonName}\nSicherheit: {confidence}\nLicht: {light} · {pets}',
   'detail.aiUpdatedBodyWithScientific':
     '{commonName} · {scientificName}\nSicherheit: {confidence}\nLicht: {light} · {pets}',
+
+  // Form — Add / Edit plant screens
+  'form.labelName': 'Name',
+  'form.labelSpecies': 'Art',
+  'form.labelCategory': 'Kategorie',
+  'form.labelLocation': 'Raum / Standort',
+  'form.labelLight': 'Licht an diesem Ort',
+  'form.labelPotSize': 'Topfgröße',
+  'form.labelPetSafety': 'Haustiersicherheit',
+  'form.labelAcquiredDate': 'Erworben am',
+  'form.labelFertilizeDays': 'Düngen alle (Tage)',
+  'form.labelNotes': 'Notizen',
+  'form.placeholderLocation': 'z. B. Wohnzimmer · Ostfenster',
+  'form.library': 'Galerie',
+  'form.camera': 'Kamera',
+  'form.nameRequiredTitle': 'Name erforderlich',
+  'form.nameRequiredBody': 'Gib deiner Pflanze einen Namen (mind. 2 Zeichen).',
+  'form.photoPermissionTitle': 'Berechtigung erforderlich',
+  'form.photoPermissionBody':
+    'Erlaube den Zugriff auf die Fotomediathek, um ein Pflanzenfoto hinzuzufügen.',
+
+  'form.photoPlaceholderAdd': 'Tippen, um ein Foto zu wählen',
+  'form.aiIdentifyLoading': 'Wird bestimmt…',
+  'form.aiIdentifyButtonPremium': 'KI-Bestimmung (Premium)',
+  'form.aiIdentifyButtonPremiumOnly': 'KI-Bestimmung (nur Premium)',
+  'form.aiIdentifyHint':
+    'Premium: Die KI füllt Name, Art, Kategorie und Intervalle anhand deines Fotos aus. Der Schlüssel bleibt auf Verdant-Servern.',
+  'form.aiHintResult':
+    '{commonName} · Sicherheit: {confidence} · Licht: {light} · {pets}',
+  'form.aiHintResultWithScientific':
+    '{commonName} ({scientificName}) · Sicherheit: {confidence} · Licht: {light} · {pets}',
+  'form.placeholderName': 'z. B. Mondschein',
+  'form.placeholderSpecies': 'z. B. Philodendron hederaceum',
+  'form.labelWaterDays': 'Gießen alle (Tage)',
+  'form.scheduleHint':
+    'Zeitpläne passen sich an Licht und Topfgröße an. Der Kalender nutzt „Erde prüfen vor dem Gießen“ (kein blindes „jetzt gießen“ wie bei den meisten Pflege-Apps).',
+  'form.placeholderNotes': 'Erdmischung, Herkunft…',
+  'form.saveButtonAdd': 'Pflanze speichern',
+  'form.photoNeededTitle': 'Foto benötigt',
+  'form.photoNeededBody':
+    'Füge zuerst ein Pflanzenfoto hinzu und starte dann die KI-Bestimmung.',
+  'form.aiLimitTitle': 'KI-Limit',
+  'form.identifyFailedTitle': 'KI-Bestimmung fehlgeschlagen',
+  'form.unknownError': 'Unbekannter Fehler',
+  'form.addFailedTitle': 'Pflanze konnte nicht hinzugefügt werden',
+  'form.addFailedBody': 'Versuche es gleich noch einmal.',
+
+  'form.notFound': 'Pflanze nicht gefunden.',
+  'form.photoPlaceholderEdit': 'Foto hinzufügen',
+  'form.labelBaseWaterDays': 'Basis-Gießen (Tage)',
+  'form.waterRhythmHint':
+    'Tatsächlicher Gießrhythmus ≈ alle {days} Tage (angepasst an Licht und Topf — besser als blinde Zeitpläne, die zu viel gießen).',
+  'form.checkBeforeWaterTitle': 'Erde vor dem Gießen prüfen',
+  'form.checkBeforeWaterBody':
+    'Der Kalender zeigt die Verschiebung „{stillMoist}“ — der zentrale Unterschied zwischen Verdant und Planta.',
+  'form.labelCaretaker': 'Pflegeperson (Familie)',
+  'form.caretakerAnyone': 'Alle',
+  'form.saveButtonEdit': 'Änderungen speichern',
+  'form.editSaveFailedTitle': 'Konnte nicht gespeichert werden',
+  'form.editSaveFailedBody': 'Versuche es gleich noch einmal.',
+
+  'form.datePickerLabel': 'Datum wählen',
+  'form.datePickerDone': 'Fertig',
+  'form.datePickerDoneA11y': 'Datumsauswahl abschließen',
 };
 
 export const translations: Record<LanguageCode, Messages> = { en, es, fr, de };

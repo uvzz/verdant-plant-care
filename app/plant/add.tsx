@@ -71,7 +71,7 @@ export default function AddPlantScreen() {
   const pickPhoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Permission needed', 'Allow photo library access to add a plant photo.');
+      Alert.alert(t('form.photoPermissionTitle'), t('form.photoPermissionBody'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -93,7 +93,7 @@ export default function AddPlantScreen() {
 
   const onIdentify = async () => {
     if (!photoUri) {
-      Alert.alert('Photo needed', 'Add a plant photo first, then run AI identify.');
+      Alert.alert(t('form.photoNeededTitle'), t('form.photoNeededBody'));
       return;
     }
     if (!canUseAi) {
@@ -105,7 +105,7 @@ export default function AddPlantScreen() {
     try {
       const quota = await consumeAiUse();
       if (!quota.ok) {
-        Alert.alert('AI limit', quota.reason);
+        Alert.alert(t('form.aiLimitTitle'), quota.reason);
         return;
       }
       const result = await identifyPlantFromPhoto(photoUri);
@@ -120,12 +120,22 @@ export default function AddPlantScreen() {
         setNotes((prev) => mergeAiNote(prev, result.careSummary));
       }
       setAiHint(
-        `${result.confidence} confidence · ${result.commonName}${
-          result.scientificName ? ` (${result.scientificName})` : ''
-        } · light ${result.lightLevel} · pets ${result.petToxicity}`
+        t(
+          result.scientificName ? 'form.aiHintResultWithScientific' : 'form.aiHintResult',
+          {
+            commonName: result.commonName,
+            scientificName: result.scientificName,
+            confidence: t(`domain.confidence.${result.confidence}`),
+            light: t(`domain.light.${result.lightLevel}`),
+            pets: t(`domain.pet.${result.petToxicity}`),
+          }
+        )
       );
     } catch (e) {
-      Alert.alert('AI identify failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert(
+        t('form.identifyFailedTitle'),
+        e instanceof Error ? e.message : t('form.unknownError')
+      );
     } finally {
       setIdentifying(false);
     }
@@ -137,7 +147,7 @@ export default function AddPlantScreen() {
       return;
     }
     if (name.trim().length < 2) {
-      Alert.alert('Name required', 'Give your plant a name (at least 2 characters).');
+      Alert.alert(t('form.nameRequiredTitle'), t('form.nameRequiredBody'));
       return;
     }
     if (saving) return;
@@ -159,12 +169,12 @@ export default function AddPlantScreen() {
         checkBeforeWater: true,
       });
       if (!result.ok) {
-        Alert.alert('Could not add plant', result.reason);
+        Alert.alert(t('form.addFailedTitle'), result.reason);
         return;
       }
       router.replace(`/plant/${result.plant.id}`);
     } catch {
-      Alert.alert('Could not add plant', 'Try again in a moment.');
+      Alert.alert(t('form.addFailedTitle'), t('form.addFailedBody'));
     } finally {
       setSaving(false);
     }
@@ -202,23 +212,23 @@ export default function AddPlantScreen() {
           ) : (
             <View style={styles.photoPlaceholder}>
               <ImagePlus color={c.tint} size={30} strokeWidth={1.8} />
-              <Text style={[Type.meta, { color: c.textMuted }]}>Tap to choose a photo</Text>
+              <Text style={[Type.meta, { color: c.textMuted }]}>{t('form.photoPlaceholderAdd')}</Text>
             </View>
           )}
         </Pressable>
 
         <View style={styles.photoActions}>
-          <PrimaryButton label="Library" variant="secondary" onPress={pickPhoto} style={styles.half} />
-          <PrimaryButton label="Camera" variant="secondary" onPress={takePhoto} style={styles.half} />
+          <PrimaryButton label={t('form.library')} variant="secondary" onPress={pickPhoto} style={styles.half} />
+          <PrimaryButton label={t('form.camera')} variant="secondary" onPress={takePhoto} style={styles.half} />
         </View>
 
         <PrimaryButton
           label={
             identifying
-              ? 'Identifying…'
+              ? t('form.aiIdentifyLoading')
               : canUseAi
-                ? 'AI identify plant (Premium)'
-                : 'AI identify (Premium only)'
+                ? t('form.aiIdentifyButtonPremium')
+                : t('form.aiIdentifyButtonPremiumOnly')
           }
           icon={<Sparkles color={c.text} size={16} strokeWidth={2.2} />}
           variant="secondary"
@@ -231,32 +241,31 @@ export default function AddPlantScreen() {
           <Text style={[Type.meta, { color: c.tint, marginBottom: 12 }]}>{aiHint}</Text>
         ) : (
           <Text style={[Type.meta, { color: c.textMuted, marginBottom: 12 }]}>
-            Premium: AI fills name, species, category, and intervals from your photo. Key stays
-            on Verdant’s servers.
+            {t('form.aiIdentifyHint')}
           </Text>
         )}
 
-        <Field label="Name" color={c.textMuted}>
+        <Field label={t('form.labelName')} color={c.textMuted}>
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="e.g. Moonlight"
+            placeholder={t('form.placeholderName')}
             placeholderTextColor={c.textMuted}
             style={inputStyle}
           />
         </Field>
 
-        <Field label="Species" color={c.textMuted}>
+        <Field label={t('form.labelSpecies')} color={c.textMuted}>
           <TextInput
             value={species}
             onChangeText={setSpecies}
-            placeholder="e.g. Philodendron hederaceum"
+            placeholder={t('form.placeholderSpecies')}
             placeholderTextColor={c.textMuted}
             style={inputStyle}
           />
         </Field>
 
-        <Field label="Category" color={c.textMuted}>
+        <Field label={t('form.labelCategory')} color={c.textMuted}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
             {PLANT_CATEGORIES.map((cat) => {
               const active = cat === category;
@@ -278,7 +287,7 @@ export default function AddPlantScreen() {
                       { color: active ? c.onEmphasis : c.text, fontFamily: Fonts.bodySemi },
                     ]}
                   >
-                    {cat}
+                    {t(`domain.category.${cat}`)}
                   </Text>
                 </Pressable>
               );
@@ -286,17 +295,17 @@ export default function AddPlantScreen() {
           </ScrollView>
         </Field>
 
-        <Field label="Room / location" color={c.textMuted}>
+        <Field label={t('form.labelLocation')} color={c.textMuted}>
           <TextInput
             value={location}
             onChangeText={setLocation}
-            placeholder="e.g. Living room · east window"
+            placeholder={t('form.placeholderLocation')}
             placeholderTextColor={c.textMuted}
             style={inputStyle}
           />
         </Field>
 
-        <Field label="Light at this spot" color={c.textMuted}>
+        <Field label={t('form.labelLight')} color={c.textMuted}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
             {LIGHT_LEVELS.map((lv) => {
               const active = lv === lightLevel;
@@ -326,7 +335,7 @@ export default function AddPlantScreen() {
           </ScrollView>
         </Field>
 
-        <Field label="Pot size" color={c.textMuted}>
+        <Field label={t('form.labelPotSize')} color={c.textMuted}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
             {POT_SIZES.map((sz) => {
               const active = sz === potSize;
@@ -356,7 +365,7 @@ export default function AddPlantScreen() {
           </ScrollView>
         </Field>
 
-        <Field label="Pet safety" color={c.textMuted}>
+        <Field label={t('form.labelPetSafety')} color={c.textMuted}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
             {PET_TOXICITY.map((tx) => {
               const active = tx === petToxicity;
@@ -386,11 +395,11 @@ export default function AddPlantScreen() {
           </ScrollView>
         </Field>
 
-        <DateField label="Acquired date" value={acquiredDate} onChange={setAcquiredDate} />
+        <DateField label={t('form.labelAcquiredDate')} value={acquiredDate} onChange={setAcquiredDate} />
 
         <View style={styles.row2}>
           <View style={styles.half}>
-            <Field label="Water every (days)" color={c.textMuted}>
+            <Field label={t('form.labelWaterDays')} color={c.textMuted}>
               <TextInput
                 value={waterDays}
                 onChangeText={setWaterDays}
@@ -400,7 +409,7 @@ export default function AddPlantScreen() {
             </Field>
           </View>
           <View style={styles.half}>
-            <Field label="Fertilize every (days)" color={c.textMuted}>
+            <Field label={t('form.labelFertilizeDays')} color={c.textMuted}>
               <TextInput
                 value={fertDays}
                 onChangeText={setFertDays}
@@ -411,22 +420,21 @@ export default function AddPlantScreen() {
           </View>
         </View>
         <Text style={[Type.meta, { color: c.textMuted, marginBottom: 12 }]}>
-          Schedules adapt to light + pot size. Calendar uses check-before-water (not blind
-          “water now” like most care apps).
+          {t('form.scheduleHint')}
         </Text>
 
-        <Field label="Notes" color={c.textMuted}>
+        <Field label={t('form.labelNotes')} color={c.textMuted}>
           <TextInput
             value={notes}
             onChangeText={setNotes}
-            placeholder="Soil mix, provenance…"
+            placeholder={t('form.placeholderNotes')}
             placeholderTextColor={c.textMuted}
             multiline
             style={[inputStyle, styles.multiline]}
           />
         </Field>
 
-        <PrimaryButton label="Save plant" onPress={onSave} loading={saving} />
+        <PrimaryButton label={t('form.saveButtonAdd')} onPress={onSave} loading={saving} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

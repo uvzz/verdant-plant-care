@@ -7,6 +7,7 @@ import { CalendarDays } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
+import { useI18n } from '@/lib/i18n';
 
 function parseDate(value: string): Date {
   try {
@@ -29,6 +30,7 @@ export function DateField({
 }) {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const date = parseDate(value);
 
@@ -56,15 +58,15 @@ export function DateField({
         >
           {Platform.OS === 'ios' ? (
             <View style={styles.iosBar}>
-              <Text style={[Type.meta, { color: c.textMuted }]}>Pick a date</Text>
+              <Text style={[Type.meta, { color: c.textMuted }]}>{t('form.datePickerLabel')}</Text>
               <Pressable
                 onPress={() => setOpen(false)}
                 accessibilityRole="button"
-                accessibilityLabel="Done choosing date"
+                accessibilityLabel={t('form.datePickerDoneA11y')}
                 hitSlop={10}
               >
                 <Text style={[Type.meta, { color: c.tint, fontFamily: Fonts.bodySemi }]}>
-                  Done
+                  {t('form.datePickerDone')}
                 </Text>
               </Pressable>
             </View>
