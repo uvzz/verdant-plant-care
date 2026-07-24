@@ -207,6 +207,16 @@ describe('catalog seam — label descriptors always render as real text', () => 
     { count: 8, shown: 4, isPremium: true, freeLimit: 5 }, // subtitlePremiumFilteredMany
   ];
 
+  // The interpolated `plants.careProgressA11y` key components/WaterRing.tsx
+  // calls via raw `t(key, params)` (Task 8) — a plain single-value
+  // interpolation with no branching, so one table entry covers it. Added
+  // when the guard test (lib/__tests__/i18nCoverage.test.ts) caught
+  // WaterRing.tsx's accessibilityLabel as a hardcoded English template
+  // literal that had never been wired to the catalog.
+  const plantsRawCallSites: Array<{ key: string; params: TranslateParams }> = [
+    { key: 'plants.careProgressA11y', params: { percent: 42 } },
+  ];
+
   // negative-one, negative-many, zero, one, many
   const careDaysUntil = [-1, -5, 0, 1, 5];
 
@@ -564,6 +574,14 @@ describe('catalog seam — label descriptors always render as real text', () => 
           const rendered = translate(code, label.key, label.params);
           expect(rendered, `${code} ${label.key}`).not.toBe(label.key);
           expect(rendered, `${code} ${label.key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every raw t() call site in WaterRing.tsx as real text', () => {
+        for (const { key, params } of plantsRawCallSites) {
+          const rendered = translate(code, key, params);
+          expect(rendered, `${code} ${key}`).not.toBe(key);
+          expect(rendered, `${code} ${key}`).not.toContain('{');
         }
       });
 

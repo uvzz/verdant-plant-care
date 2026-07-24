@@ -289,6 +289,16 @@ const en: Messages = {
   'plants.searchPlaceholder': 'Search name, species, room…',
   'plants.categoryAll': 'All',
   'plants.roomAll': 'All rooms',
+  // Compact overdue badge on the plant-card photo (PlantCard.tsx) — shown
+  // only when a plant's care is late (colorKey === 'late'), same trigger
+  // condition as domain.care.overdueOne/Many, so it borrows that "due"
+  // vocabulary rather than being translated as a standalone literal word.
+  'plants.overdueBadge': 'Due',
+  // WaterRing.tsx's accessibilityLabel on the photo's care-progress badge —
+  // was a bare template literal (`Care progress ${pct}%`) that bypassed the
+  // catalog entirely; folded into plants.* since PlantCard.tsx is its only
+  // caller.
+  'plants.careProgressA11y': 'Care progress {percent}%',
   // Subtitle line — whole-sentence keys chosen by branch (premium tier ×
   // filtered-or-not), split one/many per Constraint 4. See
   // lib/plantsSubtitle.ts for the selection logic.
@@ -1036,6 +1046,8 @@ const es: Messages = {
   'plants.searchPlaceholder': 'Buscar nombre, especie, habitación…',
   'plants.categoryAll': 'Todas',
   'plants.roomAll': 'Todas las habitaciones',
+  'plants.overdueBadge': 'Toca',
+  'plants.careProgressA11y': 'Progreso de cuidado {percent}%',
   'plants.subtitleFreeOne': '1 planta · Gratis, hasta {limit}',
   'plants.subtitleFreeMany': '{count} plantas · Gratis, hasta {limit}',
   'plants.subtitlePremiumOne': '1 planta · Premium',
@@ -1598,6 +1610,8 @@ const fr: Messages = {
   'plants.searchPlaceholder': 'Rechercher nom, espèce, pièce…',
   'plants.categoryAll': 'Toutes',
   'plants.roomAll': 'Toutes les pièces',
+  'plants.overdueBadge': 'À faire',
+  'plants.careProgressA11y': 'Progression du soin {percent}%',
   'plants.subtitleFreeOne': '1 plante · Gratuit : {limit}',
   'plants.subtitleFreeMany': '{count} plantes · Gratuit : {limit}',
   'plants.subtitlePremiumOne': '1 plante · Premium',
@@ -2164,6 +2178,8 @@ const de: Messages = {
   'plants.searchPlaceholder': 'Name, Art, Raum suchen…',
   'plants.categoryAll': 'Alle',
   'plants.roomAll': 'Alle Räume',
+  'plants.overdueBadge': 'Fällig',
+  'plants.careProgressA11y': 'Pflegefortschritt {percent}%',
   'plants.subtitleFreeOne': '1 Pflanze · Kostenlos: {limit}',
   'plants.subtitleFreeMany': '{count} Pflanzen · Kostenlos: {limit}',
   'plants.subtitlePremiumOne': '1 Pflanze · Premium',

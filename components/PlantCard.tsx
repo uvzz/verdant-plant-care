@@ -117,7 +117,9 @@ export function PlantCard({
           ) : null}
           {overdue ? (
             <View style={[styles.overdueBadge, { backgroundColor: overdueHue }]}>
-              <Text style={[styles.overdueText, { color: onHue(overdueHue) }]}>Due</Text>
+              <Text style={[styles.overdueText, { color: onHue(overdueHue) }]}>
+                {t('plants.overdueBadge')}
+              </Text>
             </View>
           ) : null}
         </View>

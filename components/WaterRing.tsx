@@ -3,6 +3,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { Droplet } from 'lucide-react-native';
 
 import { onHue, withAlpha } from '@/constants/Palette';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Circular care-progress badge overlaid on a plant card.
@@ -26,6 +27,7 @@ export function WaterRing({
   size?: number;
   strokeWidth?: number;
 }) {
+  const { t } = useI18n();
   const clamped = Math.min(1, Math.max(0, progress));
   const r = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * r;
@@ -43,7 +45,7 @@ export function WaterRing({
           shadowColor: color,
         },
       ]}
-      accessibilityLabel={`Care progress ${Math.round(clamped * 100)}%`}
+      accessibilityLabel={t('plants.careProgressA11y', { percent: Math.round(clamped * 100) })}
     >
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
         <Circle
