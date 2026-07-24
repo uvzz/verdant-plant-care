@@ -13,26 +13,45 @@
 //      locale, because the manual sweep's grep set (Alert.alert,
 //      placeholder=, accessibilityLabel/Hint, JSX text nodes, Stack.Screen
 //      title) never looked at template-literal label=/title= props at all.
+//      Critically, a template literal sitting directly in one of these 8
+//      props is flagged EVEN WHEN ITS STATIC TEXT HAS NO LETTERS — e.g. a
+//      bare `\` · \`` separator between two interpolations — unless every
+//      `${...}` interpolation is itself a `t(...)`/`i18nT(...)` call. The
+//      historical bug's static quasis were exactly `' · '`; the English
+//      text was smuggled in through a non-`t()` interpolation
+//      (`PREMIUM_DISPLAY.yearlyLabel`), so gating purely on "does the
+//      literal text contain a letter" (rule 3 below) would have missed it
+//      — see checkExprSlot's forced-flag branch.
 //   2. Bare text children of <Text> and <Animated.Text>.
 //   3. Alert.alert(...) string-literal arguments — the title, the message,
 //      and each button's `text:` entry. The other failure class this plan
 //      actually hit (several Alert bodies were found untranslated across
 //      the plan).
-//   4. Stack.Screen / Tabs.Screen `options={{ title, tabBarAccessibilityLabel }}`.
+//   4. Stack.Screen / Tabs.Screen `options={{ title, tabBarAccessibilityLabel,
+//      headerTitle, headerBackTitle, tabBarLabel }}`.
 //      Not one of the 8 props above — the string sits inside a NESTED
 //      object literal, not a JSX attribute — but Task 7 found exactly this
 //      shape hardcoded (a local Stack.Screen title silently overriding an
 //      already-translated app/_layout.tsx one), so it gets its own narrow
 //      rule rather than being left to the generic prop scan to miss again.
 //      `options=` is used ONLY for react-navigation route config in this
-//      codebase (every `options={{` call site is a Stack.Screen or
-//      Tabs.Screen — verified by hand when this test was written), so
-//      keying off the attribute name alone is safe here.
+//      codebase today, but the rule does not rely on that alone: it is
+//      gated on the enclosing JSX element actually being `Stack.Screen` or
+//      `Tabs.Screen` (see isNavScreenTag below), so an unrelated component
+//      with its own `options=` prop (e.g. `<ChipRow options={{...}}>`)
+//      can't be misread as navigation config just because the attribute
+//      name matches.
 //
 // A literal is only flagged if it contains at least one Unicode letter —
 // this single heuristic is most of what keeps the false-positive rate low.
-// It quietly and correctly clears, with no allowlist entry needed:
-//   - separators/punctuation/ellipsis-only branches (' · ', '…')
+// (The one deliberate exception: a template literal directly in a
+// TARGET_PROPS slot whose interpolations aren't all t()/i18nT() calls is
+// flagged regardless — see checkExprSlot — because that shape is exactly
+// how the historical bug hid a letters-free static separator.) Otherwise
+// this heuristic quietly and correctly clears, with no allowlist entry
+// needed:
+//   - separators/punctuation/ellipsis-only STRING literals (' · ', '…')
+//     that are not part of a TARGET_PROPS template-literal interpolation
 //   - emoji-only branches ('✅' / '⬜️')
 //   - catalog KEYS — `t(\`domain.light.${x}\`)` is a CallExpression sitting
 //     in the prop slot, not a literal directly in it, so the rules above
@@ -63,6 +82,8 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import ts from 'typescript';
 
+import { translations } from '../i18n/translations';
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
 
@@ -77,7 +98,17 @@ const TARGET_PROPS = new Set([
   'subtitle',
 ]);
 
-const NAV_OPTION_PROPS = new Set(['title', 'tabBarAccessibilityLabel']);
+// 'headerTitle' (app/_layout.tsx:138) and 'headerBackTitle' override the nav
+// header exactly like 'title'; 'tabBarLabel' is the tab-bar equivalent of
+// 'tabBarAccessibilityLabel'. Added per review — previously omitted despite
+// a live call site already using headerTitle.
+const NAV_OPTION_PROPS = new Set([
+  'title',
+  'tabBarAccessibilityLabel',
+  'headerTitle',
+  'headerBackTitle',
+  'tabBarLabel',
+]);
 
 interface Finding {
   file: string; // repo-relative, forward-slash
@@ -155,6 +186,24 @@ function literalTextOf(
   return null;
 }
 
+/** True for `t(...)` / `i18nT(...)` — the two bound-translate-function names used in this codebase. */
+function isTranslationCall(expr: ts.Expression): boolean {
+  return (
+    ts.isCallExpression(expr) &&
+    ts.isIdentifier(expr.expression) &&
+    (expr.expression.text === 't' || expr.expression.text === 'i18nT')
+  );
+}
+
+/**
+ * True when every `${...}` interpolation in a template expression is itself
+ * a `t(...)`/`i18nT(...)` call — i.e. the template is pure composition of
+ * already-translated fragments (plus static separators), not raw English.
+ */
+function allSpansAreTranslationCalls(node: ts.TemplateExpression): boolean {
+  return node.templateSpans.every((s) => isTranslationCall(s.expression));
+}
+
 function scanFile(filePath: string): Finding[] {
   const rel = path.relative(ROOT, filePath).split(path.sep).join('/');
   const source = fs.readFileSync(filePath, 'utf8');
@@ -165,17 +214,34 @@ function scanFile(filePath: string): Finding[] {
     return sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
   }
 
-  function record(node: ts.Node, kind: string, text: string) {
-    if (!hasLetters(text)) return;
+  function record(node: ts.Node, kind: string, text: string, force = false) {
+    if (!force && !hasLetters(text)) return;
     findings.push({ file: rel, line: lineOf(node), kind, text: text.trim() });
   }
 
   // Examines an expression sitting in a "renders as text" slot (a JSX
   // attribute value, a <Text> child expression, an Alert.alert argument).
-  // Recurses into ternary branches and `||`/`??` fallbacks so a hardcoded
-  // literal hiding behind a condition still gets caught, e.g.
-  // `label={loading ? 'Loading…' : t('x')}`.
+  // Recurses into ternary branches and `||`/`??`/`&&` fallbacks so a
+  // hardcoded literal hiding behind a condition still gets caught, e.g.
+  // `label={loading ? 'Loading…' : t('x')}` or `{overdue && 'Due'}`.
   function checkExprSlot(expr: ts.Expression, kind: string) {
+    // A template literal sitting directly in one of the 8 TARGET_PROPS
+    // slots (kind starts with 'jsx-attr:') is flagged unconditionally —
+    // NOT gated on hasLetters — unless every one of its interpolations is
+    // itself a t()/i18nT() call. This is what actually catches the
+    // historical bug: `` `${PREMIUM_DISPLAY.yearlyLabel} · ${price}` ``
+    // has static quasis of just `' · '` (no letters at all — the English
+    // text was smuggled in through the non-t() interpolation), so gating on
+    // hasLetters alone would silently clear it, the way the original
+    // version of this test did.
+    if (
+      ts.isTemplateExpression(expr) &&
+      kind.startsWith('jsx-attr:') &&
+      !allSpansAreTranslationCalls(expr)
+    ) {
+      record(expr, kind, literalTextOf(expr) ?? '', true);
+      return;
+    }
     const literal = literalTextOf(expr);
     if (literal != null) {
       record(expr, kind, literal);
@@ -187,7 +253,8 @@ function scanFile(filePath: string): Finding[] {
     } else if (
       ts.isBinaryExpression(expr) &&
       (expr.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
-        expr.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
+        expr.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+        expr.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken)
     ) {
       checkExprSlot(expr.left, kind);
       checkExprSlot(expr.right, kind);
@@ -216,6 +283,17 @@ function scanFile(filePath: string): Finding[] {
     );
   }
 
+  /** True for the `Stack.Screen` / `Tabs.Screen` JSX tag names — see rule 4's gate. */
+  function isNavScreenTag(tagName: ts.JsxTagNameExpression): boolean {
+    if (!ts.isPropertyAccessExpression(tagName) || !ts.isIdentifier(tagName.expression)) {
+      return false;
+    }
+    return (
+      (tagName.expression.text === 'Stack' || tagName.expression.text === 'Tabs') &&
+      tagName.name.text === 'Screen'
+    );
+  }
+
   function visit(node: ts.Node) {
     // Rule 1 — JSX attributes in TARGET_PROPS.
     if (ts.isJsxAttribute(node) && ts.isIdentifier(node.name) && TARGET_PROPS.has(node.name.text)) {
@@ -229,10 +307,24 @@ function scanFile(filePath: string): Finding[] {
       }
     }
 
-    // Rule 4 — Stack.Screen / Tabs.Screen options={{ title, tabBarAccessibilityLabel }}.
+    // Rule 4 — Stack.Screen / Tabs.Screen options={{ title, tabBarAccessibilityLabel, ... }}.
+    // Gated on the enclosing element actually being Stack.Screen/Tabs.Screen
+    // (not just the attribute being named "options") — see isNavScreenTag.
     if (ts.isJsxAttribute(node) && ts.isIdentifier(node.name) && node.name.text === 'options') {
+      const jsxElement = node.parent.parent;
+      const tagName =
+        ts.isJsxOpeningElement(jsxElement) || ts.isJsxSelfClosingElement(jsxElement)
+          ? jsxElement.tagName
+          : undefined;
       const init = node.initializer;
-      if (init && ts.isJsxExpression(init) && init.expression && ts.isObjectLiteralExpression(init.expression)) {
+      if (
+        tagName &&
+        isNavScreenTag(tagName) &&
+        init &&
+        ts.isJsxExpression(init) &&
+        init.expression &&
+        ts.isObjectLiteralExpression(init.expression)
+      ) {
         for (const prop of init.expression.properties) {
           if (
             ts.isPropertyAssignment(prop) &&
@@ -294,6 +386,65 @@ function scanAll(): Finding[] {
   return files.flatMap(scanFile);
 }
 
+// --- t()/i18nT() key-existence guard (review item 2) -----------------------
+//
+// Everything above catches hardcoded English that never went through the
+// catalog at all. It has no way to catch the inverse mistake: a call site
+// that DOES go through the catalog but references a key that doesn't exist
+// — `t('plants.overdueBadg')` (typo) just falls back to rendering the raw
+// key string, with every other test green (translate() never throws, and
+// the ~10 hand-maintained *RawCallSites tables in i18n.test.ts only cover
+// the call sites someone remembered to add a row for). This walks every
+// .ts/.tsx file under app/, components/, and lib/ and asserts every
+// STRING-LITERAL first argument to a t(...)/i18nT(...) call names a real
+// English catalog key. Composed/dynamic keys (e.g. `` t(`domain.light.${x}`) ``)
+// aren't string literals, so they're skipped here by construction — those
+// are exactly what the catalog seam tests (i18n.test.ts) exist to cover.
+
+/** Same walk as collectTsxFiles, but for both .ts and .tsx (t() calls live in plain .ts too). */
+function collectSourceFiles(dir: string): string[] {
+  const out: string[] = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === '__tests__' || entry.name === 'node_modules') continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...collectSourceFiles(full));
+    else if (entry.name.endsWith('.tsx') || entry.name.endsWith('.ts')) out.push(full);
+  }
+  return out;
+}
+
+interface TCallSite {
+  file: string; // repo-relative, forward-slash
+  line: number;
+  key: string;
+}
+
+/** Every string-literal first argument to a t(...)/i18nT(...) call in one file. */
+function collectTCallLiteralKeys(filePath: string): TCallSite[] {
+  const rel = path.relative(ROOT, filePath).split(path.sep).join('/');
+  const source = fs.readFileSync(filePath, 'utf8');
+  const scriptKind = filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const sf = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKind);
+  const out: TCallSite[] = [];
+
+  function visit(node: ts.Node) {
+    if (ts.isCallExpression(node) && isTranslationCall(node)) {
+      const [firstArg] = node.arguments;
+      if (firstArg && ts.isStringLiteral(firstArg)) {
+        out.push({
+          file: rel,
+          line: sf.getLineAndCharacterOfPosition(firstArg.getStart(sf)).line + 1,
+          key: firstArg.text,
+        });
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sf);
+  return out;
+}
+
 describe('i18n coverage guard (Task 8)', () => {
   const findings = scanAll();
   const usedAllowlist = new Set<number>();
@@ -331,5 +482,28 @@ describe('i18n coverage guard (Task 8)', () => {
       stale,
       `Stale allowlist entries (no longer produced by the scan — remove or fix): ${JSON.stringify(stale, null, 2)}`
     ).toEqual([]);
+  });
+});
+
+describe('t()/i18nT() call sites reference real catalog keys (Task 8 review item 2)', () => {
+  const englishKeys = new Set(Object.keys(translations.en));
+
+  const callSites = [
+    ...collectSourceFiles(path.join(ROOT, 'app')),
+    ...collectSourceFiles(path.join(ROOT, 'components')),
+    ...collectSourceFiles(path.join(ROOT, 'lib')),
+  ].flatMap(collectTCallLiteralKeys);
+
+  it('every literal key passed to t()/i18nT() exists in the English catalog', () => {
+    const missing = callSites.filter((c) => !englishKeys.has(c.key));
+    if (missing.length > 0) {
+      const report = missing.map((c) => `  ${c.file}:${c.line} t(${JSON.stringify(c.key)})`).join('\n');
+      throw new Error(
+        `Found ${missing.length} t()/i18nT() call site(s) referencing a key that ` +
+          `does not exist in the English catalog (renders as the raw dotted key ` +
+          `on screen):\n${report}`
+      );
+    }
+    expect(missing).toEqual([]);
   });
 });
