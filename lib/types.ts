@@ -148,25 +148,12 @@ export const LIGHT_LEVELS: LightLevel[] = ['low', 'medium', 'bright', 'direct'];
 export const POT_SIZES: PotSize[] = ['small', 'medium', 'large'];
 export const PET_TOXICITY: PetToxicity[] = ['unknown', 'safe', 'caution', 'toxic'];
 
-export const LIGHT_LABELS: Record<LightLevel, string> = {
-  low: 'Low light',
-  medium: 'Medium',
-  bright: 'Bright indirect',
-  direct: 'Direct sun',
-};
-
-export const POT_LABELS: Record<PotSize, string> = {
-  small: 'Small pot',
-  medium: 'Medium pot',
-  large: 'Large pot',
-};
-
-export const PET_LABELS: Record<PetToxicity, string> = {
-  unknown: 'Pets: unknown',
-  safe: 'Pet-safe',
-  caution: 'Pets: caution',
-  toxic: 'Toxic to pets',
-};
+// LIGHT_LABELS / POT_LABELS / PET_LABELS / CARE_TYPE_LABELS (English display
+// maps) used to live here. Every caller was a UI component, so they were
+// removed in favour of `t('domain.light.*' | 'domain.pot.*' | 'domain.pet.*'
+// | 'domain.careType.*')` — one source of truth in `lib/i18n/translations.ts`.
+// The enum values below stay untranslated: they are the persisted/synced
+// wire format (Constraint 2), only ever used as lookup keys.
 
 export const DEFAULT_INTERVALS: Record<
   PlantCategory,
@@ -181,15 +168,10 @@ export const DEFAULT_INTERVALS: Record<
   Other: { water: 7, fertilize: 30 },
 };
 
-export const CARE_TYPE_LABELS: Record<CareLogType, string> = {
-  water: 'Watered',
-  fertilize: 'Fertilized',
-  note: 'Note',
-  photo: 'Photo',
-  check: 'Soil check',
-};
+// CARE_TYPE_LABELS (English display map) used to live here — removed with
+// LIGHT_LABELS/POT_LABELS/PET_LABELS above; use `t('domain.careType.*')`.
 
-const VALID_CARE_TYPES: CareLogType[] = [
+export const CARE_LOG_TYPES: CareLogType[] = [
   'water',
   'fertilize',
   'note',
@@ -280,7 +262,7 @@ export function normalizeCareLog(
   if (!raw || typeof raw !== 'object') return null;
   const plantId = typeof raw.plantId === 'string' ? raw.plantId.trim() : '';
   if (!plantId) return null;
-  const type = VALID_CARE_TYPES.includes(raw.type as CareLogType)
+  const type = CARE_LOG_TYPES.includes(raw.type as CareLogType)
     ? (raw.type as CareLogType)
     : 'note';
   const now = new Date().toISOString();

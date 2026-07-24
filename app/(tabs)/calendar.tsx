@@ -17,11 +17,13 @@ import { CalendarDays } from 'lucide-react-native';
 import { tapLight, tapSuccess } from '@/lib/haptics';
 import {
   effectiveWaterIntervalDays,
-  formatRelativeCare,
   getCareDueItems,
+  relativeCareLabel,
 } from '@/lib/care';
 import { scheduleGentleReminders } from '@/lib/notifications';
 import { usePlants } from '@/lib/PlantContext';
+import { useI18n } from '@/lib/i18n';
+import { translateLabel } from '@/lib/i18n/core';
 import { MOISTURE_SNOOZE_DAYS, type CareDueItem } from '@/lib/types';
 
 export default function CalendarScreen() {
@@ -29,6 +31,7 @@ export default function CalendarScreen() {
   const c = Colors[scheme];
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useI18n();
   const { plants, logs, settings, addCareLog } = usePlants();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -140,7 +143,7 @@ export default function CalendarScreen() {
           onPress={() => openPlant(item)}
           onLongPress={() => openLog(item)}
           accessibilityRole="button"
-          accessibilityLabel={`${item.plant.name}, ${item.type}, ${formatRelativeCare(item.daysUntil)}. Tap for plant, long-press to log.`}
+          accessibilityLabel={`${item.plant.name}, ${item.type}, ${translateLabel(t, relativeCareLabel(item.daysUntil))}. Tap for plant, long-press to log.`}
           style={styles.cardTop}
         >
           <View style={[styles.dot, { backgroundColor: tint }]} />
@@ -152,7 +155,7 @@ export default function CalendarScreen() {
               <CareIcon type={item.type} color={tint} size={13} />
               <Text style={[Type.meta, { color: c.textMuted }]}>
                 {item.type === 'water' ? 'Water' : 'Fertilize'} ·{' '}
-                {formatRelativeCare(item.daysUntil)}
+                {translateLabel(t, relativeCareLabel(item.daysUntil))}
                 {item.plant.location ? ` · ${item.plant.location}` : ''}
               </Text>
             </View>

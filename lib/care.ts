@@ -174,6 +174,13 @@ export function getProgressPhotos(logs: CareLog[], plantId: string): CareLog[] {
   );
 }
 
+/**
+ * Kept only for `lib/family.ts`'s plain-text care-sheet share message: that
+ * code builds a string for the OS Share sheet outside any React tree, so it
+ * has no `t()` to call. Every UI caller (home grid, calendar, plant detail)
+ * uses `relativeCareLabel` + `translateLabel` below instead — do not add new
+ * callers here.
+ */
 export function formatRelativeCare(daysUntil: number): string {
   if (daysUntil < 0) {
     const n = Math.abs(daysUntil);
@@ -182,6 +189,29 @@ export function formatRelativeCare(daysUntil: number): string {
   if (daysUntil === 0) return 'Due today';
   if (daysUntil === 1) return 'Due tomorrow';
   return `In ${daysUntil} days`;
+}
+
+/** A translatable relative-care descriptor — the key/params `t()` needs. */
+export interface CareLabel {
+  key: string;
+  params?: Record<string, string | number>;
+}
+
+/**
+ * Translatable counterpart of `formatRelativeCare`. Stays pure (no React, no
+ * `t()` import) so it can be unit-tested and called from anywhere; the caller
+ * renders it via `translateLabel(t, label)` from `lib/i18n/core`.
+ */
+export function relativeCareLabel(daysUntil: number): CareLabel {
+  if (daysUntil < 0) {
+    const n = Math.abs(daysUntil);
+    return n === 1
+      ? { key: 'domain.care.overdueOne' }
+      : { key: 'domain.care.overdueMany', params: { count: n } };
+  }
+  if (daysUntil === 0) return { key: 'domain.care.dueToday' };
+  if (daysUntil === 1) return { key: 'domain.care.dueTomorrow' };
+  return { key: 'domain.care.inDays', params: { count: daysUntil } };
 }
 
 /** Unique non-empty locations for room filter chips */

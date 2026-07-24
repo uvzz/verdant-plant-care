@@ -15,7 +15,7 @@ import {
   withAlpha,
   type Scheme,
 } from '@/constants/Palette';
-import { CARE_TYPE_LABELS, PLANT_CATEGORIES } from '@/lib/types';
+import { CARE_LOG_TYPES, PLANT_CATEGORIES } from '@/lib/types';
 
 const SCHEMES: Scheme[] = ['light', 'dark'];
 
@@ -66,7 +66,7 @@ describe('palette coverage', () => {
   });
 
   it('defines a hue for every care log type', () => {
-    for (const type of Object.keys(CARE_TYPE_LABELS)) {
+    for (const type of CARE_LOG_TYPES) {
       expect(CARE_HUES[type as keyof typeof CARE_HUES], `missing hue for ${type}`).toBeDefined();
     }
   });

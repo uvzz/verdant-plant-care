@@ -29,10 +29,10 @@ import { PhotoLightbox } from '@/components/PhotoLightbox';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import {
   effectiveWaterIntervalDays,
-  formatRelativeCare,
   getPlantLogs,
   getProgressPhotos,
   nextDueDate,
+  relativeCareLabel,
   safeFormatDate,
 } from '@/lib/care';
 import { createId } from '@/lib/storage';
@@ -44,12 +44,11 @@ import {
   type CareGuideResult,
 } from '@/lib/openrouter';
 import { usePlants } from '@/lib/PlantContext';
+import { useI18n } from '@/lib/i18n';
+import { translateLabel } from '@/lib/i18n/core';
 import {
-  LIGHT_LABELS,
   MAX_COACH_HISTORY,
   MOISTURE_SNOOZE_DAYS,
-  PET_LABELS,
-  POT_LABELS,
   type StoredCoachEntry,
 } from '@/lib/types';
 import { plantAgeDays } from '@/lib/stats';
@@ -87,6 +86,9 @@ export default function PlantDetailScreen() {
   const c = Colors[scheme];
   const router = useRouter();
   const navigation = useNavigation();
+  // Aliased: this screen already uses `t` as a loop variable (tab list,
+  // guide.tips.map) further down.
+  const { t: i18nT } = useI18n();
   const {
     getPlant,
     logs,
@@ -429,17 +431,17 @@ export default function PlantDetailScreen() {
 
           <View style={styles.profileChips}>
             <MetaChip
-              label={LIGHT_LABELS[plant.lightLevel ?? 'medium']}
+              label={i18nT(`domain.light.${plant.lightLevel ?? 'medium'}`)}
               bg={c.surfaceAlt}
               fg={c.text}
             />
             <MetaChip
-              label={POT_LABELS[plant.potSize ?? 'medium']}
+              label={i18nT(`domain.pot.${plant.potSize ?? 'medium'}`)}
               bg={c.surfaceAlt}
               fg={c.text}
             />
             <MetaChip
-              label={PET_LABELS[plant.petToxicity ?? 'unknown']}
+              label={i18nT(`domain.pet.${plant.petToxicity ?? 'unknown'}`)}
               bg={
                 plant.petToxicity === 'toxic'
                   ? 'rgba(180,60,50,0.15)'
@@ -469,7 +471,7 @@ export default function PlantDetailScreen() {
                 />
               }
               title="Water"
-              value={formatRelativeCare(waterDays)}
+              value={translateLabel(i18nT, relativeCareLabel(waterDays))}
               accent={waterDays < 0 ? overdueHue : waterHue}
               bg={softFill(waterDays < 0 ? overdueHue : waterHue, scheme)}
               border={softBorder(waterDays < 0 ? overdueHue : waterHue, scheme)}
@@ -484,7 +486,7 @@ export default function PlantDetailScreen() {
                 />
               }
               title="Fertilize"
-              value={formatRelativeCare(fertDays)}
+              value={translateLabel(i18nT, relativeCareLabel(fertDays))}
               accent={fertDays < 0 ? overdueHue : fertHue}
               bg={softFill(fertDays < 0 ? overdueHue : fertHue, scheme)}
               border={softBorder(fertDays < 0 ? overdueHue : fertHue, scheme)}

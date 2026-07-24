@@ -19,8 +19,10 @@ import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { EmptyState } from '@/components/EmptyState';
 import { PlantCard } from '@/components/PlantCard';
-import { formatRelativeCare, getCareDueItems, listRooms } from '@/lib/care';
+import { getCareDueItems, listRooms, relativeCareLabel } from '@/lib/care';
 import { usePlants } from '@/lib/PlantContext';
+import { useI18n } from '@/lib/i18n';
+import { translateLabel } from '@/lib/i18n/core';
 import type { PlantCategory } from '@/lib/types';
 import { PLANT_CATEGORIES } from '@/lib/types';
 
@@ -29,6 +31,7 @@ export default function MyPlantsScreen() {
   const c = Colors[scheme];
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useI18n();
   const { plants, logs, loading, canAddPlant, freeLimit, settings } = usePlants();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<PlantCategory | 'All'>('All');
@@ -56,7 +59,7 @@ export default function MyPlantsScreen() {
             ? 1
             : Math.min(1, Math.max(0.12, 1 - item.daysUntil / 14));
         map.set(item.plant.id, {
-          label: formatRelativeCare(item.daysUntil),
+          label: translateLabel(t, relativeCareLabel(item.daysUntil)),
           colorKey,
           progress,
           type: item.type,
@@ -64,7 +67,7 @@ export default function MyPlantsScreen() {
       }
     }
     return map;
-  }, [plants, logs]);
+  }, [plants, logs, t]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

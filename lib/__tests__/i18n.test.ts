@@ -4,8 +4,16 @@ import {
   isSupportedLanguage,
   resolveLanguage,
   translate,
+  translateLabel,
 } from '../i18n/core';
 import { SUPPORTED_LANGUAGES, translations } from '../i18n/translations';
+import {
+  CARE_LOG_TYPES,
+  LIGHT_LEVELS,
+  PET_TOXICITY,
+  PLANT_CATEGORIES,
+  POT_SIZES,
+} from '../types';
 
 describe('interpolate', () => {
   it('fills known placeholders', () => {
@@ -96,6 +104,48 @@ describe('catalog integrity', () => {
         expect(placeholders(translations[code][key])).toBe(
           placeholders(translations.en[key])
         );
+      }
+    }
+  });
+});
+
+describe('translateLabel', () => {
+  it('translates a CareLabel with no params', () => {
+    const t = (key: string, params?: Record<string, string | number>) =>
+      translate('en', key, params);
+    expect(translateLabel(t, { key: 'domain.care.dueToday' })).toBe('Due today');
+  });
+
+  it('translates a CareLabel with params', () => {
+    const t = (key: string, params?: Record<string, string | number>) =>
+      translate('de', key, params);
+    expect(
+      translateLabel(t, { key: 'domain.care.inDays', params: { count: 4 } })
+    ).toBe('In 4 Tagen');
+  });
+});
+
+describe('domain vocabulary coverage', () => {
+  // Every stored enum value must resolve to a real catalog key in every
+  // language — otherwise a screen renders a raw dotted key like
+  // "domain.light.low" instead of falling back gracefully. Also guards
+  // against a future enum addition (e.g. a new PlantCategory) shipping
+  // without translations.
+  const groups: Array<{ prefix: string; values: readonly string[] }> = [
+    { prefix: 'domain.category', values: PLANT_CATEGORIES },
+    { prefix: 'domain.light', values: LIGHT_LEVELS },
+    { prefix: 'domain.pot', values: POT_SIZES },
+    { prefix: 'domain.pet', values: PET_TOXICITY },
+    { prefix: 'domain.careType', values: CARE_LOG_TYPES },
+  ];
+
+  it('every enum value has a catalog key in every shipped language', () => {
+    for (const { code } of SUPPORTED_LANGUAGES) {
+      for (const { prefix, values } of groups) {
+        for (const value of values) {
+          const key = `${prefix}.${value}`;
+          expect(translations[code][key], `${code} is missing ${key}`).toBeDefined();
+        }
       }
     }
   });

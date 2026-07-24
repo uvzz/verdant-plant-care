@@ -24,14 +24,12 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { identifyPlantFromPhoto } from '@/lib/openrouter';
 import { mergeAiNote } from '@/lib/aiParse';
 import { usePlants } from '@/lib/PlantContext';
+import { useI18n } from '@/lib/i18n';
 import {
   DEFAULT_INTERVALS,
-  LIGHT_LABELS,
   LIGHT_LEVELS,
-  PET_LABELS,
   PET_TOXICITY,
   PLANT_CATEGORIES,
-  POT_LABELS,
   POT_SIZES,
   type LightLevel,
   type PetToxicity,
@@ -43,6 +41,7 @@ export default function AddPlantScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const router = useRouter();
+  const { t } = useI18n();
   const { addPlant, canAddPlant, consumeAiUse, canUseAi } = usePlants();
 
   const [name, setName] = useState('');
@@ -319,7 +318,7 @@ export default function AddPlantScreen() {
                       { color: active ? c.onEmphasis : c.text, fontFamily: Fonts.bodySemi },
                     ]}
                   >
-                    {LIGHT_LABELS[lv]}
+                    {t(`domain.light.${lv}`)}
                   </Text>
                 </Pressable>
               );
@@ -349,7 +348,7 @@ export default function AddPlantScreen() {
                       { color: active ? c.onEmphasis : c.text, fontFamily: Fonts.bodySemi },
                     ]}
                   >
-                    {POT_LABELS[sz]}
+                    {t(`domain.pot.${sz}`)}
                   </Text>
                 </Pressable>
               );
@@ -379,7 +378,7 @@ export default function AddPlantScreen() {
                       { color: active ? c.onEmphasis : c.text, fontFamily: Fonts.bodySemi },
                     ]}
                   >
-                    {PET_LABELS[tx]}
+                    {t(`domain.pet.${tx}`)}
                   </Text>
                 </Pressable>
               );

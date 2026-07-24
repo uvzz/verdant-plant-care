@@ -19,7 +19,8 @@ import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { usePlants } from '@/lib/PlantContext';
-import { CARE_TYPE_LABELS, type CareLogType } from '@/lib/types';
+import { useI18n } from '@/lib/i18n';
+import type { CareLogType } from '@/lib/types';
 import { firstParam } from '@/lib/routeParams';
 import { CareIcon } from '@/components/CareIcon';
 
@@ -34,6 +35,8 @@ export default function LogCareScreen() {
   const typeParam = firstParam(typeRaw);
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
+  // Aliased: TYPES.map((t) => …) below already uses `t` as its loop variable.
+  const { t: translateDomain } = useI18n();
   const router = useRouter();
   const { getPlant, addCareLog } = usePlants();
   const plant = getPlant(plantId);
@@ -159,7 +162,7 @@ export default function LogCareScreen() {
                     },
                   ]}
                 >
-                  {CARE_TYPE_LABELS[t]}
+                  {translateDomain(`domain.careType.${t}`)}
                 </Text>
               </Pressable>
             );
@@ -208,7 +211,7 @@ export default function LogCareScreen() {
         </View>
 
         <PrimaryButton
-          label={`Save · ${CARE_TYPE_LABELS[type]}`}
+          label={`Save · ${translateDomain(`domain.careType.${type}`)}`}
           icon={<CareIcon type={type} color={c.growthInk} size={17} />}
           onPress={onSave}
           loading={saving}

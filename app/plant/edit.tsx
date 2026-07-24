@@ -21,14 +21,12 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { DateField } from '@/components/DateField';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { usePlants } from '@/lib/PlantContext';
+import { useI18n } from '@/lib/i18n';
 import {
   DEFAULT_INTERVALS,
-  LIGHT_LABELS,
   LIGHT_LEVELS,
-  PET_LABELS,
   PET_TOXICITY,
   PLANT_CATEGORIES,
-  POT_LABELS,
   POT_SIZES,
   type LightLevel,
   type PetToxicity,
@@ -44,8 +42,30 @@ export default function EditPlantScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const router = useRouter();
+  const { t } = useI18n();
   const { getPlant, updatePlant, familyMembers } = usePlants();
   const plant = getPlant(plantId);
+
+  // ChipRow (below) takes a full labels Record — build the translated maps
+  // it needs from the domain.* catalog rather than the removed English
+  // LIGHT_LABELS/POT_LABELS/PET_LABELS constants.
+  const lightLabels: Record<LightLevel, string> = {
+    low: t('domain.light.low'),
+    medium: t('domain.light.medium'),
+    bright: t('domain.light.bright'),
+    direct: t('domain.light.direct'),
+  };
+  const potLabels: Record<PotSize, string> = {
+    small: t('domain.pot.small'),
+    medium: t('domain.pot.medium'),
+    large: t('domain.pot.large'),
+  };
+  const petLabels: Record<PetToxicity, string> = {
+    unknown: t('domain.pet.unknown'),
+    safe: t('domain.pet.safe'),
+    caution: t('domain.pet.caution'),
+    toxic: t('domain.pet.toxic'),
+  };
 
   const [name, setName] = useState('');
   const [species, setSpecies] = useState('');
@@ -231,7 +251,7 @@ export default function EditPlantScreen() {
           <ChipRow
             options={LIGHT_LEVELS}
             value={lightLevel}
-            labels={LIGHT_LABELS}
+            labels={lightLabels}
             activeBg={c.emphasis}
             activeFg={c.onEmphasis}
             idleBg={c.surface}
@@ -244,7 +264,7 @@ export default function EditPlantScreen() {
           <ChipRow
             options={POT_SIZES}
             value={potSize}
-            labels={POT_LABELS}
+            labels={potLabels}
             activeBg={c.emphasis}
             activeFg={c.onEmphasis}
             idleBg={c.surface}
@@ -257,7 +277,7 @@ export default function EditPlantScreen() {
           <ChipRow
             options={PET_TOXICITY}
             value={petToxicity}
-            labels={PET_LABELS}
+            labels={petLabels}
             activeBg={c.emphasis}
             activeFg={c.onEmphasis}
             idleBg={c.surface}
