@@ -32,12 +32,15 @@ import { AreaSparkline } from '@/components/AreaSparkline';
 import { computeCollectionStats } from '@/lib/stats';
 import { usePlants } from '@/lib/PlantContext';
 import { generateCollectionInsight } from '@/lib/openrouter';
+import { useI18n } from '@/lib/i18n';
+import type { TFunction } from '@/lib/i18n/core';
 
 export default function InsightsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useI18n();
   const { plants, logs, settings, consumeAiUse, canUseAi, aiUsesLeft } = usePlants();
   const { width: windowWidth } = useWindowDimensions();
   const chartWidth = windowWidth - 64;
@@ -47,7 +50,7 @@ export default function InsightsScreen() {
 
   const runCollectionInsight = async () => {
     if (plants.length === 0) {
-      Alert.alert('No plants yet', 'Add plants and care logs first.');
+      Alert.alert(t('insights.alertNoPlantsTitle'), t('insights.alertNoPlantsBody'));
       return;
     }
     if (!canUseAi) {
@@ -58,7 +61,9 @@ export default function InsightsScreen() {
     try {
       const quota = await consumeAiUse();
       if (!quota.ok) {
-        Alert.alert('AI limit', quota.reason);
+        // quota.reason comes from lib/PlantContext's local AI-quota gate, not
+        // this screen — out of scope for the insights.tsx localization pass.
+        Alert.alert(t('insights.alertAiLimitTitle'), quota.reason);
         return;
       }
       const text = await generateCollectionInsight(
@@ -75,9 +80,14 @@ export default function InsightsScreen() {
           mostActive: stats.mostActivePlant,
         })
       );
+      // The AI's returned text is model output, shown verbatim — not
+      // translated (Constraint 9).
       setAiSummary(text);
     } catch (e) {
-      Alert.alert('Insight failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert(
+        t('insights.alertInsightFailedTitle'),
+        e instanceof Error ? e.message : t('insights.alertUnknownError')
+      );
     } finally {
       setLoading(false);
     }
@@ -87,12 +97,13 @@ export default function InsightsScreen() {
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={[Type.micro, { color: c.tint }]}>{APP_NAME}</Text>
-        <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>Insights</Text>
+        <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>
+          {t('insights.title')}
+        </Text>
         <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 6 }]}>
-          Care history and AI collection coaching.
-          {settings.isPremium
-            ? ' Premium · server AI unlocked.'
-            : ' Free · AI requires Premium.'}
+          {t('insights.subtitle', {
+            tail: t(settings.isPremium ? 'insights.subtitleTailPremium' : 'insights.subtitleTailFree'),
+          })}
         </Text>
       </View>
 
@@ -100,44 +111,48 @@ export default function InsightsScreen() {
         {plants.length === 0 ? (
           <EmptyState
             icon={<ChartColumn color="#FFFFFF" size={36} strokeWidth={1.8} />}
-            title="No data yet"
-            body="Add plants and log care to unlock stats and AI insights."
-            actionLabel="Add a plant"
+            title={t('insights.emptyTitle')}
+            body={t('insights.emptyBody')}
+            actionLabel={t('insights.emptyAction')}
             onAction={() => router.push('/plant/add')}
           />
         ) : (
           <>
             <View style={styles.grid}>
               <StatTile
-                label="Plants"
+                label={t('insights.statPlants')}
                 value={String(stats.plantCount)}
                 c={c}
                 index={0}
                 hue={statusColor('healthy', scheme)}
                 scheme={scheme}
+                t={t}
               />
               <StatTile
-                label="Care logs"
+                label={t('insights.statCareLogs')}
                 value={String(stats.totalLogs)}
                 c={c}
                 index={1}
                 hue={careColor('water', scheme)}
                 scheme={scheme}
+                t={t}
               />
               <StatTile
-                label="Streak"
-                value={`${stats.careStreakDays}d`}
+                label={t('insights.statStreak')}
+                value={t('insights.streakValue', { count: stats.careStreakDays })}
                 c={c}
                 index={2}
                 hue={careColor('fertilize', scheme)}
                 scheme={scheme}
+                t={t}
               />
               <StatTile
-                label="Overdue"
+                label={t('insights.statOverdue')}
                 value={String(stats.overdueCount)}
                 c={c}
                 index={3}
                 scheme={scheme}
+                t={t}
                 // Only burn the alarm colour when something IS overdue —
                 // a permanently red "0" trains the user to ignore it.
                 hue={
@@ -155,7 +170,7 @@ export default function InsightsScreen() {
             </View>
 
             <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-              <Text style={[Type.title, { color: c.text }]}>Activity (14 days)</Text>
+              <Text style={[Type.title, { color: c.text }]}>{t('insights.activityTitle')}</Text>
               <View style={{ marginTop: 12 }}>
                 <AreaSparkline
                   values={stats.byDayLast14.map((d) => d.count)}
@@ -165,19 +180,22 @@ export default function InsightsScreen() {
                 />
               </View>
               <Text style={[Type.meta, { color: c.textMuted, marginTop: 8 }]}>
-                Last 7 days: {stats.logsLast7Days} · Last 30 days: {stats.logsLast30Days}
+                {t('insights.last7and30', {
+                  sevenDays: stats.logsLast7Days,
+                  thirtyDays: stats.logsLast30Days,
+                })}
               </Text>
             </View>
 
             <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-              <Text style={[Type.title, { color: c.text }]}>Breakdown</Text>
+              <Text style={[Type.title, { color: c.text }]}>{t('insights.breakdownTitle')}</Text>
               <View style={styles.breakdownRow}>
                 <BreakdownStat
                   icon={
                     <Droplet color={careColor('water', scheme)} size={14} strokeWidth={2.2} />
                   }
                   value={stats.waters}
-                  label="water"
+                  label={t('insights.breakdownWater')}
                   c={c}
                 />
                 <BreakdownStat
@@ -185,7 +203,7 @@ export default function InsightsScreen() {
                     <Sprout color={careColor('fertilize', scheme)} size={14} strokeWidth={2.2} />
                   }
                   value={stats.fertilizes}
-                  label="feed"
+                  label={t('insights.breakdownFeed')}
                   c={c}
                 />
                 <BreakdownStat
@@ -193,7 +211,7 @@ export default function InsightsScreen() {
                     <NotebookPen color={careColor('note', scheme)} size={14} strokeWidth={2.2} />
                   }
                   value={stats.notes}
-                  label="notes"
+                  label={t('insights.breakdownNotes')}
                   c={c}
                 />
                 <BreakdownStat
@@ -201,13 +219,18 @@ export default function InsightsScreen() {
                     <Camera color={careColor('photo', scheme)} size={14} strokeWidth={2.2} />
                   }
                   value={stats.photos}
-                  label="photos"
+                  label={t('insights.breakdownPhotos')}
                   c={c}
                 />
               </View>
               {stats.mostActivePlant ? (
                 <Text style={[Type.bodySmall, { color: c.text, marginTop: 8 }]}>
-                  Most active: {stats.mostActivePlant.name} ({stats.mostActivePlant.count} logs)
+                  {stats.mostActivePlant.count === 1
+                    ? t('insights.mostActiveOne', { name: stats.mostActivePlant.name })
+                    : t('insights.mostActiveMany', {
+                        name: stats.mostActivePlant.name,
+                        count: stats.mostActivePlant.count,
+                      })}
                 </Text>
               ) : null}
               {stats.categoryBreakdown.length > 0 ? (
@@ -221,19 +244,22 @@ export default function InsightsScreen() {
                         ]}
                       />
                       <Text style={[Type.meta, { color: c.textMuted }]}>
-                        {row.category} · {row.count}
+                        {t('insights.categoryRow', {
+                          category: t(`domain.category.${row.category}`),
+                          count: row.count,
+                        })}
                       </Text>
                     </View>
                   ))}
                 </View>
               ) : null}
               <Text style={[Type.meta, { color: c.tint, marginTop: 10 }]}>
-                Due today: {stats.dueTodayCount}
+                {t('insights.dueToday', { count: stats.dueTodayCount })}
               </Text>
             </View>
 
             <View style={[styles.card, { backgroundColor: c.heroSurface, borderColor: c.heroSurface }]}>
-              <Text style={[Type.title, { color: c.growth }]}>AI collection insight</Text>
+              <Text style={[Type.title, { color: c.growth }]}>{t('insights.aiTitle')}</Text>
               <Text
                 style={[
                   Type.bodySmall,
@@ -241,23 +267,25 @@ export default function InsightsScreen() {
                 ]}
               >
                 {canUseAi
-                  ? `A short coach note from your stats. Premium AI · ~${aiUsesLeft === 'unlimited' ? '∞' : aiUsesLeft} soft uses left today on this device.`
-                  : 'Premium only — unlock in Settings for a calm coach note on your collection.'}
+                  ? t('insights.aiBodyPremium', {
+                      usesLeft: aiUsesLeft === 'unlimited' ? '∞' : aiUsesLeft,
+                    })
+                  : t('insights.aiBodyFree')}
               </Text>
               {canUseAi ? (
                 <PrimaryButton
-                  label={loading ? 'Thinking…' : 'Generate insight'}
+                  label={loading ? t('insights.aiButtonThinking') : t('insights.aiButtonGenerate')}
                   icon={<Sparkles color={c.growthInk} size={16} strokeWidth={2.2} />}
                   onPress={runCollectionInsight}
                   loading={loading}
-                  accessibilityHint="Uses Premium AI for a short collection note"
+                  accessibilityHint={t('insights.aiHintGenerate')}
                 />
               ) : (
                 <PrimaryButton
-                  label="Unlock Premium for AI"
+                  label={t('insights.aiButtonUnlock')}
                   icon={<Sparkles color={c.growthInk} size={16} strokeWidth={2.2} />}
                   onPress={() => router.push({ pathname: '/paywall', params: { reason: 'insights' } })}
-                  accessibilityHint="Opens the Premium upgrade screen"
+                  accessibilityHint={t('insights.aiHintUnlock')}
                 />
               )}
               {loading && !aiSummary ? <TextSkeleton lines={3} /> : null}
@@ -309,6 +337,7 @@ function StatTile({
   index = 0,
   hue,
   scheme,
+  t,
 }: {
   label: string;
   value: string;
@@ -319,18 +348,20 @@ function StatTile({
   /** Accent for the tile. Tints the fill, the border and the number. */
   hue: string;
   scheme: 'light' | 'dark';
+  t: TFunction;
 }) {
   const tileStyle = {
     backgroundColor: softFill(hue, scheme),
     borderColor: softBorder(hue, scheme),
   };
+  const a11yLabel = t('insights.statA11yLabel', { label, value });
   const body = (
     <>
       <Text style={[Type.displayM, { color: hue, fontSize: 26 }]}>{value}</Text>
       <Text style={[Type.meta, { color: c.textMuted, marginTop: 4 }]}>{label}</Text>
       {onPress && danger ? (
         <Text style={[Type.meta, { color: hue, marginTop: 4, fontSize: 10 }]}>
-          Tap for care list
+          {t('insights.tapForCareList')}
         </Text>
       ) : null}
     </>
@@ -344,7 +375,7 @@ function StatTile({
         entering={entering}
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={`${label}: ${value}`}
+        accessibilityLabel={a11yLabel}
         style={[styles.tile, tileStyle]}
       >
         {body}
@@ -354,7 +385,7 @@ function StatTile({
   return (
     <Animated.View
       entering={entering}
-      accessibilityLabel={`${label}: ${value}`}
+      accessibilityLabel={a11yLabel}
       style={[styles.tile, tileStyle]}
     >
       {body}

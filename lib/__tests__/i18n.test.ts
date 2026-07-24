@@ -272,6 +272,33 @@ describe('catalog seam — label descriptors always render as real text', () => 
     { key: 'calendar.toastSnoozed', params: { name: 'Fern', days: MOISTURE_SNOOZE_DAYS } },
   ];
 
+  // The interpolated keys app/(tabs)/insights.tsx calls via raw
+  // `t(key, params)` — no descriptor functions were extracted for this
+  // screen since every branch is a simple two-way ternary already resolved
+  // by the time `t()` is called (mirrors calendar.tsx's toastWatered/
+  // toastFed/swipeFed ternaries, which also aren't descriptor-wrapped).
+  // Each entry's `params` mirrors exactly what the screen passes at that
+  // call site — see "catalog seam" comment above for why that matters.
+  const insightsRawCallSites: Array<{ key: string; params: TranslateParams }> = [
+    // Header subtitle — {tail} is itself a pre-translated string (either
+    // insights.subtitleTailPremium or insights.subtitleTailFree).
+    { key: 'insights.subtitle', params: { tail: ' Premium · server AI unlocked.' } },
+    // StatTile accessibilityLabel — {label} is itself a pre-translated stat
+    // label (e.g. insights.statPlants).
+    { key: 'insights.statA11yLabel', params: { label: 'Plants', value: '3' } },
+    // Streak stat tile value ("5d"/"5j"/"5T").
+    { key: 'insights.streakValue', params: { count: 5 } },
+    { key: 'insights.last7and30', params: { sevenDays: 4, thirtyDays: 12 } },
+    { key: 'insights.mostActiveOne', params: { name: 'Fern' } },
+    { key: 'insights.mostActiveMany', params: { name: 'Fern', count: 3 } },
+    // {category} is the already-translated domain.category.* value.
+    { key: 'insights.categoryRow', params: { category: 'Houseplant', count: 2 } },
+    { key: 'insights.dueToday', params: { count: 2 } },
+    // {usesLeft} is either a number or the '∞' symbol for unlimited.
+    { key: 'insights.aiBodyPremium', params: { usesLeft: 3 } },
+    { key: 'insights.aiBodyPremium', params: { usesLeft: '∞' } },
+  ];
+
   for (const { code } of SUPPORTED_LANGUAGES) {
     describe(code, () => {
       it('renders every plantsSubtitleLabel branch as real text', () => {
@@ -329,6 +356,14 @@ describe('catalog seam — label descriptors always render as real text', () => 
 
       it('renders every raw t() call site in calendar.tsx as real text', () => {
         for (const { key, params } of rawCallSites) {
+          const rendered = translate(code, key, params);
+          expect(rendered, `${code} ${key}`).not.toBe(key);
+          expect(rendered, `${code} ${key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every raw t() call site in insights.tsx as real text', () => {
+        for (const { key, params } of insightsRawCallSites) {
           const rendered = translate(code, key, params);
           expect(rendered, `${code} ${key}`).not.toBe(key);
           expect(rendered, `${code} ${key}`).not.toContain('{');

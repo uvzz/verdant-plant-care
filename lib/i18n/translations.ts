@@ -338,6 +338,64 @@ const en: Messages = {
   'calendar.toastFed': 'Fed {name}',
   'calendar.toastSnoozed': '{name} · snoozed {days}d',
   'calendar.toastError': 'Could not save — try again',
+
+  // Insights — collection stats + AI coach screen
+  'insights.title': 'Insights',
+  // Header subtitle: fixed lead-in + a tail that differs by premium state.
+  // `{tail}` is filled with the *already translated* tail string (see
+  // insights.subtitleTailPremium/Free below) — mirrors calendar.rowMeta's
+  // pattern of composing pre-translated pieces via a placeholder rather than
+  // gluing raw fragments (Constraint 3).
+  'insights.subtitle': 'Care history and AI collection coaching.{tail}',
+  'insights.subtitleTailPremium': ' Premium · server AI unlocked.',
+  'insights.subtitleTailFree': ' Free · AI requires Premium.',
+  'insights.emptyTitle': 'No data yet',
+  'insights.emptyBody': 'Add plants and log care to unlock stats and AI insights.',
+  'insights.emptyAction': 'Add a plant',
+  // Stat tile labels — half-width cards under a 26px number; keep tight.
+  'insights.statPlants': 'Plants',
+  'insights.statCareLogs': 'Care logs',
+  'insights.statStreak': 'Streak',
+  'insights.statOverdue': 'Overdue',
+  'insights.statA11yLabel': '{label}: {value}',
+  'insights.tapForCareList': 'Tap for care list',
+  // Streak tile value ("5d"). Abbreviated unit suffix, not a plural word —
+  // same treatment as calendar.intervalWater/intervalFertilize, which also
+  // never split one/many for their {days}d/j/T suffix.
+  'insights.streakValue': '{count}d',
+  'insights.activityTitle': 'Activity (14 days)',
+  'insights.last7and30': 'Last 7 days: {sevenDays} · Last 30 days: {thirtyDays}',
+  'insights.breakdownTitle': 'Breakdown',
+  // Breakdown row labels — four-to-a-row, keep tight.
+  'insights.breakdownWater': 'water',
+  'insights.breakdownFeed': 'feed',
+  'insights.breakdownNotes': 'notes',
+  'insights.breakdownPhotos': 'photos',
+  // "{count} logs" pluralizes — distinct one/many keys per Constraint 4.
+  'insights.mostActiveOne': 'Most active: {name} (1 log)',
+  'insights.mostActiveMany': 'Most active: {name} ({count} logs)',
+  // Category legend row. `{category}` is the already-translated
+  // domain.category.* value — see lib/care.ts's CareLabel-composition
+  // pattern; the stored enum itself is never translated (Constraint 2).
+  'insights.categoryRow': '{category} · {count}',
+  'insights.dueToday': 'Due today: {count}',
+  'insights.aiTitle': 'AI collection insight',
+  'insights.aiBodyPremium':
+    'A short coach note from your stats. Premium AI · ~{usesLeft} soft uses left today on this device.',
+  'insights.aiBodyFree':
+    'Premium only — unlock in Settings for a calm coach note on your collection.',
+  'insights.aiButtonGenerate': 'Generate insight',
+  'insights.aiButtonThinking': 'Thinking…',
+  'insights.aiButtonUnlock': 'Unlock Premium for AI',
+  'insights.aiHintGenerate': 'Uses Premium AI for a short collection note',
+  'insights.aiHintUnlock': 'Opens the Premium upgrade screen',
+  // Alert.alert calls — ours, so they get keys. The AI's returned text and
+  // e.message from a thrown error stay untranslated (model/dynamic output).
+  'insights.alertNoPlantsTitle': 'No plants yet',
+  'insights.alertNoPlantsBody': 'Add plants and care logs first.',
+  'insights.alertAiLimitTitle': 'AI limit',
+  'insights.alertInsightFailedTitle': 'Insight failed',
+  'insights.alertUnknownError': 'Unknown error',
 };
 
 const es: Messages = {
@@ -600,6 +658,49 @@ const es: Messages = {
   'calendar.toastFed': 'Abono registrado · {name}',
   'calendar.toastSnoozed': '{name} · pospuesta {days}d',
   'calendar.toastError': 'No se pudo guardar — inténtalo de nuevo',
+
+  // Insights — collection stats + AI coach screen
+  'insights.title': 'Estadísticas',
+  'insights.subtitle': 'Historial de cuidados y coaching de IA para tu colección.{tail}',
+  'insights.subtitleTailPremium': ' Premium · IA en servidor activada.',
+  'insights.subtitleTailFree': ' Gratis · la IA requiere Premium.',
+  'insights.emptyTitle': 'Aún sin datos',
+  'insights.emptyBody':
+    'Añade plantas y registra cuidados para desbloquear estadísticas e IA.',
+  'insights.emptyAction': 'Añadir planta',
+  'insights.statPlants': 'Plantas',
+  'insights.statCareLogs': 'Cuidados',
+  'insights.statStreak': 'Racha',
+  'insights.statOverdue': 'Atrasados',
+  'insights.statA11yLabel': '{label}: {value}',
+  'insights.tapForCareList': 'Toca para ver la lista',
+  'insights.streakValue': '{count}d',
+  'insights.activityTitle': 'Actividad (14 días)',
+  'insights.last7and30': 'Últimos 7 días: {sevenDays} · Últimos 30 días: {thirtyDays}',
+  'insights.breakdownTitle': 'Desglose',
+  'insights.breakdownWater': 'agua',
+  'insights.breakdownFeed': 'abono',
+  'insights.breakdownNotes': 'notas',
+  'insights.breakdownPhotos': 'fotos',
+  'insights.mostActiveOne': 'Más activa: {name} (1 registro)',
+  'insights.mostActiveMany': 'Más activa: {name} ({count} registros)',
+  'insights.categoryRow': '{category} · {count}',
+  'insights.dueToday': 'Toca hoy: {count}',
+  'insights.aiTitle': 'Consejo de IA para tu colección',
+  'insights.aiBodyPremium':
+    'Una nota breve de coaching según tus datos. IA Premium · ~{usesLeft} usos suaves restantes hoy en este dispositivo.',
+  'insights.aiBodyFree':
+    'Solo Premium — actívala en Ajustes para una nota de coaching tranquila sobre tu colección.',
+  'insights.aiButtonGenerate': 'Generar consejo',
+  'insights.aiButtonThinking': 'Pensando…',
+  'insights.aiButtonUnlock': 'Desbloquea Premium para IA',
+  'insights.aiHintGenerate': 'Usa la IA Premium para una nota breve sobre tu colección',
+  'insights.aiHintUnlock': 'Abre la pantalla de mejora a Premium',
+  'insights.alertNoPlantsTitle': 'Aún no hay plantas',
+  'insights.alertNoPlantsBody': 'Añade plantas y registros de cuidado primero.',
+  'insights.alertAiLimitTitle': 'Límite de IA',
+  'insights.alertInsightFailedTitle': 'Error al generar el consejo',
+  'insights.alertUnknownError': 'Error desconocido',
 };
 
 const fr: Messages = {
@@ -863,6 +964,49 @@ const fr: Messages = {
   'calendar.toastFed': 'Engrais noté · {name}',
   'calendar.toastSnoozed': '{name} · reportée {days}j',
   'calendar.toastError': 'Échec de l’enregistrement — réessayez',
+
+  // Insights — collection stats + AI coach screen
+  'insights.title': 'Statistiques',
+  'insights.subtitle': 'Historique de soins et coaching IA pour votre collection.{tail}',
+  'insights.subtitleTailPremium': ' Premium · IA serveur activée.',
+  'insights.subtitleTailFree': ' Gratuit · l’IA nécessite Premium.',
+  'insights.emptyTitle': 'Aucune donnée pour l’instant',
+  'insights.emptyBody':
+    'Ajoutez des plantes et notez des soins pour débloquer stats et IA.',
+  'insights.emptyAction': 'Ajouter une plante',
+  'insights.statPlants': 'Plantes',
+  'insights.statCareLogs': 'Soins',
+  'insights.statStreak': 'Série',
+  'insights.statOverdue': 'En retard',
+  'insights.statA11yLabel': '{label} : {value}',
+  'insights.tapForCareList': 'Touchez pour la liste',
+  'insights.streakValue': '{count}j',
+  'insights.activityTitle': 'Activité (14 jours)',
+  'insights.last7and30': '7 derniers jours : {sevenDays} · 30 derniers jours : {thirtyDays}',
+  'insights.breakdownTitle': 'Répartition',
+  'insights.breakdownWater': 'eau',
+  'insights.breakdownFeed': 'engrais',
+  'insights.breakdownNotes': 'notes',
+  'insights.breakdownPhotos': 'photos',
+  'insights.mostActiveOne': 'Plus active : {name} (1 note)',
+  'insights.mostActiveMany': 'Plus active : {name} ({count} notes)',
+  'insights.categoryRow': '{category} · {count}',
+  'insights.dueToday': 'À faire aujourd’hui : {count}',
+  'insights.aiTitle': 'Conseil IA sur la collection',
+  'insights.aiBodyPremium':
+    'Une courte note de coaching selon vos stats. IA Premium · ~{usesLeft} utilisations restantes aujourd’hui sur cet appareil.',
+  'insights.aiBodyFree':
+    'Réservé à Premium — activez-le dans Réglages pour une note de coaching apaisante sur votre collection.',
+  'insights.aiButtonGenerate': 'Générer un conseil',
+  'insights.aiButtonThinking': 'Réflexion…',
+  'insights.aiButtonUnlock': 'Débloquez Premium pour l’IA',
+  'insights.aiHintGenerate': 'Utilise l’IA Premium pour une courte note sur la collection',
+  'insights.aiHintUnlock': 'Ouvre l’écran de passage à Premium',
+  'insights.alertNoPlantsTitle': 'Pas encore de plantes',
+  'insights.alertNoPlantsBody': 'Ajoutez d’abord des plantes et des soins.',
+  'insights.alertAiLimitTitle': 'Limite IA',
+  'insights.alertInsightFailedTitle': 'Échec du conseil',
+  'insights.alertUnknownError': 'Erreur inconnue',
 };
 
 const de: Messages = {
@@ -1127,6 +1271,49 @@ const de: Messages = {
   'calendar.toastFed': '{name} gedüngt',
   'calendar.toastSnoozed': '{name} · verschoben um {days}T',
   'calendar.toastError': 'Konnte nicht gespeichert werden — bitte erneut versuchen',
+
+  // Insights — collection stats + AI coach screen
+  'insights.title': 'Statistiken',
+  'insights.subtitle': 'Pflegeverlauf und KI-Coaching für deine Sammlung.{tail}',
+  'insights.subtitleTailPremium': ' Premium · Server-KI freigeschaltet.',
+  'insights.subtitleTailFree': ' Kostenlos · KI erfordert Premium.',
+  'insights.emptyTitle': 'Noch keine Daten',
+  'insights.emptyBody':
+    'Füge Pflanzen hinzu und notiere Pflege, um Statistiken und KI freizuschalten.',
+  'insights.emptyAction': 'Pflanze hinzufügen',
+  'insights.statPlants': 'Pflanzen',
+  'insights.statCareLogs': 'Pflege',
+  'insights.statStreak': 'Serie',
+  'insights.statOverdue': 'Überfällig',
+  'insights.statA11yLabel': '{label}: {value}',
+  'insights.tapForCareList': 'Für Liste tippen',
+  'insights.streakValue': '{count}T',
+  'insights.activityTitle': 'Aktivität (14 Tage)',
+  'insights.last7and30': 'Letzte 7 Tage: {sevenDays} · Letzte 30 Tage: {thirtyDays}',
+  'insights.breakdownTitle': 'Übersicht',
+  'insights.breakdownWater': 'Wasser',
+  'insights.breakdownFeed': 'Dünger',
+  'insights.breakdownNotes': 'Notizen',
+  'insights.breakdownPhotos': 'Fotos',
+  'insights.mostActiveOne': 'Aktivste: {name} (1 Eintrag)',
+  'insights.mostActiveMany': 'Aktivste: {name} ({count} Einträge)',
+  'insights.categoryRow': '{category} · {count}',
+  'insights.dueToday': 'Heute fällig: {count}',
+  'insights.aiTitle': 'KI-Einblick zur Sammlung',
+  'insights.aiBodyPremium':
+    'Eine kurze Coaching-Notiz zu deinen Daten. Premium-KI · ~{usesLeft} sanfte Nutzungen heute auf diesem Gerät übrig.',
+  'insights.aiBodyFree':
+    'Nur Premium — schalte es in den Einstellungen frei für eine ruhige Coaching-Notiz zu deiner Sammlung.',
+  'insights.aiButtonGenerate': 'Einblick erzeugen',
+  'insights.aiButtonThinking': 'Denkt nach…',
+  'insights.aiButtonUnlock': 'Premium für KI freischalten',
+  'insights.aiHintGenerate': 'Nutzt Premium-KI für eine kurze Notiz zur Sammlung',
+  'insights.aiHintUnlock': 'Öffnet den Premium-Upgrade-Bildschirm',
+  'insights.alertNoPlantsTitle': 'Noch keine Pflanzen',
+  'insights.alertNoPlantsBody': 'Füge zuerst Pflanzen und Pflegeeinträge hinzu.',
+  'insights.alertAiLimitTitle': 'KI-Limit',
+  'insights.alertInsightFailedTitle': 'Einblick fehlgeschlagen',
+  'insights.alertUnknownError': 'Unbekannter Fehler',
 };
 
 export const translations: Record<LanguageCode, Messages> = { en, es, fr, de };
