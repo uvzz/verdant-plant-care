@@ -59,7 +59,9 @@ export default function LogCareScreen() {
   const pickPhoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Permission needed', 'Allow photo library access.');
+      // Same permission prompt as add.tsx/edit.tsx — reuses their shared key
+      // rather than a byte-identical log.* duplicate.
+      Alert.alert(translateDomain('form.photoPermissionTitle'), translateDomain('form.photoPermissionBody'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -87,11 +89,13 @@ export default function LogCareScreen() {
 
   const onSave = async () => {
     if (!plant) {
-      Alert.alert('Plant missing');
+      // Defensive only — the component already renders the "not found" view
+      // below (and never mounts the Save button) whenever `plant` is falsy.
+      Alert.alert(translateDomain('log.plantMissingTitle'));
       return;
     }
     if (type === 'photo' && !photoUri) {
-      Alert.alert('Photo required', 'Add a photo for a photo log entry.');
+      Alert.alert(translateDomain('log.photoRequiredTitle'), translateDomain('log.photoRequiredBody'));
       return;
     }
     if (saving) return;
@@ -105,7 +109,7 @@ export default function LogCareScreen() {
       });
       router.back();
     } catch {
-      Alert.alert('Could not save', 'Try again in a moment.');
+      Alert.alert(translateDomain('log.saveErrorTitle'), translateDomain('log.saveErrorBody'));
     } finally {
       setSaving(false);
     }
@@ -114,7 +118,7 @@ export default function LogCareScreen() {
   if (!plant) {
     return (
       <View style={[styles.center, { backgroundColor: c.background }]}>
-        <Text style={[Type.body, { color: c.textMuted }]}>Plant not found.</Text>
+        <Text style={[Type.body, { color: c.textMuted }]}>{translateDomain('log.notFound')}</Text>
       </View>
     );
   }
@@ -127,10 +131,12 @@ export default function LogCareScreen() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={[Type.displayM, { color: c.text }]}>{plant.name}</Text>
         <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 6, marginBottom: 16 }]}>
-          A quiet moment of care. Photos help you see seasons of growth.
+          {translateDomain('log.subtitle')}
         </Text>
 
-        <Text style={[Type.micro, { color: c.textMuted, marginBottom: 8 }]}>Care type</Text>
+        <Text style={[Type.micro, { color: c.textMuted, marginBottom: 8 }]}>
+          {translateDomain('log.careTypeLabel')}
+        </Text>
         <View style={styles.typeGrid}>
           {TYPES.map((t) => {
             const active = t === type;
@@ -170,12 +176,12 @@ export default function LogCareScreen() {
         </View>
 
         <Text style={[Type.micro, { color: c.textMuted, marginBottom: 8, marginTop: 8 }]}>
-          Note
+          {translateDomain('log.noteLabel')}
         </Text>
         <TextInput
           value={note}
           onChangeText={setNote}
-          placeholder="New leaf almost open…"
+          placeholder={translateDomain('log.notePlaceholder')}
           placeholderTextColor={c.textMuted}
           multiline
           style={[
@@ -190,7 +196,7 @@ export default function LogCareScreen() {
         />
 
         <Text style={[Type.micro, { color: c.textMuted, marginBottom: 8, marginTop: 8 }]}>
-          Photo
+          {translateDomain('log.photoLabel')}
         </Text>
         <Pressable
           onPress={pickPhoto}
@@ -202,16 +208,33 @@ export default function LogCareScreen() {
           {photoUri ? (
             <Image source={{ uri: photoUri }} style={styles.photo} contentFit="cover" />
           ) : (
-            <Text style={[Type.meta, { color: c.textMuted }]}>Tap to attach a photo</Text>
+            <Text style={[Type.meta, { color: c.textMuted }]}>
+              {translateDomain('log.photoBoxPlaceholder')}
+            </Text>
           )}
         </Pressable>
         <View style={styles.photoActions}>
-          <PrimaryButton label="Library" variant="secondary" onPress={pickPhoto} style={styles.half} />
-          <PrimaryButton label="Camera" variant="secondary" onPress={takePhoto} style={styles.half} />
+          {/* "Library"/"Camera" reuse add.tsx/edit.tsx's shared form.library
+              form.camera keys — identical photo-source buttons, third screen
+              to use them. */}
+          <PrimaryButton
+            label={translateDomain('form.library')}
+            variant="secondary"
+            onPress={pickPhoto}
+            style={styles.half}
+          />
+          <PrimaryButton
+            label={translateDomain('form.camera')}
+            variant="secondary"
+            onPress={takePhoto}
+            style={styles.half}
+          />
         </View>
 
         <PrimaryButton
-          label={`Save · ${translateDomain(`domain.careType.${type}`)}`}
+          label={translateDomain('log.saveButton', {
+            careType: translateDomain(`domain.careType.${type}`),
+          })}
           icon={<CareIcon type={type} color={c.growthInk} size={17} />}
           onPress={onSave}
           loading={saving}

@@ -2,6 +2,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Fonts, Type } from '@/constants/Typography';
+import { useI18n } from '@/lib/i18n';
 
 export function PhotoLightbox({
   uri,
@@ -15,6 +16,11 @@ export function PhotoLightbox({
   onClose: () => void;
 }) {
   const insets = useSafeAreaInsets();
+  // Rendered exclusively by app/plant/[id].tsx (the plant detail screen) —
+  // single-owner component, so its one hardcoded string lives under detail.*
+  // per the WeekStrip/CareLogRow/DateField precedent
+  // (.superpowers/sdd/progress.md).
+  const { t } = useI18n();
   if (!uri) return null;
 
   return (
@@ -26,7 +32,7 @@ export function PhotoLightbox({
           hitSlop={12}
         >
           <Text style={[Type.title, { color: '#fff', fontFamily: Fonts.bodySemi }]}>
-            Close
+            {t('detail.lightboxClose')}
           </Text>
         </Pressable>
         <Image source={{ uri }} style={styles.image} contentFit="contain" />

@@ -6,6 +6,7 @@
  * Only gates AUTOMATIC sync paths (debounced timer, foreground/launch). A
  * user-initiated "Sync now" press must bypass this and call syncNow directly.
  */
+import type { CareLabel } from './care';
 
 export type SyncSchedState = {
   now: number; // ms epoch
@@ -40,14 +41,33 @@ export function nextBackoffMs(current: number): number {
 /**
  * Human-readable status line for the Backup & sync card. Errors stay
  * unalarming — sync is best-effort and auto-retries in the background.
+ *
+ * Returns a translatable `CareLabel` descriptor rather than a raw string —
+ * mirrors `relativeCareLabel` (lib/care.ts), `plantsSubtitleLabel`
+ * (lib/plantsSubtitle.ts), etc: pure + no `t()` import, so the branch
+ * selection stays unit-testable and the component renders it via
+ * `translateLabel(t, label)` from `lib/i18n/core`.
+ *
+ * `lastSyncError` is accepted but not woven into the message (kept
+ * unalarming/generic on purpose) — same as before this was a descriptor.
+ * `{date}` for the "last synced" branch is `new Date(...).toLocaleString()`,
+ * which formats using the *device* locale, not the app's selected language
+ * (same class of gotcha as `DateField`'s native date picker — see
+ * .superpowers/sdd/progress.md). Left as-is; out of scope for a string-only
+ * localization pass.
  */
 export function syncStatusLabel(input: {
   status: 'idle' | 'syncing' | 'error';
   lastSyncError: string | null;
   lastSyncAt: string | null; // ISO
-}): string {
-  if (input.status === 'syncing') return 'Syncing…';
-  if (input.status === 'error') return 'Couldn’t sync — will retry automatically.';
-  if (input.lastSyncAt) return `Last synced ${new Date(input.lastSyncAt).toLocaleString()}`;
-  return 'First sync pending.';
+}): CareLabel {
+  if (input.status === 'syncing') return { key: 'settings.syncStatusSyncing' };
+  if (input.status === 'error') return { key: 'settings.syncStatusError' };
+  if (input.lastSyncAt) {
+    return {
+      key: 'settings.syncStatusLast',
+      params: { date: new Date(input.lastSyncAt).toLocaleString() },
+    };
+  }
+  return { key: 'settings.syncStatusPending' };
 }

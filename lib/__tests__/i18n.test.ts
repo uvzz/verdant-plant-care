@@ -13,6 +13,7 @@ import {
 import { SUPPORTED_LANGUAGES, translations } from '../i18n/translations';
 import { mostActiveLabel } from '../insightsLabels';
 import { plantsSubtitleLabel } from '../plantsSubtitle';
+import { syncStatusLabel } from '../syncSchedule';
 import {
   AI_CONFIDENCE_LEVELS,
   AI_URGENCY_LEVELS,
@@ -409,6 +410,51 @@ describe('catalog seam — label descriptors always render as real text', () => 
     { key: 'form.checkBeforeWaterBody', params: { stillMoist: 'Still moist' } },
   ];
 
+  // The interpolated `log.*` key app/plant/log.tsx calls via raw
+  // `t(key, params)` — its care-type selector cells and Save button are
+  // simple direct lookups with no branching function, so only the one
+  // interpolated key needs a table entry (Task 7).
+  const logRawCallSites: Array<{ key: string; params: TranslateParams }> = [
+    // {careType} is the already-translated domain.careType.* value for the
+    // currently-selected CareLogType — composed via a placeholder rather
+    // than a `Save · ${...}` template literal (Constraint 3).
+    { key: 'log.saveButton', params: { careType: 'Watered' } },
+  ];
+
+  // `syncStatusLabel` (lib/syncSchedule.ts) — the Backup & sync card's
+  // status line (components/CloudSyncCard.tsx, Task 7). Same kind of pure
+  // branch-selecting descriptor as `mostActiveLabel`/`relativeCareLabel`,
+  // covering all four `SyncSchedState`-adjacent branches: syncing, error,
+  // idle-with-a-prior-sync (the one interpolated branch, {date}), and
+  // idle-with-no-prior-sync.
+  const syncStatusStates: Array<Parameters<typeof syncStatusLabel>[0]> = [
+    { status: 'syncing', lastSyncError: null, lastSyncAt: null },
+    { status: 'error', lastSyncError: 'network request failed', lastSyncAt: null },
+    { status: 'idle', lastSyncError: null, lastSyncAt: '2026-07-01T12:00:00.000Z' },
+    { status: 'idle', lastSyncError: null, lastSyncAt: null },
+  ];
+
+  // The interpolated `settings.sync*` keys components/CloudSyncCard.tsx
+  // calls via raw `t(key, params)` (Task 7) — no descriptor function was
+  // extracted for these since each is a simple presence/absence dispatch
+  // (email present or not) or a one/many count split already resolved by
+  // the time `t()` is called, mirroring insights.tsx's/form.tsx's inline
+  // ternaries. Each entry's `params` mirrors exactly what the component
+  // passes at that call site (see "catalog seam" comment above).
+  const cloudSyncRawCallSites: Array<{ key: string; params: TranslateParams }> = [
+    // "Apple"/"Google" are brand names, passed verbatim (never translated —
+    // mirrors "Planta" elsewhere in this catalog).
+    { key: 'settings.syncSignedInBlurb', params: { provider: 'Apple' } },
+    {
+      key: 'settings.syncSignedInBlurbWithEmail',
+      params: { provider: 'Google', email: 'fern@example.com' },
+    },
+    // One/many split (Constraint 4) — the One branch has no placeholder;
+    // covered by the plain-lookup fallback in catalog integrity. Only the
+    // interpolated Many branch needs a table entry here.
+    { key: 'settings.syncLinkedBodyMany', params: { count: 3 } },
+  ];
+
   for (const { code } of SUPPORTED_LANGUAGES) {
     describe(code, () => {
       it('renders every plantsSubtitleLabel branch as real text', () => {
@@ -522,6 +568,31 @@ describe('catalog seam — label descriptors always render as real text', () => 
 
       it('renders every raw t() call site in add.tsx/edit.tsx as real text', () => {
         for (const { key, params } of formRawCallSites) {
+          const rendered = translate(code, key, params);
+          expect(rendered, `${code} ${key}`).not.toBe(key);
+          expect(rendered, `${code} ${key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every raw t() call site in log.tsx as real text', () => {
+        for (const { key, params } of logRawCallSites) {
+          const rendered = translate(code, key, params);
+          expect(rendered, `${code} ${key}`).not.toBe(key);
+          expect(rendered, `${code} ${key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every syncStatusLabel branch as real text', () => {
+        for (const state of syncStatusStates) {
+          const label = syncStatusLabel(state);
+          const rendered = translate(code, label.key, label.params);
+          expect(rendered, `${code} ${label.key}`).not.toBe(label.key);
+          expect(rendered, `${code} ${label.key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every raw t() call site in CloudSyncCard.tsx as real text', () => {
+        for (const { key, params } of cloudSyncRawCallSites) {
           const rendered = translate(code, key, params);
           expect(rendered, `${code} ${key}`).not.toBe(key);
           expect(rendered, `${code} ${key}`).not.toContain('{');

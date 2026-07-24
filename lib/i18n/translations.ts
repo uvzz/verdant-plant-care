@@ -643,6 +643,129 @@ const en: Messages = {
   'form.datePickerLabel': 'Pick a date',
   'form.datePickerDone': 'Done',
   'form.datePickerDoneA11y': 'Done choosing date',
+
+  // Log care screen (app/plant/log.tsx, Task 7). The care-type selector
+  // reuses domain.careType.* from Task 1 (displays translated, writes the
+  // raw stored CareLogType — Constraint 2); "Library"/"Camera" reuse
+  // form.library/form.camera above — same photo-source buttons, a third
+  // screen using them now.
+  'log.subtitle': 'A quiet moment of care. Photos help you see seasons of growth.',
+  'log.careTypeLabel': 'Care type',
+  'log.noteLabel': 'Note',
+  'log.notePlaceholder': 'New leaf almost open…',
+  'log.photoLabel': 'Photo',
+  'log.photoBoxPlaceholder': 'Tap to attach a photo',
+  // {careType} is the already-translated domain.careType.* value, composed
+  // via a placeholder rather than a `Save · ${...}` template literal
+  // (Constraint 3).
+  'log.saveButton': 'Save · {careType}',
+  // Defensive-only alert (title, no body) — see the code comment at its
+  // call site; this branch can't actually be reached since the component
+  // never mounts the Save button while `plant` is falsy.
+  'log.plantMissingTitle': 'Plant missing',
+  'log.photoRequiredTitle': 'Photo required',
+  'log.photoRequiredBody': 'Add a photo for a photo log entry.',
+  // "Could not save" / "Try again in a moment." also exist as
+  // detail.saveErrorTitle/Body and form.editSaveFailedTitle/form.retryBody —
+  // an accepted per-screen duplicate (see form.notFound/detail.notFound
+  // below for the same precedent on "Plant not found."), not a
+  // shared-component defect.
+  'log.saveErrorTitle': 'Could not save',
+  'log.saveErrorBody': 'Try again in a moment.',
+  'log.notFound': 'Plant not found.',
+
+  // components/PhotoLightbox.tsx — rendered exclusively by the plant detail
+  // screen (app/plant/[id].tsx), so its one hardcoded string is folded in
+  // under detail.* per the WeekStrip/CareLogRow/DateField precedent, even
+  // though it ships in Task 7 (.superpowers/sdd/progress.md).
+  'detail.lightboxClose': 'Close',
+
+  // Backup & sync card (components/CloudSyncCard.tsx, Task 7) — rendered
+  // only from the Settings screen, which already owns settings.*; sync gets
+  // its own settings.sync* sub-prefix, mirroring settings.ai*/
+  // settings.notifications* above (a distinct, self-contained feature, not
+  // a handful of shared verbs like settings.family*'s cancel/add/remove).
+  'settings.syncTitle': 'Backup & sync',
+  'settings.syncPremiumBlurb':
+    'Premium: sign in once and your plants, care history, and photos back up automatically and follow you to any device.',
+  // "Apple"/"Google" are brand names — passed as the already-decided
+  // {provider} param, never translated (mirrors "Planta" elsewhere in this
+  // catalog). Two whole-sentence keys (email present or not), not a glued
+  // "{a}{b ? ` · ${b}` : ''}" fragment (Constraint 3).
+  'settings.syncSignedInBlurb':
+    'Signed in with {provider}. Everything syncs automatically — after changes, on app open, and when you return.',
+  'settings.syncSignedInBlurbWithEmail':
+    'Signed in with {provider} · {email}. Everything syncs automatically — after changes, on app open, and when you return.',
+  // syncStatusLabel (lib/syncSchedule.ts) descriptor keys. {date} is the
+  // untouched, device-locale `new Date(...).toLocaleString()` output — same
+  // class of gotcha as DateField's native picker (Constraint-10-style
+  // carve-out; see that function's own comment).
+  'settings.syncStatusSyncing': 'Syncing…',
+  'settings.syncStatusError': 'Couldn’t sync — will retry automatically.',
+  'settings.syncStatusLast': 'Last synced {date}',
+  'settings.syncStatusPending': 'First sync pending.',
+  // Reused for both the "Sync now" button's loading label and the status
+  // line above (settings.syncStatusSyncing) — same word, one key.
+  'settings.syncNowButton': 'Sync now',
+  // Reused for both the "Sign out" button label and the destructive button
+  // in its own confirmation alert below.
+  'settings.syncSignOutButton': 'Sign out',
+  'settings.syncDeleteButton': 'Delete synced data',
+  'settings.syncDeletingButton': 'Deleting…',
+  'settings.syncDeleteHint': 'Permanently removes your collection from the cloud',
+  'settings.syncDeleteTitle': 'Delete synced data?',
+  'settings.syncDeleteBody':
+    'This permanently removes your plants, care history, and photos from the cloud, and signs you out. Your plants stay on this device — delete the app to remove them too. This cannot be undone.',
+  'settings.syncDeleteConfirm': 'Delete',
+  'settings.syncDeletedTitle': 'Synced data deleted',
+  'settings.syncDeleteFailedTitle': 'Delete failed',
+  'settings.syncDeletedBody':
+    'Your cloud collection is gone and sync is off. Your plants are still on this device.',
+  'settings.syncSignOutTitle': 'Sign out?',
+  'settings.syncSignOutBody':
+    'Sync pauses on this device. Your plants stay here and in your cloud backup.',
+  'settings.syncSignInBlurb':
+    'Sign in once — your plants, care history, and photos back up and sync automatically across devices.',
+  'settings.syncAppleUnavailable':
+    'Sign into an Apple Account in system Settings to enable Sign in with Apple.',
+  'settings.syncGoogleButton': 'Continue with Google',
+  // result.reason (Google/Apple/sync-code failures below) is a dynamic
+  // provider/network error string (Constraint 9) — only these titles are
+  // ours to translate.
+  'settings.syncGoogleFailedTitle': 'Google sign-in failed',
+  'settings.syncAppleSignedInTitle': 'Signed in',
+  'settings.syncAppleSignedInBody': 'Your plants now back up and sync automatically.',
+  'settings.syncAppleFailedTitle': 'Apple sign-in failed',
+  'settings.syncFailedTitle': 'Sync failed',
+  'settings.syncAdvancedHide': 'Hide advanced linking',
+  'settings.syncAdvancedShow': 'Advanced: link with sync code',
+  'settings.syncCodeHide': 'Hide this device’s code',
+  'settings.syncCodeShow': 'Show this device’s code',
+  'settings.syncCodeWarning': 'Treat it like a password.',
+  'settings.syncCodePlaceholder': 'Paste a sync code…',
+  'settings.syncLinkButton': 'Link',
+  'settings.syncInvalidCodeTitle': 'Invalid code',
+  'settings.syncLinkedTitle': 'Device linked',
+  'settings.syncLinkedFailedTitle': 'Linked, but sync failed',
+  // One/many split (Constraint 4) — pulledPlants spells out the plural noun
+  // "plants" rather than an abbreviated suffix.
+  'settings.syncLinkedBodyOne': 'Now sharing a collection (1 plant).',
+  'settings.syncLinkedBodyMany': 'Now sharing a collection ({count} plants).',
+  'settings.syncLinkedSyncing': 'Syncing your collection now…',
+
+  // components/EmptyState.tsx and components/SwipeToComplete.tsx take all
+  // their text as props (PrimaryButton-style) — nothing to key here. Swept
+  // all 4 EmptyState call sites (Plants home ×2, Care calendar, Insights)
+  // and confirmed each already passes translated t() strings from Tasks 2-4.
+
+  // app/paywall.tsx — one accessibility label the sweep found missed by
+  // every earlier task.
+  'paywall.closeA11y': 'Close',
+
+  // app/+not-found.tsx — Expo Router's default unmatched-route fallback.
+  'notFound.title': 'Oops!',
+  'notFound.body': 'This screen doesn’t exist.',
+  'notFound.link': 'Go to home screen!',
 };
 
 const es: Messages = {
@@ -1106,6 +1229,80 @@ const es: Messages = {
   'form.datePickerLabel': 'Elegir fecha',
   'form.datePickerDone': 'Listo',
   'form.datePickerDoneA11y': 'Terminar de elegir la fecha',
+
+  'log.subtitle':
+    'Un momento tranquilo de cuidado. Las fotos te ayudan a ver cómo crece con el paso del tiempo.',
+  'log.careTypeLabel': 'Tipo de cuidado',
+  'log.noteLabel': 'Nota',
+  'log.notePlaceholder': 'Una hoja nueva casi abierta…',
+  'log.photoLabel': 'Foto',
+  'log.photoBoxPlaceholder': 'Toca para añadir una foto',
+  'log.saveButton': 'Guardar · {careType}',
+  'log.plantMissingTitle': 'Falta la planta',
+  'log.photoRequiredTitle': 'Foto requerida',
+  'log.photoRequiredBody': 'Añade una foto para este registro de tipo foto.',
+  'log.saveErrorTitle': 'No se pudo guardar',
+  'log.saveErrorBody': 'Inténtalo de nuevo en un momento.',
+  'log.notFound': 'Planta no encontrada.',
+
+  'detail.lightboxClose': 'Cerrar',
+
+  'settings.syncTitle': 'Copia y sincronización',
+  'settings.syncPremiumBlurb':
+    'Premium: inicia sesión una vez y tus plantas, historial de cuidados y fotos se respaldan automáticamente y te siguen a cualquier dispositivo.',
+  'settings.syncSignedInBlurb':
+    'Sesión iniciada con {provider}. Todo se sincroniza automáticamente: tras los cambios, al abrir la app y cuando vuelves.',
+  'settings.syncSignedInBlurbWithEmail':
+    'Sesión iniciada con {provider} · {email}. Todo se sincroniza automáticamente: tras los cambios, al abrir la app y cuando vuelves.',
+  'settings.syncStatusSyncing': 'Sincronizando…',
+  'settings.syncStatusError': 'No se pudo sincronizar; se reintentará automáticamente.',
+  'settings.syncStatusLast': 'Última sincronización: {date}',
+  'settings.syncStatusPending': 'Primera sincronización pendiente.',
+  'settings.syncNowButton': 'Sincronizar ahora',
+  'settings.syncSignOutButton': 'Cerrar sesión',
+  'settings.syncDeleteButton': 'Eliminar datos sincronizados',
+  'settings.syncDeletingButton': 'Eliminando…',
+  'settings.syncDeleteHint': 'Elimina tu colección de la nube de forma permanente',
+  'settings.syncDeleteTitle': '¿Eliminar los datos sincronizados?',
+  'settings.syncDeleteBody':
+    'Esto elimina de forma permanente tus plantas, historial de cuidados y fotos de la nube, y cierra tu sesión. Tus plantas siguen en este dispositivo; elimina la app para quitarlas también. Esto no se puede deshacer.',
+  'settings.syncDeleteConfirm': 'Eliminar',
+  'settings.syncDeletedTitle': 'Datos sincronizados eliminados',
+  'settings.syncDeleteFailedTitle': 'Error al eliminar',
+  'settings.syncDeletedBody':
+    'Tu colección en la nube ha desaparecido y la sincronización está desactivada. Tus plantas siguen en este dispositivo.',
+  'settings.syncSignOutTitle': '¿Cerrar sesión?',
+  'settings.syncSignOutBody':
+    'La sincronización se pausa en este dispositivo. Tus plantas siguen aquí y en tu copia en la nube.',
+  'settings.syncSignInBlurb':
+    'Inicia sesión una vez: tus plantas, historial de cuidados y fotos se respaldan y sincronizan automáticamente entre dispositivos.',
+  'settings.syncAppleUnavailable':
+    'Inicia sesión en una cuenta de Apple en los Ajustes del sistema para activar Iniciar sesión con Apple.',
+  'settings.syncGoogleButton': 'Continuar con Google',
+  'settings.syncGoogleFailedTitle': 'Error al iniciar sesión con Google',
+  'settings.syncAppleSignedInTitle': 'Sesión iniciada',
+  'settings.syncAppleSignedInBody': 'Tus plantas ahora se respaldan y sincronizan automáticamente.',
+  'settings.syncAppleFailedTitle': 'Error al iniciar sesión con Apple',
+  'settings.syncFailedTitle': 'Error de sincronización',
+  'settings.syncAdvancedHide': 'Ocultar vinculación avanzada',
+  'settings.syncAdvancedShow': 'Avanzado: vincular con código de sincronización',
+  'settings.syncCodeHide': 'Ocultar el código de este dispositivo',
+  'settings.syncCodeShow': 'Mostrar el código de este dispositivo',
+  'settings.syncCodeWarning': 'Trátalo como una contraseña.',
+  'settings.syncCodePlaceholder': 'Pega un código de sincronización…',
+  'settings.syncLinkButton': 'Vincular',
+  'settings.syncInvalidCodeTitle': 'Código no válido',
+  'settings.syncLinkedTitle': 'Dispositivo vinculado',
+  'settings.syncLinkedFailedTitle': 'Vinculado, pero la sincronización falló',
+  'settings.syncLinkedBodyOne': 'Ahora compartes una colección (1 planta).',
+  'settings.syncLinkedBodyMany': 'Ahora compartes una colección ({count} plantas).',
+  'settings.syncLinkedSyncing': 'Sincronizando tu colección…',
+
+  'paywall.closeA11y': 'Cerrar',
+
+  'notFound.title': '¡Ups!',
+  'notFound.body': 'Esta pantalla no existe.',
+  'notFound.link': 'Ir a la pantalla de inicio',
 };
 
 const fr: Messages = {
@@ -1571,6 +1768,80 @@ const fr: Messages = {
   'form.datePickerLabel': 'Choisir une date',
   'form.datePickerDone': 'Terminé',
   'form.datePickerDoneA11y': 'Terminer le choix de la date',
+
+  'log.subtitle':
+    'Un instant de soin tranquille. Les photos vous aident à voir grandir votre plante au fil des saisons.',
+  'log.careTypeLabel': 'Type de soin',
+  'log.noteLabel': 'Note',
+  'log.notePlaceholder': 'Une nouvelle feuille presque ouverte…',
+  'log.photoLabel': 'Photo',
+  'log.photoBoxPlaceholder': 'Touchez pour ajouter une photo',
+  'log.saveButton': 'Enregistrer · {careType}',
+  'log.plantMissingTitle': 'Plante manquante',
+  'log.photoRequiredTitle': 'Photo requise',
+  'log.photoRequiredBody': 'Ajoutez une photo pour cette entrée de type photo.',
+  'log.saveErrorTitle': 'Échec de l’enregistrement',
+  'log.saveErrorBody': 'Réessayez dans un instant.',
+  'log.notFound': 'Plante introuvable.',
+
+  'detail.lightboxClose': 'Fermer',
+
+  'settings.syncTitle': 'Sauvegarde et synchronisation',
+  'settings.syncPremiumBlurb':
+    'Premium : connectez-vous une fois et vos plantes, historique de soins et photos sont sauvegardés automatiquement et vous suivent sur tous vos appareils.',
+  'settings.syncSignedInBlurb':
+    'Connecté avec {provider}. Tout se synchronise automatiquement : après chaque modification, à l’ouverture de l’appli et à votre retour.',
+  'settings.syncSignedInBlurbWithEmail':
+    'Connecté avec {provider} · {email}. Tout se synchronise automatiquement : après chaque modification, à l’ouverture de l’appli et à votre retour.',
+  'settings.syncStatusSyncing': 'Synchronisation…',
+  'settings.syncStatusError': 'Échec de synchronisation — nouvelle tentative automatique.',
+  'settings.syncStatusLast': 'Dernière synchro : {date}',
+  'settings.syncStatusPending': 'Première synchronisation en attente.',
+  'settings.syncNowButton': 'Synchroniser maintenant',
+  'settings.syncSignOutButton': 'Se déconnecter',
+  'settings.syncDeleteButton': 'Supprimer les données synchronisées',
+  'settings.syncDeletingButton': 'Suppression…',
+  'settings.syncDeleteHint': 'Supprime définitivement votre collection du cloud',
+  'settings.syncDeleteTitle': 'Supprimer les données synchronisées ?',
+  'settings.syncDeleteBody':
+    'Cette action supprime définitivement vos plantes, votre historique de soins et vos photos du cloud, et vous déconnecte. Vos plantes restent sur cet appareil — supprimez l’appli pour les retirer aussi. Cette action est irréversible.',
+  'settings.syncDeleteConfirm': 'Supprimer',
+  'settings.syncDeletedTitle': 'Données synchronisées supprimées',
+  'settings.syncDeleteFailedTitle': 'Échec de la suppression',
+  'settings.syncDeletedBody':
+    'Votre collection cloud a disparu et la synchronisation est désactivée. Vos plantes restent sur cet appareil.',
+  'settings.syncSignOutTitle': 'Se déconnecter ?',
+  'settings.syncSignOutBody':
+    'La synchronisation est mise en pause sur cet appareil. Vos plantes restent ici et dans votre sauvegarde cloud.',
+  'settings.syncSignInBlurb':
+    'Connectez-vous une fois — vos plantes, historique de soins et photos se sauvegardent et se synchronisent automatiquement sur tous vos appareils.',
+  'settings.syncAppleUnavailable':
+    'Connectez-vous à un compte Apple dans les Réglages système pour activer Se connecter avec Apple.',
+  'settings.syncGoogleButton': 'Continuer avec Google',
+  'settings.syncGoogleFailedTitle': 'Échec de la connexion avec Google',
+  'settings.syncAppleSignedInTitle': 'Connecté',
+  'settings.syncAppleSignedInBody': 'Vos plantes se sauvegardent et se synchronisent désormais automatiquement.',
+  'settings.syncAppleFailedTitle': 'Échec de la connexion avec Apple',
+  'settings.syncFailedTitle': 'Échec de la synchronisation',
+  'settings.syncAdvancedHide': 'Masquer la liaison avancée',
+  'settings.syncAdvancedShow': 'Avancé : lier avec un code de synchronisation',
+  'settings.syncCodeHide': 'Masquer le code de cet appareil',
+  'settings.syncCodeShow': 'Afficher le code de cet appareil',
+  'settings.syncCodeWarning': 'Traitez-le comme un mot de passe.',
+  'settings.syncCodePlaceholder': 'Collez un code de synchronisation…',
+  'settings.syncLinkButton': 'Lier',
+  'settings.syncInvalidCodeTitle': 'Code invalide',
+  'settings.syncLinkedTitle': 'Appareil lié',
+  'settings.syncLinkedFailedTitle': 'Lié, mais la synchronisation a échoué',
+  'settings.syncLinkedBodyOne': 'Vous partagez maintenant une collection (1 plante).',
+  'settings.syncLinkedBodyMany': 'Vous partagez maintenant une collection ({count} plantes).',
+  'settings.syncLinkedSyncing': 'Synchronisation de votre collection…',
+
+  'paywall.closeA11y': 'Fermer',
+
+  'notFound.title': 'Oups !',
+  'notFound.body': 'Cet écran n’existe pas.',
+  'notFound.link': 'Retour à l’accueil',
 };
 
 const de: Messages = {
@@ -2037,6 +2308,80 @@ const de: Messages = {
   'form.datePickerLabel': 'Datum wählen',
   'form.datePickerDone': 'Fertig',
   'form.datePickerDoneA11y': 'Datumsauswahl abschließen',
+
+  'log.subtitle':
+    'Ein ruhiger Moment der Pflege. Fotos zeigen dir, wie sie mit den Jahreszeiten wächst.',
+  'log.careTypeLabel': 'Pflegeart',
+  'log.noteLabel': 'Notiz',
+  'log.notePlaceholder': 'Neues Blatt fast entfaltet…',
+  'log.photoLabel': 'Foto',
+  'log.photoBoxPlaceholder': 'Tippen, um ein Foto hinzuzufügen',
+  'log.saveButton': 'Speichern · {careType}',
+  'log.plantMissingTitle': 'Pflanze fehlt',
+  'log.photoRequiredTitle': 'Foto erforderlich',
+  'log.photoRequiredBody': 'Füge ein Foto für diesen Foto-Eintrag hinzu.',
+  'log.saveErrorTitle': 'Konnte nicht gespeichert werden',
+  'log.saveErrorBody': 'Versuche es gleich noch einmal.',
+  'log.notFound': 'Pflanze nicht gefunden.',
+
+  'detail.lightboxClose': 'Schließen',
+
+  'settings.syncTitle': 'Backup & Sync',
+  'settings.syncPremiumBlurb':
+    'Premium: Melde dich einmal an, und deine Pflanzen, dein Pflegeverlauf und deine Fotos werden automatisch gesichert und folgen dir auf jedes Gerät.',
+  'settings.syncSignedInBlurb':
+    'Angemeldet mit {provider}. Alles synchronisiert automatisch — nach Änderungen, beim Öffnen der App und wenn du zurückkehrst.',
+  'settings.syncSignedInBlurbWithEmail':
+    'Angemeldet mit {provider} · {email}. Alles synchronisiert automatisch — nach Änderungen, beim Öffnen der App und wenn du zurückkehrst.',
+  'settings.syncStatusSyncing': 'Synchronisiere…',
+  'settings.syncStatusError': 'Synchronisierung fehlgeschlagen — wird automatisch erneut versucht.',
+  'settings.syncStatusLast': 'Zuletzt synchronisiert: {date}',
+  'settings.syncStatusPending': 'Erste Synchronisierung ausstehend.',
+  'settings.syncNowButton': 'Jetzt synchronisieren',
+  'settings.syncSignOutButton': 'Abmelden',
+  'settings.syncDeleteButton': 'Synchronisierte Daten löschen',
+  'settings.syncDeletingButton': 'Wird gelöscht…',
+  'settings.syncDeleteHint': 'Entfernt deine Sammlung dauerhaft aus der Cloud',
+  'settings.syncDeleteTitle': 'Synchronisierte Daten löschen?',
+  'settings.syncDeleteBody':
+    'Dadurch werden deine Pflanzen, dein Pflegeverlauf und deine Fotos dauerhaft aus der Cloud entfernt, und du wirst abgemeldet. Deine Pflanzen bleiben auf diesem Gerät — lösche die App, um auch sie zu entfernen. Das kann nicht rückgängig gemacht werden.',
+  'settings.syncDeleteConfirm': 'Löschen',
+  'settings.syncDeletedTitle': 'Synchronisierte Daten gelöscht',
+  'settings.syncDeleteFailedTitle': 'Löschen fehlgeschlagen',
+  'settings.syncDeletedBody':
+    'Deine Cloud-Sammlung ist weg, und die Synchronisierung ist deaktiviert. Deine Pflanzen sind weiterhin auf diesem Gerät.',
+  'settings.syncSignOutTitle': 'Abmelden?',
+  'settings.syncSignOutBody':
+    'Die Synchronisierung wird auf diesem Gerät pausiert. Deine Pflanzen bleiben hier und in deinem Cloud-Backup.',
+  'settings.syncSignInBlurb':
+    'Melde dich einmal an — deine Pflanzen, dein Pflegeverlauf und deine Fotos werden automatisch gesichert und geräteübergreifend synchronisiert.',
+  'settings.syncAppleUnavailable':
+    'Melde dich in den Systemeinstellungen bei einem Apple-Account an, um „Mit Apple anmelden“ zu aktivieren.',
+  'settings.syncGoogleButton': 'Mit Google fortfahren',
+  'settings.syncGoogleFailedTitle': 'Anmeldung mit Google fehlgeschlagen',
+  'settings.syncAppleSignedInTitle': 'Angemeldet',
+  'settings.syncAppleSignedInBody': 'Deine Pflanzen werden jetzt automatisch gesichert und synchronisiert.',
+  'settings.syncAppleFailedTitle': 'Anmeldung mit Apple fehlgeschlagen',
+  'settings.syncFailedTitle': 'Synchronisierung fehlgeschlagen',
+  'settings.syncAdvancedHide': 'Erweiterte Verknüpfung ausblenden',
+  'settings.syncAdvancedShow': 'Erweitert: mit Sync-Code verknüpfen',
+  'settings.syncCodeHide': 'Code dieses Geräts ausblenden',
+  'settings.syncCodeShow': 'Code dieses Geräts anzeigen',
+  'settings.syncCodeWarning': 'Behandle ihn wie ein Passwort.',
+  'settings.syncCodePlaceholder': 'Sync-Code einfügen…',
+  'settings.syncLinkButton': 'Verknüpfen',
+  'settings.syncInvalidCodeTitle': 'Ungültiger Code',
+  'settings.syncLinkedTitle': 'Gerät verknüpft',
+  'settings.syncLinkedFailedTitle': 'Verknüpft, aber Synchronisierung fehlgeschlagen',
+  'settings.syncLinkedBodyOne': 'Du teilst jetzt eine Sammlung (1 Pflanze).',
+  'settings.syncLinkedBodyMany': 'Du teilst jetzt eine Sammlung ({count} Pflanzen).',
+  'settings.syncLinkedSyncing': 'Deine Sammlung wird synchronisiert…',
+
+  'paywall.closeA11y': 'Schließen',
+
+  'notFound.title': 'Hoppla!',
+  'notFound.body': 'Diesen Bildschirm gibt es nicht.',
+  'notFound.link': 'Zur Startseite',
 };
 
 export const translations: Record<LanguageCode, Messages> = { en, es, fr, de };

@@ -131,7 +131,7 @@ function RootLayoutNav() {
         <Stack.Screen
           name="plant/[id]"
           options={{
-            title: 'Plant',
+            title: t('nav.plant'),
             headerShadowVisible: false,
             headerTransparent: true,
             headerTintColor: '#FFFFFF',
