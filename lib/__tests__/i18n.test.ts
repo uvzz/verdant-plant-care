@@ -10,6 +10,7 @@ import {
   type TranslateParams,
 } from '../i18n/core';
 import { SUPPORTED_LANGUAGES, translations } from '../i18n/translations';
+import { mostActiveLabel } from '../insightsLabels';
 import { plantsSubtitleLabel } from '../plantsSubtitle';
 import {
   CARE_LOG_TYPES,
@@ -187,6 +188,11 @@ describe('catalog seam — label descriptors always render as real text', () => 
   // negative-one, negative-many, zero, one, many
   const careDaysUntil = [-1, -5, 0, 1, 5];
 
+  // one/many boundary + a larger count, mirroring careDaysUntil's shape —
+  // exercises `mostActiveLabel` (lib/insightsLabels.ts), the Insights
+  // screen's one/many "Most active: {name} (…)" breakdown line.
+  const mostActiveCounts = [1, 2, 12];
+
   // `careVerbLabel` and `intervalHintLabel` (lib/calendarLabels.ts) are the
   // same kind of pure branch-selecting descriptor, added for the Care
   // calendar screen — cover them here too so a typo'd key or mismatched
@@ -273,24 +279,26 @@ describe('catalog seam — label descriptors always render as real text', () => 
   ];
 
   // The interpolated keys app/(tabs)/insights.tsx calls via raw
-  // `t(key, params)` — no descriptor functions were extracted for this
-  // screen since every branch is a simple two-way ternary already resolved
-  // by the time `t()` is called (mirrors calendar.tsx's toastWatered/
-  // toastFed/swipeFed ternaries, which also aren't descriptor-wrapped).
+  // `t(key, params)` — no descriptor function was extracted for most of
+  // these since each is a simple two-way ternary already resolved by the
+  // time `t()` is called (mirrors calendar.tsx's toastWatered/toastFed/
+  // swipeFed ternaries, which also aren't descriptor-wrapped). The one
+  // exception, the "most active" one/many line, *is* wrapped (see
+  // `mostActiveLabel` above) since it's a count-branch structurally
+  // identical to `plantsSubtitleLabel`/`relativeCareLabel` — its coverage
+  // lives in the dedicated loop below instead of this table.
   // Each entry's `params` mirrors exactly what the screen passes at that
   // call site — see "catalog seam" comment above for why that matters.
   const insightsRawCallSites: Array<{ key: string; params: TranslateParams }> = [
     // Header subtitle — {tail} is itself a pre-translated string (either
     // insights.subtitleTailPremium or insights.subtitleTailFree).
-    { key: 'insights.subtitle', params: { tail: ' Premium · server AI unlocked.' } },
+    { key: 'insights.subtitle', params: { tail: 'Premium · server AI unlocked.' } },
     // StatTile accessibilityLabel — {label} is itself a pre-translated stat
     // label (e.g. insights.statPlants).
     { key: 'insights.statA11yLabel', params: { label: 'Plants', value: '3' } },
     // Streak stat tile value ("5d"/"5j"/"5T").
     { key: 'insights.streakValue', params: { count: 5 } },
     { key: 'insights.last7and30', params: { sevenDays: 4, thirtyDays: 12 } },
-    { key: 'insights.mostActiveOne', params: { name: 'Fern' } },
-    { key: 'insights.mostActiveMany', params: { name: 'Fern', count: 3 } },
     // {category} is the already-translated domain.category.* value.
     { key: 'insights.categoryRow', params: { category: 'Houseplant', count: 2 } },
     { key: 'insights.dueToday', params: { count: 2 } },
@@ -348,6 +356,15 @@ describe('catalog seam — label descriptors always render as real text', () => 
             relativeCareLabel(item.daysUntil)
           );
           const label = rowMetaLabel(item, careVerb, relative);
+          const rendered = translate(code, label.key, label.params);
+          expect(rendered, `${code} ${label.key}`).not.toBe(label.key);
+          expect(rendered, `${code} ${label.key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every mostActiveLabel branch as real text', () => {
+        for (const count of mostActiveCounts) {
+          const label = mostActiveLabel('Fern', count);
           const rendered = translate(code, label.key, label.params);
           expect(rendered, `${code} ${label.key}`).not.toBe(label.key);
           expect(rendered, `${code} ${label.key}`).not.toContain('{');

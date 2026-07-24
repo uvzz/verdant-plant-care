@@ -346,9 +346,9 @@ const en: Messages = {
   // insights.subtitleTailPremium/Free below) — mirrors calendar.rowMeta's
   // pattern of composing pre-translated pieces via a placeholder rather than
   // gluing raw fragments (Constraint 3).
-  'insights.subtitle': 'Care history and AI collection coaching.{tail}',
-  'insights.subtitleTailPremium': ' Premium · server AI unlocked.',
-  'insights.subtitleTailFree': ' Free · AI requires Premium.',
+  'insights.subtitle': 'Care history and AI collection coaching. {tail}',
+  'insights.subtitleTailPremium': 'Premium · server AI unlocked.',
+  'insights.subtitleTailFree': 'Free · AI requires Premium.',
   'insights.emptyTitle': 'No data yet',
   'insights.emptyBody': 'Add plants and log care to unlock stats and AI insights.',
   'insights.emptyAction': 'Add a plant',
@@ -660,10 +660,10 @@ const es: Messages = {
   'calendar.toastError': 'No se pudo guardar — inténtalo de nuevo',
 
   // Insights — collection stats + AI coach screen
-  'insights.title': 'Estadísticas',
-  'insights.subtitle': 'Historial de cuidados y coaching de IA para tu colección.{tail}',
-  'insights.subtitleTailPremium': ' Premium · IA en servidor activada.',
-  'insights.subtitleTailFree': ' Gratis · la IA requiere Premium.',
+  'insights.title': 'Análisis',
+  'insights.subtitle': 'Historial de cuidados y coaching de IA para tu colección. {tail}',
+  'insights.subtitleTailPremium': 'Premium · IA en servidor activada.',
+  'insights.subtitleTailFree': 'Gratis · la IA requiere Premium.',
   'insights.emptyTitle': 'Aún sin datos',
   'insights.emptyBody':
     'Añade plantas y registra cuidados para desbloquear estadísticas e IA.',
@@ -966,10 +966,10 @@ const fr: Messages = {
   'calendar.toastError': 'Échec de l’enregistrement — réessayez',
 
   // Insights — collection stats + AI coach screen
-  'insights.title': 'Statistiques',
-  'insights.subtitle': 'Historique de soins et coaching IA pour votre collection.{tail}',
-  'insights.subtitleTailPremium': ' Premium · IA serveur activée.',
-  'insights.subtitleTailFree': ' Gratuit · l’IA nécessite Premium.',
+  'insights.title': 'Analyses',
+  'insights.subtitle': 'Historique de soins et coaching IA pour votre collection. {tail}',
+  'insights.subtitleTailPremium': 'Premium · IA serveur activée.',
+  'insights.subtitleTailFree': 'Gratuit · l’IA nécessite Premium.',
   'insights.emptyTitle': 'Aucune donnée pour l’instant',
   'insights.emptyBody':
     'Ajoutez des plantes et notez des soins pour débloquer stats et IA.',
@@ -988,8 +988,8 @@ const fr: Messages = {
   'insights.breakdownFeed': 'engrais',
   'insights.breakdownNotes': 'notes',
   'insights.breakdownPhotos': 'photos',
-  'insights.mostActiveOne': 'Plus active : {name} (1 note)',
-  'insights.mostActiveMany': 'Plus active : {name} ({count} notes)',
+  'insights.mostActiveOne': 'Plus active : {name} (1 soin)',
+  'insights.mostActiveMany': 'Plus active : {name} ({count} soins)',
   'insights.categoryRow': '{category} · {count}',
   'insights.dueToday': 'À faire aujourd’hui : {count}',
   'insights.aiTitle': 'Conseil IA sur la collection',
@@ -1273,16 +1273,16 @@ const de: Messages = {
   'calendar.toastError': 'Konnte nicht gespeichert werden — bitte erneut versuchen',
 
   // Insights — collection stats + AI coach screen
-  'insights.title': 'Statistiken',
-  'insights.subtitle': 'Pflegeverlauf und KI-Coaching für deine Sammlung.{tail}',
-  'insights.subtitleTailPremium': ' Premium · Server-KI freigeschaltet.',
-  'insights.subtitleTailFree': ' Kostenlos · KI erfordert Premium.',
+  'insights.title': 'Einblicke',
+  'insights.subtitle': 'Pflegeverlauf und KI-Coaching für deine Sammlung. {tail}',
+  'insights.subtitleTailPremium': 'Premium · Server-KI freigeschaltet.',
+  'insights.subtitleTailFree': 'Kostenlos · KI erfordert Premium.',
   'insights.emptyTitle': 'Noch keine Daten',
   'insights.emptyBody':
     'Füge Pflanzen hinzu und notiere Pflege, um Statistiken und KI freizuschalten.',
   'insights.emptyAction': 'Pflanze hinzufügen',
   'insights.statPlants': 'Pflanzen',
-  'insights.statCareLogs': 'Pflege',
+  'insights.statCareLogs': 'Einträge',
   'insights.statStreak': 'Serie',
   'insights.statOverdue': 'Überfällig',
   'insights.statA11yLabel': '{label}: {value}',

@@ -33,7 +33,8 @@ import { computeCollectionStats } from '@/lib/stats';
 import { usePlants } from '@/lib/PlantContext';
 import { generateCollectionInsight } from '@/lib/openrouter';
 import { useI18n } from '@/lib/i18n';
-import type { TFunction } from '@/lib/i18n/core';
+import { translateLabel, type TFunction } from '@/lib/i18n/core';
+import { mostActiveLabel } from '@/lib/insightsLabels';
 
 export default function InsightsScreen() {
   const scheme = useColorScheme() ?? 'light';
@@ -61,8 +62,13 @@ export default function InsightsScreen() {
     try {
       const quota = await consumeAiUse();
       if (!quota.ok) {
-        // quota.reason comes from lib/PlantContext's local AI-quota gate, not
-        // this screen — out of scope for the insights.tsx localization pass.
+        // quota.reason surfaces lib/aiSafety.ts's peekLocalAiQuota
+        // blockedReason strings (~lines 98 & 100: the per-minute and
+        // per-day rate-limit messages) — not lib/PlantContext.tsx. This
+        // screen only reaches here once canUseAi = settings.isPremium
+        // (PlantContext.tsx:129) has already passed, so PlantContext's own
+        // "AI assist is a Premium feature." reason string is unreachable at
+        // this call site. Out of scope for the insights.tsx localization pass.
         Alert.alert(t('insights.alertAiLimitTitle'), quota.reason);
         return;
       }
@@ -84,6 +90,12 @@ export default function InsightsScreen() {
       // translated (Constraint 9).
       setAiSummary(text);
     } catch (e) {
+      // e.message is a thrown Error from lib/openrouter.ts's
+      // generateCollectionInsight (~lines 130-153: the rate-limit/403/401/
+      // safety-filter/generic-status messages) — not lib/PlantContext.tsx.
+      // Dynamic/thrown text, out of scope for the insights.tsx localization
+      // pass; only insights.alertUnknownError (the non-Error fallback) is
+      // ours to translate.
       Alert.alert(
         t('insights.alertInsightFailedTitle'),
         e instanceof Error ? e.message : t('insights.alertUnknownError')
@@ -225,12 +237,10 @@ export default function InsightsScreen() {
               </View>
               {stats.mostActivePlant ? (
                 <Text style={[Type.bodySmall, { color: c.text, marginTop: 8 }]}>
-                  {stats.mostActivePlant.count === 1
-                    ? t('insights.mostActiveOne', { name: stats.mostActivePlant.name })
-                    : t('insights.mostActiveMany', {
-                        name: stats.mostActivePlant.name,
-                        count: stats.mostActivePlant.count,
-                      })}
+                  {translateLabel(
+                    t,
+                    mostActiveLabel(stats.mostActivePlant.name, stats.mostActivePlant.count)
+                  )}
                 </Text>
               ) : null}
               {stats.categoryBreakdown.length > 0 ? (
