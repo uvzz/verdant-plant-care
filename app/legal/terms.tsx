@@ -5,7 +5,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/constants/Colors';
 import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
+import { useI18n } from '@/lib/i18n';
 
+// Policy section titles/bodies are deliberately left English (not folded
+// into the catalog): this is a legal document, and a machine/ad-hoc
+// translation of terms-of-use text carries real accuracy/liability risk that
+// ordinary UI copy doesn't — it needs a professional/certified translation
+// pass of its own, out of scope for this string-localization task. That
+// carve-out covers only the SECTIONS body below — it is legal prose. The
+// screen chrome (the Stack.Screen header title and the "Last updated" line)
+// is UI, not legal prose, and is localized.
 const SECTIONS: { title: string; body: string }[] = [
   {
     title: 'Agreement',
@@ -49,15 +58,22 @@ export default function TermsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const insets = useSafeAreaInsets();
+  const { t } = useI18n();
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Terms of use' }} />
+      {/* This local Stack.Screen overrides app/_layout.tsx's
+          `title: t('nav.terms')` for this route — it was hardcoded English
+          here, so the header silently ignored the app language. Fixed by
+          reusing the same nav.terms key rather than a duplicate. */}
+      <Stack.Screen options={{ title: t('nav.terms') }} />
       <ScrollView
         style={{ flex: 1, backgroundColor: c.background }}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
       >
-        <Text style={[Type.meta, { color: c.textMuted }]}>Last updated: 2026-07-11</Text>
+        <Text style={[Type.meta, { color: c.textMuted }]}>
+          {t('legal.lastUpdated', { date: '2026-07-11' })}
+        </Text>
         {SECTIONS.map((s) => (
           <View key={s.title} style={styles.block}>
             <Text style={[Type.title, { color: c.text }]}>{s.title}</Text>

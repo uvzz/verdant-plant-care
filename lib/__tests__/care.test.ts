@@ -6,6 +6,7 @@ import {
   getCareDueItems,
   listRooms,
   nextDueDate,
+  relativeCareLabel,
   safeFormatDate,
   safeParseDate,
 } from '../care';
@@ -169,11 +170,42 @@ describe('nextDueDate + soil check snooze', () => {
 });
 
 describe('formatRelativeCare', () => {
+  // Kept only for lib/family.ts's plain-text share-sheet message, which has
+  // no t() outside a React tree — see the comment on the function itself.
+  // Every UI caller uses relativeCareLabel below instead.
   it('formats overdue and upcoming', () => {
     expect(formatRelativeCare(-2)).toBe('2 days overdue');
     expect(formatRelativeCare(0)).toBe('Due today');
     expect(formatRelativeCare(1)).toBe('Due tomorrow');
     expect(formatRelativeCare(5)).toBe('In 5 days');
+  });
+});
+
+describe('relativeCareLabel', () => {
+  it('returns the singular overdue key at exactly 1 day overdue', () => {
+    expect(relativeCareLabel(-1)).toEqual({ key: 'domain.care.overdueOne' });
+  });
+
+  it('returns the plural overdue key with a count for >1 day overdue', () => {
+    expect(relativeCareLabel(-2)).toEqual({
+      key: 'domain.care.overdueMany',
+      params: { count: 2 },
+    });
+  });
+
+  it('returns dueToday for 0', () => {
+    expect(relativeCareLabel(0)).toEqual({ key: 'domain.care.dueToday' });
+  });
+
+  it('returns dueTomorrow for 1', () => {
+    expect(relativeCareLabel(1)).toEqual({ key: 'domain.care.dueTomorrow' });
+  });
+
+  it('returns inDays with a count for anything further out', () => {
+    expect(relativeCareLabel(5)).toEqual({
+      key: 'domain.care.inDays',
+      params: { count: 5 },
+    });
   });
 });
 

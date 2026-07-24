@@ -21,14 +21,12 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { DateField } from '@/components/DateField';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { usePlants } from '@/lib/PlantContext';
+import { useI18n } from '@/lib/i18n';
 import {
   DEFAULT_INTERVALS,
-  LIGHT_LABELS,
   LIGHT_LEVELS,
-  PET_LABELS,
   PET_TOXICITY,
   PLANT_CATEGORIES,
-  POT_LABELS,
   POT_SIZES,
   type LightLevel,
   type PetToxicity,
@@ -44,8 +42,30 @@ export default function EditPlantScreen() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const router = useRouter();
+  const { t } = useI18n();
   const { getPlant, updatePlant, familyMembers } = usePlants();
   const plant = getPlant(plantId);
+
+  // ChipRow (below) takes a full labels Record — build the translated maps
+  // it needs from the domain.* catalog rather than the removed English
+  // LIGHT_LABELS/POT_LABELS/PET_LABELS constants.
+  const lightLabels: Record<LightLevel, string> = {
+    low: t('domain.light.low'),
+    medium: t('domain.light.medium'),
+    bright: t('domain.light.bright'),
+    direct: t('domain.light.direct'),
+  };
+  const potLabels: Record<PotSize, string> = {
+    small: t('domain.pot.small'),
+    medium: t('domain.pot.medium'),
+    large: t('domain.pot.large'),
+  };
+  const petLabels: Record<PetToxicity, string> = {
+    unknown: t('domain.pet.unknown'),
+    safe: t('domain.pet.safe'),
+    caution: t('domain.pet.caution'),
+    toxic: t('domain.pet.toxic'),
+  };
 
   const [name, setName] = useState('');
   const [species, setSpecies] = useState('');
@@ -86,7 +106,7 @@ export default function EditPlantScreen() {
   if (!plant) {
     return (
       <View style={[styles.center, { backgroundColor: c.background }]}>
-        <Text style={[Type.body, { color: c.textMuted }]}>Plant not found.</Text>
+        <Text style={[Type.body, { color: c.textMuted }]}>{t('form.notFound')}</Text>
       </View>
     );
   }
@@ -94,7 +114,7 @@ export default function EditPlantScreen() {
   const pickPhoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Permission needed', 'Allow photo library access.');
+      Alert.alert(t('form.photoPermissionTitle'), t('form.photoPermissionBody'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -119,7 +139,7 @@ export default function EditPlantScreen() {
     // Min length applies only to a *changed* name so legacy plants with short
     // names can still save other field edits.
     if (!trimmedName || (trimmedName !== plant.name && trimmedName.length < 2)) {
-      Alert.alert('Name required', 'Give your plant a name (at least 2 characters).');
+      Alert.alert(t('form.nameRequiredTitle'), t('form.nameRequiredBody'));
       return;
     }
     if (saving) return;
@@ -143,7 +163,7 @@ export default function EditPlantScreen() {
       });
       router.back();
     } catch {
-      Alert.alert('Could not save', 'Try again in a moment.');
+      Alert.alert(t('form.editSaveFailedTitle'), t('form.retryBody'));
     } finally {
       setSaving(false);
     }
@@ -177,22 +197,22 @@ export default function EditPlantScreen() {
             <Image source={{ uri: photoUri }} style={styles.photoImg} contentFit="cover" />
           ) : (
             <View style={[styles.photoPlaceholder, { backgroundColor: c.surfaceAlt }]}>
-              <Text style={[Type.meta, { color: c.textMuted }]}>Add photo</Text>
+              <Text style={[Type.meta, { color: c.textMuted }]}>{t('form.photoPlaceholderEdit')}</Text>
             </View>
           )}
         </Pressable>
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
-          <PrimaryButton label="Library" variant="secondary" onPress={pickPhoto} style={{ flex: 1 }} />
-          <PrimaryButton label="Camera" variant="secondary" onPress={takePhoto} style={{ flex: 1 }} />
+          <PrimaryButton label={t('form.library')} variant="secondary" onPress={pickPhoto} style={{ flex: 1 }} />
+          <PrimaryButton label={t('form.camera')} variant="secondary" onPress={takePhoto} style={{ flex: 1 }} />
         </View>
 
-        <Field label="Name" color={c.textMuted}>
+        <Field label={t('form.labelName')} color={c.textMuted}>
           <TextInput value={name} onChangeText={setName} style={inputStyle} />
         </Field>
-        <Field label="Species" color={c.textMuted}>
+        <Field label={t('form.labelSpecies')} color={c.textMuted}>
           <TextInput value={species} onChangeText={setSpecies} style={inputStyle} />
         </Field>
-        <Field label="Category" color={c.textMuted}>
+        <Field label={t('form.labelCategory')} color={c.textMuted}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
             {PLANT_CATEGORIES.map((cat) => {
               const active = cat === category;
@@ -209,29 +229,29 @@ export default function EditPlantScreen() {
                   ]}
                 >
                   <Text style={[Type.meta, { color: active ? c.onEmphasis : c.text, fontFamily: Fonts.bodySemi }]}>
-                    {cat}
+                    {t(`domain.category.${cat}`)}
                   </Text>
                 </Pressable>
               );
             })}
           </ScrollView>
         </Field>
-        <Field label="Room / location" color={c.textMuted}>
+        <Field label={t('form.labelLocation')} color={c.textMuted}>
           <TextInput
             value={location}
             onChangeText={setLocation}
-            placeholder="e.g. Living room · east window"
+            placeholder={t('form.placeholderLocation')}
             placeholderTextColor={c.textMuted}
             style={inputStyle}
           />
         </Field>
-        <DateField label="Acquired date" value={acquiredDate} onChange={setAcquiredDate} />
+        <DateField label={t('form.labelAcquiredDate')} value={acquiredDate} onChange={setAcquiredDate} />
 
-        <Field label="Light at this spot" color={c.textMuted}>
+        <Field label={t('form.labelLight')} color={c.textMuted}>
           <ChipRow
             options={LIGHT_LEVELS}
             value={lightLevel}
-            labels={LIGHT_LABELS}
+            labels={lightLabels}
             activeBg={c.emphasis}
             activeFg={c.onEmphasis}
             idleBg={c.surface}
@@ -240,11 +260,11 @@ export default function EditPlantScreen() {
             onChange={setLightLevel}
           />
         </Field>
-        <Field label="Pot size" color={c.textMuted}>
+        <Field label={t('form.labelPotSize')} color={c.textMuted}>
           <ChipRow
             options={POT_SIZES}
             value={potSize}
-            labels={POT_LABELS}
+            labels={potLabels}
             activeBg={c.emphasis}
             activeFg={c.onEmphasis}
             idleBg={c.surface}
@@ -253,11 +273,11 @@ export default function EditPlantScreen() {
             onChange={setPotSize}
           />
         </Field>
-        <Field label="Pet safety" color={c.textMuted}>
+        <Field label={t('form.labelPetSafety')} color={c.textMuted}>
           <ChipRow
             options={PET_TOXICITY}
             value={petToxicity}
-            labels={PET_LABELS}
+            labels={petLabels}
             activeBg={c.emphasis}
             activeFg={c.onEmphasis}
             idleBg={c.surface}
@@ -269,19 +289,20 @@ export default function EditPlantScreen() {
 
         <View style={styles.row2}>
           <View style={styles.half}>
-            <Field label="Base water (days)" color={c.textMuted}>
+            <Field label={t('form.labelBaseWaterDays')} color={c.textMuted}>
               <TextInput value={waterDays} onChangeText={setWaterDays} keyboardType="number-pad" style={inputStyle} />
             </Field>
           </View>
           <View style={styles.half}>
-            <Field label="Fertilize every (days)" color={c.textMuted}>
+            <Field label={t('form.labelFertilizeDays')} color={c.textMuted}>
               <TextInput value={fertDays} onChangeText={setFertDays} keyboardType="number-pad" style={inputStyle} />
             </Field>
           </View>
         </View>
         <Text style={[Type.meta, { color: c.tint, marginBottom: 12 }]}>
-          Effective water rhythm ≈ every {previewInterval} days (adjusted for light + pot —
-          beats blind schedules that overwater).
+          {previewInterval === 1
+            ? t('form.waterRhythmHintOne')
+            : t('form.waterRhythmHintMany', { days: previewInterval })}
         </Text>
 
         <Pressable
@@ -294,16 +315,16 @@ export default function EditPlantScreen() {
           <Text style={{ fontSize: 18 }}>{checkBeforeWater ? '✅' : '⬜️'}</Text>
           <View style={{ flex: 1 }}>
             <Text style={[Type.title, { color: c.text, fontSize: 14 }]}>
-              Check soil before watering
+              {t('form.checkBeforeWaterTitle')}
             </Text>
             <Text style={[Type.meta, { color: c.textMuted, marginTop: 2 }]}>
-              Calendar shows “Still moist” snooze — core Verdant vs Planta difference.
+              {t('form.checkBeforeWaterBody', { stillMoist: t('calendar.actionStillMoist') })}
             </Text>
           </View>
         </Pressable>
 
         {familyMembers.length > 0 ? (
-          <Field label="Family caretaker" color={c.textMuted}>
+          <Field label={t('form.labelCaretaker')} color={c.textMuted}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
               <Pressable
                 onPress={() => setCaretakerId(null)}
@@ -324,7 +345,7 @@ export default function EditPlantScreen() {
                     },
                   ]}
                 >
-                  Anyone
+                  {t('form.caretakerAnyone')}
                 </Text>
               </Pressable>
               {familyMembers.map((m) => {
@@ -359,7 +380,7 @@ export default function EditPlantScreen() {
           </Field>
         ) : null}
 
-        <Field label="Notes" color={c.textMuted}>
+        <Field label={t('form.labelNotes')} color={c.textMuted}>
           <TextInput
             value={notes}
             onChangeText={setNotes}
@@ -367,7 +388,7 @@ export default function EditPlantScreen() {
             style={[inputStyle, styles.multiline]}
           />
         </Field>
-        <PrimaryButton label="Save changes" onPress={onSave} loading={saving} />
+        <PrimaryButton label={t('form.saveButtonEdit')} onPress={onSave} loading={saving} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

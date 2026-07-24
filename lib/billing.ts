@@ -34,9 +34,7 @@ export type StoreProductInfo = {
 };
 
 export const PREMIUM_DISPLAY = {
-  yearlyLabel: 'Premium · yearly',
   yearlyPriceHint: '$29.99/year',
-  lifetimeLabel: 'Premium · lifetime',
   lifetimePriceHint: '$59.99 once',
 } as const;
 

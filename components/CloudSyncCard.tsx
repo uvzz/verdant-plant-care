@@ -10,6 +10,8 @@ import { Fonts, Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { usePlants } from '@/lib/PlantContext';
+import { useI18n } from '@/lib/i18n';
+import { translateLabel } from '@/lib/i18n/core';
 import {
   exchangeIdentityToken,
   getAuthSession,
@@ -32,6 +34,7 @@ export function CloudSyncCard() {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const { settings, syncNow, setSyncEnabled, refresh, syncing, syncStatus, lastSyncError } = usePlants();
+  const { t } = useI18n();
   const isPremium = settings.isPremium;
 
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -74,10 +77,12 @@ export function CloudSyncCard() {
         await refresh();
         await setSyncEnabled(true);
       } else {
-        Alert.alert('Google sign-in failed', result.reason);
+        // result.reason is a dynamic/provider error string (Constraint 9) —
+        // only the title is ours to translate.
+        Alert.alert(t('settings.syncGoogleFailedTitle'), result.reason);
       }
     })();
-  }, [googleResponse, setSyncEnabled, refresh]);
+  }, [googleResponse, setSyncEnabled, refresh, t]);
 
   const onApple = async () => {
     setBusy(true);
@@ -89,21 +94,23 @@ export function CloudSyncCard() {
       // so no later mutation writes the prior account's data back.
       await refresh();
       await setSyncEnabled(true);
-      Alert.alert('Signed in', 'Your plants now back up and sync automatically.');
+      Alert.alert(t('settings.syncAppleSignedInTitle'), t('settings.syncAppleSignedInBody'));
     } else if (!result.cancelled) {
-      Alert.alert('Apple sign-in failed', result.reason);
+      // result.reason is a dynamic/provider error string (Constraint 9) —
+      // only the title is ours to translate.
+      Alert.alert(t('settings.syncAppleFailedTitle'), result.reason);
     }
   };
 
   // Apple 5.1.1(v): sign-in requires an in-app way to delete the account's data.
   const onDeleteCloud = () => {
     Alert.alert(
-      'Delete synced data?',
-      'This permanently removes your plants, care history, and photos from the cloud, and signs you out. Your plants stay on this device — delete the app to remove them too. This cannot be undone.',
+      t('settings.syncDeleteTitle'),
+      t('settings.syncDeleteBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('settings.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('settings.syncDeleteConfirm'),
           style: 'destructive',
           onPress: async () => {
             setDeleting(true);
@@ -115,11 +122,11 @@ export function CloudSyncCard() {
               setSyncCode(null);
             }
             setDeleting(false);
+            // r.reason (failure body) is a dynamic error string (Constraint
+            // 9) — only the title and the success body are ours to translate.
             Alert.alert(
-              r.ok ? 'Synced data deleted' : 'Delete failed',
-              r.ok
-                ? 'Your cloud collection is gone and sync is off. Your plants are still on this device.'
-                : r.reason
+              r.ok ? t('settings.syncDeletedTitle') : t('settings.syncDeleteFailedTitle'),
+              r.ok ? t('settings.syncDeletedBody') : r.reason
             );
           },
         },
@@ -129,12 +136,12 @@ export function CloudSyncCard() {
 
   const onSignOut = () => {
     Alert.alert(
-      'Sign out?',
-      'Sync pauses on this device. Your plants stay here and in your cloud backup.',
+      t('settings.syncSignOutTitle'),
+      t('settings.syncSignOutBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('settings.cancel'), style: 'cancel' },
         {
-          text: 'Sign out',
+          text: t('settings.syncSignOutButton'),
           style: 'destructive',
           onPress: async () => {
             await signOut();
@@ -151,30 +158,42 @@ export function CloudSyncCard() {
     <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
       <View style={styles.titleRow}>
         <CloudUpload color={c.tint} size={18} strokeWidth={2.2} />
-        <Text style={[Type.title, { color: c.text }]}>Backup & sync</Text>
+        <Text style={[Type.title, { color: c.text }]}>{t('settings.syncTitle')}</Text>
       </View>
 
       {!isPremium ? (
         <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 6 }]}>
-          Premium: sign in once and your plants, care history, and photos back
-          up automatically and follow you to any device.
+          {t('settings.syncPremiumBlurb')}
         </Text>
       ) : session ? (
         <>
+          {/* "Apple"/"Google" are brand names — kept verbatim in every
+              language (same treatment as "Planta" elsewhere in this catalog),
+              interpolated as {provider} rather than translated. Email/no-email
+              are two whole-sentence keys (Constraint 3), not a glued
+              "{a}{b ? ` · ${b}` : ''}" fragment. */}
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 6 }]}>
-            Signed in with {session.provider === 'apple' ? 'Apple' : 'Google'}
-            {session.email ? ` · ${session.email}` : ''}. Everything syncs
-            automatically — after changes, on app open, and when you return.
+            {session.email
+              ? t('settings.syncSignedInBlurbWithEmail', {
+                  provider: session.provider === 'apple' ? 'Apple' : 'Google',
+                  email: session.email,
+                })
+              : t('settings.syncSignedInBlurb', {
+                  provider: session.provider === 'apple' ? 'Apple' : 'Google',
+                })}
           </Text>
           <Text style={[Type.meta, { color: syncStatus === 'error' ? c.danger : c.textMuted, marginTop: 8 }]}>
-            {syncStatusLabel({
-              status: syncStatus,
-              lastSyncError,
-              lastSyncAt: settings.lastSyncAt ?? null,
-            })}
+            {translateLabel(
+              t,
+              syncStatusLabel({
+                status: syncStatus,
+                lastSyncError,
+                lastSyncAt: settings.lastSyncAt ?? null,
+              })
+            )}
           </Text>
           <PrimaryButton
-            label={syncing ? 'Syncing…' : 'Sync now'}
+            label={syncing ? t('settings.syncStatusSyncing') : t('settings.syncNowButton')}
             variant="secondary"
             loading={syncing}
             onPress={async () => {
@@ -182,13 +201,15 @@ export function CloudSyncCard() {
               // A collision with an already-running sync is benign — don't
               // flag it as a failure to the user.
               if (!r.ok && r.reason !== SYNC_BUSY_REASON) {
-                Alert.alert('Sync failed', r.reason);
+                // r.reason is a dynamic error string (Constraint 9) — only
+                // the title is ours to translate.
+                Alert.alert(t('settings.syncFailedTitle'), r.reason);
               }
             }}
             style={{ marginTop: 10 }}
           />
           <PrimaryButton
-            label="Sign out"
+            label={t('settings.syncSignOutButton')}
             variant="ghost"
             onPress={onSignOut}
             style={{ marginTop: 6 }}
@@ -197,8 +218,7 @@ export function CloudSyncCard() {
       ) : (
         <>
           <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 6 }]}>
-            Sign in once — your plants, care history, and photos back up and
-            sync automatically across devices.
+            {t('settings.syncSignInBlurb')}
           </Text>
           {appleAvailable ? (
             <AppleAuthentication.AppleAuthenticationButton
@@ -214,13 +234,12 @@ export function CloudSyncCard() {
             />
           ) : Platform.OS === 'ios' ? (
             <Text style={[Type.meta, { color: c.textMuted, marginTop: 10 }]}>
-              Sign into an Apple Account in system Settings to enable Sign in
-              with Apple.
+              {t('settings.syncAppleUnavailable')}
             </Text>
           ) : null}
           {gConfig.configured ? (
             <PrimaryButton
-              label="Continue with Google"
+              label={t('settings.syncGoogleButton')}
               variant="secondary"
               loading={busy}
               onPress={() => promptGoogle()}
@@ -235,11 +254,11 @@ export function CloudSyncCard() {
           session, and Apple 5.1.1(v) still requires an in-app way to delete it. */}
       {isPremium && (session || settings.syncEnabled) ? (
         <PrimaryButton
-          label={deleting ? 'Deleting…' : 'Delete synced data'}
+          label={deleting ? t('settings.syncDeletingButton') : t('settings.syncDeleteButton')}
           variant="ghost"
           loading={deleting}
           onPress={onDeleteCloud}
-          accessibilityHint="Permanently removes your collection from the cloud"
+          accessibilityHint={t('settings.syncDeleteHint')}
           style={{ marginTop: 6 }}
         />
       ) : null}
@@ -247,7 +266,7 @@ export function CloudSyncCard() {
       {isPremium ? (
         <>
           <PrimaryButton
-            label={advanced ? 'Hide advanced linking' : 'Advanced: link with sync code'}
+            label={advanced ? t('settings.syncAdvancedHide') : t('settings.syncAdvancedShow')}
             variant="ghost"
             onPress={() => setAdvanced((v) => !v)}
             style={{ marginTop: 10, minHeight: 38 }}
@@ -255,7 +274,7 @@ export function CloudSyncCard() {
           {advanced ? (
             <>
               <PrimaryButton
-                label={syncCode ? 'Hide this device’s code' : 'Show this device’s code'}
+                label={syncCode ? t('settings.syncCodeHide') : t('settings.syncCodeShow')}
                 variant="ghost"
                 onPress={async () =>
                   setSyncCode(syncCode ? null : await getOrCreateSyncId())
@@ -279,7 +298,7 @@ export function CloudSyncCard() {
                     {syncCode}
                   </Text>
                   <Text style={[Type.meta, { color: c.textMuted, marginTop: 4 }]}>
-                    Treat it like a password.
+                    {t('settings.syncCodeWarning')}
                   </Text>
                 </>
               ) : null}
@@ -287,7 +306,7 @@ export function CloudSyncCard() {
                 <TextInput
                   value={linkCode}
                   onChangeText={setLinkCode}
-                  placeholder="Paste a sync code…"
+                  placeholder={t('settings.syncCodePlaceholder')}
                   placeholderTextColor={c.textMuted}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -302,11 +321,13 @@ export function CloudSyncCard() {
                   ]}
                 />
                 <PrimaryButton
-                  label="Link"
+                  label={t('settings.syncLinkButton')}
                   onPress={async () => {
                     const r = await adoptSyncId(linkCode);
                     if (!r.ok) {
-                      Alert.alert('Invalid code', r.reason);
+                      // r.reason is a dynamic error string (Constraint 9) —
+                      // only the title is ours to translate.
+                      Alert.alert(t('settings.syncInvalidCodeTitle'), r.reason);
                       return;
                     }
                     setLinkCode('');
@@ -322,12 +343,14 @@ export function CloudSyncCard() {
                     const linked =
                       s.ok || s.reason === SYNC_BUSY_REASON;
                     Alert.alert(
-                      linked ? 'Device linked' : 'Linked, but sync failed',
+                      linked ? t('settings.syncLinkedTitle') : t('settings.syncLinkedFailedTitle'),
                       linked
                         ? s.ok
-                          ? `Now sharing a collection (${s.pulledPlants} plants).`
-                          : 'Syncing your collection now…'
-                        : s.reason
+                          ? s.pulledPlants === 1
+                            ? t('settings.syncLinkedBodyOne')
+                            : t('settings.syncLinkedBodyMany', { count: s.pulledPlants })
+                          : t('settings.syncLinkedSyncing')
+                        : s.reason // dynamic error string (Constraint 9)
                     );
                   }}
                   style={{ minWidth: 72 }}

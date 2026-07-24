@@ -148,25 +148,12 @@ export const LIGHT_LEVELS: LightLevel[] = ['low', 'medium', 'bright', 'direct'];
 export const POT_SIZES: PotSize[] = ['small', 'medium', 'large'];
 export const PET_TOXICITY: PetToxicity[] = ['unknown', 'safe', 'caution', 'toxic'];
 
-export const LIGHT_LABELS: Record<LightLevel, string> = {
-  low: 'Low light',
-  medium: 'Medium',
-  bright: 'Bright indirect',
-  direct: 'Direct sun',
-};
-
-export const POT_LABELS: Record<PotSize, string> = {
-  small: 'Small pot',
-  medium: 'Medium pot',
-  large: 'Large pot',
-};
-
-export const PET_LABELS: Record<PetToxicity, string> = {
-  unknown: 'Pets: unknown',
-  safe: 'Pet-safe',
-  caution: 'Pets: caution',
-  toxic: 'Toxic to pets',
-};
+// LIGHT_LABELS / POT_LABELS / PET_LABELS / CARE_TYPE_LABELS (English display
+// maps) used to live here. Every caller was a UI component, so they were
+// removed in favour of `t('domain.light.*' | 'domain.pot.*' | 'domain.pet.*'
+// | 'domain.careType.*')` — one source of truth in `lib/i18n/translations.ts`.
+// The enum values below stay untranslated: they are the persisted/synced
+// wire format (Constraint 2), only ever used as lookup keys.
 
 export const DEFAULT_INTERVALS: Record<
   PlantCategory,
@@ -181,21 +168,40 @@ export const DEFAULT_INTERVALS: Record<
   Other: { water: 7, fertilize: 30 },
 };
 
-export const CARE_TYPE_LABELS: Record<CareLogType, string> = {
-  water: 'Watered',
-  fertilize: 'Fertilized',
-  note: 'Note',
-  photo: 'Photo',
-  check: 'Soil check',
-};
+// CARE_TYPE_LABELS (English display map) used to live here — removed with
+// LIGHT_LABELS/POT_LABELS/PET_LABELS above; use `t('domain.careType.*')`.
 
-const VALID_CARE_TYPES: CareLogType[] = [
+export const CARE_LOG_TYPES: CareLogType[] = [
   'water',
   'fertilize',
   'note',
   'photo',
   'check',
 ];
+
+/**
+ * `Plant.aiIdentityConfidence` / `PlantIdResult.confidence` values — like
+ * the enum arrays above, this is a persisted, displayed value (Constraint
+ * 2: never render the raw stored value, only its `domain.confidence.*`
+ * catalog label). Typed against `Plant['aiIdentityConfidence']` (the
+ * `PlantIdResult.confidence` union in lib/openrouter.ts is structurally
+ * identical) rather than inlining a fourth uncoupled copy of the union —
+ * if a level is ever added there, this array's type stops compiling
+ * instead of silently staying green while `domain.confidence.<new>` is
+ * missing from the catalog.
+ */
+export const AI_CONFIDENCE_LEVELS: Array<NonNullable<Plant['aiIdentityConfidence']>> = [
+  'high',
+  'medium',
+  'low',
+];
+
+/**
+ * `AiUrgency` values (`CareCoachResult.urgency` / `StoredCoachEntry.urgency`,
+ * the latter persisted on `Plant.aiCoachHistory`) — same treatment as
+ * `AI_CONFIDENCE_LEVELS` above; display goes through `domain.urgency.*`.
+ */
+export const AI_URGENCY_LEVELS: AiUrgency[] = ['none', 'watch', 'soon', 'urgent'];
 
 /**
  * True when a string is a date the REST OF THE APP can actually read.
@@ -260,16 +266,36 @@ export function normalizePlant(
     notes: (raw.notes ?? '').toString().slice(0, 4000),
     createdAt,
     updatedAt,
-    lightLevel: raw.lightLevel ?? 'medium',
-    potSize: raw.potSize ?? 'medium',
-    petToxicity: raw.petToxicity ?? 'unknown',
+    lightLevel: LIGHT_LEVELS.includes(raw.lightLevel as LightLevel)
+      ? (raw.lightLevel as LightLevel)
+      : 'medium',
+    potSize: POT_SIZES.includes(raw.potSize as PotSize)
+      ? (raw.potSize as PotSize)
+      : 'medium',
+    petToxicity: PET_TOXICITY.includes(raw.petToxicity as PetToxicity)
+      ? (raw.petToxicity as PetToxicity)
+      : 'unknown',
     checkBeforeWater: raw.checkBeforeWater !== false,
     caretakerId: raw.caretakerId ?? null,
     aiGuide: raw.aiGuide ?? null,
     aiCoachHistory: Array.isArray(raw.aiCoachHistory)
-      ? raw.aiCoachHistory.slice(0, MAX_COACH_HISTORY)
+      ? raw.aiCoachHistory.slice(0, MAX_COACH_HISTORY).map((entry) => ({
+          ...entry,
+          // Same treatment as CareLog.type/Plant.category: an unknown/corrupt
+          // urgency (e.g. a future enum value round-tripped from cloud sync
+          // to an older client) must not render as the raw stored key —
+          // 'watch' mirrors the fallback lib/openrouter.ts already uses when
+          // parsing a fresh AI response's urgency field.
+          urgency: AI_URGENCY_LEVELS.includes(entry?.urgency as AiUrgency)
+            ? (entry.urgency as AiUrgency)
+            : 'watch',
+        }))
       : [],
-    aiIdentityConfidence: raw.aiIdentityConfidence ?? null,
+    aiIdentityConfidence: AI_CONFIDENCE_LEVELS.includes(
+      raw.aiIdentityConfidence as NonNullable<Plant['aiIdentityConfidence']>
+    )
+      ? (raw.aiIdentityConfidence as Plant['aiIdentityConfidence'])
+      : null,
   };
 }
 
@@ -280,7 +306,7 @@ export function normalizeCareLog(
   if (!raw || typeof raw !== 'object') return null;
   const plantId = typeof raw.plantId === 'string' ? raw.plantId.trim() : '';
   if (!plantId) return null;
-  const type = VALID_CARE_TYPES.includes(raw.type as CareLogType)
+  const type = CARE_LOG_TYPES.includes(raw.type as CareLogType)
     ? (raw.type as CareLogType)
     : 'note';
   const now = new Date().toISOString();

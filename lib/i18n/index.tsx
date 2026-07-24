@@ -22,7 +22,13 @@ import React, {
   useState,
 } from 'react';
 
-import { isSupportedLanguage, resolveLanguage, translate, type TranslateParams } from './core';
+import {
+  isSupportedLanguage,
+  resolveLanguage,
+  translate,
+  type TFunction,
+  type TranslateParams,
+} from './core';
 import {
   SUPPORTED_LANGUAGES,
   type LanguageCode,
@@ -48,7 +54,7 @@ function deviceLanguageCandidates(): string[] {
 
 interface I18nContextValue {
   /** Translate a key, interpolating any `{name}` params. */
-  t: (key: string, params?: TranslateParams) => string;
+  t: TFunction;
   language: LanguageCode;
   setLanguage: (code: LanguageCode) => Promise<void>;
   languages: LanguageMeta[];

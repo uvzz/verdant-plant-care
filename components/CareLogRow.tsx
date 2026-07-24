@@ -6,7 +6,8 @@ import { Type } from '@/constants/Typography';
 import { useColorScheme } from '@/components/useColorScheme';
 import { CareIcon } from '@/components/CareIcon';
 import { safeFormatDate } from '@/lib/care';
-import { CARE_TYPE_LABELS, type CareLog } from '@/lib/types';
+import { useI18n } from '@/lib/i18n';
+import type { CareLog } from '@/lib/types';
 
 export function CareLogRow({
   log,
@@ -17,16 +18,17 @@ export function CareLogRow({
 }) {
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
+  const { t } = useI18n();
   // Each log type carries its own hue, so a history list scans as a coloured
   // timeline instead of a wall of identical grey badges.
   const hue = careColor(log.type, scheme);
 
   const confirmDelete = () => {
     if (!onDelete) return;
-    Alert.alert('Delete entry?', 'Remove this care log item.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('detail.logRowDeleteTitle'), t('detail.logRowDeleteBody'), [
+      { text: t('detail.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('detail.logRowDeleteAction'),
         style: 'destructive',
         onPress: () => onDelete(log.id),
       },
@@ -43,7 +45,7 @@ export function CareLogRow({
       </View>
       <View style={styles.content}>
         <Text style={[Type.title, { color: c.text, fontSize: 15 }]}>
-          {CARE_TYPE_LABELS[log.type] ?? 'Care'}
+          {t(`domain.careType.${log.type}`)}
         </Text>
         <Text style={[Type.meta, { color: c.textMuted }]}>
           {safeFormatDate(log.createdAt, 'MMM d · h:mm a')}
@@ -55,7 +57,7 @@ export function CareLogRow({
         ) : null}
         {onDelete ? (
           <Text style={[Type.meta, { color: c.textMuted, marginTop: 4, fontSize: 10 }]}>
-            Long-press to delete
+            {t('detail.logRowLongPressHint')}
           </Text>
         ) : null}
       </View>

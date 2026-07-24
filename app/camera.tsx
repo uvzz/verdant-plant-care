@@ -29,11 +29,13 @@ import Animated, {
 
 import { Type } from '@/constants/Typography';
 import { cancelCameraCapture, deliverCameraCapture } from '@/lib/cameraBridge';
+import { useI18n } from '@/lib/i18n';
 
 const GROWTH = '#C6D45A';
 const NIGHT = '#0F1612';
 
 export default function CameraScreen() {
+  const { t } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -173,7 +175,7 @@ export default function CameraScreen() {
     return (
       <View style={[styles.root, styles.center, { padding: 28 }]}>
         <Text style={[Type.displayM, { color: '#EEF3EF', textAlign: 'center' }]}>
-          Camera access
+          {t('camera.permissionTitle')}
         </Text>
         <Text
           style={[
@@ -181,8 +183,7 @@ export default function CameraScreen() {
             { color: 'rgba(232,239,233,0.7)', textAlign: 'center', marginTop: 10 },
           ]}
         >
-          Verdant needs the camera for plant portraits and progress photos. Photos stay on
-          your device.
+          {t('camera.permissionBody')}
         </Text>
         <Pressable
           onPress={requestPermission}
@@ -191,10 +192,12 @@ export default function CameraScreen() {
             { opacity: pressed ? 0.9 : 1, marginTop: 24 },
           ]}
         >
-          <Text style={[Type.button, { color: '#2A3318' }]}>Allow camera</Text>
+          <Text style={[Type.button, { color: '#2A3318' }]}>{t('camera.permissionAllow')}</Text>
         </Pressable>
         <Pressable onPress={onCancel} style={{ marginTop: 16, padding: 12 }}>
-          <Text style={[Type.meta, { color: 'rgba(232,239,233,0.55)' }]}>Not now</Text>
+          <Text style={[Type.meta, { color: 'rgba(232,239,233,0.55)' }]}>
+            {t('camera.permissionDismiss')}
+          </Text>
         </Pressable>
       </View>
     );
@@ -249,7 +252,7 @@ export default function CameraScreen() {
           onPress={onCancel}
           hitSlop={12}
           accessibilityRole="button"
-          accessibilityLabel="Close camera"
+          accessibilityLabel={t('camera.closeA11y')}
           style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.7 : 1 }]}
         >
           <Text style={styles.iconBtnText}>✕</Text>
@@ -257,7 +260,7 @@ export default function CameraScreen() {
         <View style={styles.titleBlock}>
           <Text style={[Type.micro, { color: GROWTH, letterSpacing: 1.2 }]}>VERDANT</Text>
           <Text style={[Type.meta, { color: 'rgba(238,243,239,0.9)', marginTop: 2 }]}>
-            {previewUri ? 'Review portrait' : 'Glasshouse camera'}
+            {previewUri ? t('camera.titleReview') : t('camera.titleLive')}
           </Text>
         </View>
         {!previewUri ? (
@@ -267,7 +270,7 @@ export default function CameraScreen() {
             }
             hitSlop={12}
             accessibilityRole="button"
-            accessibilityLabel={`Flash ${flash}`}
+            accessibilityLabel={t('camera.flashA11y', { mode: t(`domain.flash.${flash}`) })}
             style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.7 : 1 }]}
           >
             {flash === 'off' ? (
@@ -307,7 +310,7 @@ export default function CameraScreen() {
       {!previewUri ? (
         <Animated.View style={[styles.tip, tipStyle, { bottom: insets.bottom + 148 }]}>
           <Text style={[Type.meta, { color: 'rgba(238,243,239,0.85)', textAlign: 'center' }]}>
-            Fill the frame with a leaf or whole plant · bright, even light works best
+            {t('camera.tip')}
           </Text>
         </Animated.View>
       ) : null}
@@ -323,9 +326,11 @@ export default function CameraScreen() {
                 { opacity: pressed ? 0.85 : 1 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Retake photo"
+              accessibilityLabel={t('camera.retakeA11y')}
             >
-              <Text style={[Type.button, { color: '#EEF3EF', fontSize: 15 }]}>Retake</Text>
+              <Text style={[Type.button, { color: '#EEF3EF', fontSize: 15 }]}>
+                {t('camera.retake')}
+              </Text>
             </Pressable>
             <Pressable
               onPress={() => close(previewUri)}
@@ -334,9 +339,9 @@ export default function CameraScreen() {
                 { opacity: pressed ? 0.9 : 1 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Use this photo"
+              accessibilityLabel={t('camera.usePhotoA11y')}
             >
-              <Text style={[Type.button, { color: '#2A3318' }]}>Use photo</Text>
+              <Text style={[Type.button, { color: '#2A3318' }]}>{t('camera.usePhoto')}</Text>
             </Pressable>
           </>
         ) : (
@@ -348,11 +353,11 @@ export default function CameraScreen() {
                 { opacity: pressed ? 0.85 : 1 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Flip camera"
+              accessibilityLabel={t('camera.flipA11y')}
             >
               <SwitchCamera color="#EEF3EF" size={22} strokeWidth={2} />
               <Text style={[Type.meta, { color: 'rgba(238,243,239,0.75)', marginTop: 2 }]}>
-                Flip
+                {t('camera.flip')}
               </Text>
             </Pressable>
 
@@ -363,7 +368,7 @@ export default function CameraScreen() {
                   onPress={onCapture}
                   disabled={!ready || capturing}
                   accessibilityRole="button"
-                  accessibilityLabel="Take photo"
+                  accessibilityLabel={t('camera.captureA11y')}
                   style={({ pressed }) => [
                     styles.shutterOuter,
                     {
@@ -389,11 +394,11 @@ export default function CameraScreen() {
                 { opacity: pressed ? 0.85 : 1 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Cancel"
+              accessibilityLabel={t('camera.back')}
             >
               <Text style={{ fontSize: 20 }}>←</Text>
               <Text style={[Type.meta, { color: 'rgba(238,243,239,0.75)', marginTop: 2 }]}>
-                Back
+                {t('camera.back')}
               </Text>
             </Pressable>
           </>

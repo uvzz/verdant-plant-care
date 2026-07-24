@@ -68,10 +68,14 @@ describe('nextBackoffMs', () => {
 });
 
 describe('syncStatusLabel', () => {
+  // Returns a `{ key, params? }` descriptor (see lib/care.ts's CareLabel) so
+  // the Backup & sync card can render it via `translateLabel(t, label)` in
+  // all four shipped languages — catalog rendering is covered end-to-end by
+  // the "catalog seam" describe block in lib/__tests__/i18n.test.ts.
   it('shows a syncing message while a sync is in progress', () => {
     expect(
       syncStatusLabel({ status: 'syncing', lastSyncError: null, lastSyncAt: null })
-    ).toBe('Syncing…');
+    ).toEqual({ key: 'settings.syncStatusSyncing' });
   });
 
   it('shows an unalarming retry message on error', () => {
@@ -81,7 +85,7 @@ describe('syncStatusLabel', () => {
         lastSyncError: 'network request failed',
         lastSyncAt: null,
       })
-    ).toBe('Couldn’t sync — will retry automatically.');
+    ).toEqual({ key: 'settings.syncStatusError' });
   });
 
   it('shows the last synced time when idle and a prior sync happened', () => {
@@ -90,12 +94,13 @@ describe('syncStatusLabel', () => {
       lastSyncError: null,
       lastSyncAt: '2026-07-01T12:00:00.000Z',
     });
-    expect(label).toContain('Last synced');
+    expect(label.key).toBe('settings.syncStatusLast');
+    expect(label.params?.date).toBeTruthy();
   });
 
   it('shows first-sync-pending when idle with no prior sync', () => {
     expect(
       syncStatusLabel({ status: 'idle', lastSyncError: null, lastSyncAt: null })
-    ).toBe('First sync pending.');
+    ).toEqual({ key: 'settings.syncStatusPending' });
   });
 });

@@ -5,6 +5,7 @@
  * lookup falls back to English, then to the raw key, so a missing translation
  * degrades to readable text instead of a blank or a crash.
  */
+import type { CareLabel } from '../care';
 import {
   DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
@@ -13,6 +14,9 @@ import {
 } from './translations';
 
 export type TranslateParams = Record<string, string | number>;
+
+/** Shape of `useI18n().t` — a translate function bound to the active language. */
+export type TFunction = (key: string, params?: TranslateParams) => string;
 
 const SUPPORTED_CODES = SUPPORTED_LANGUAGES.map((l) => l.code);
 
@@ -64,4 +68,13 @@ export function resolveLanguage(candidates: Array<string | null | undefined>): L
     if (isSupportedLanguage(base)) return base;
   }
   return DEFAULT_LANGUAGE;
+}
+
+/**
+ * Render a `CareLabel` descriptor (from `relativeCareLabel` in `lib/care.ts`)
+ * through a bound `t()`. Exists so call sites stay one-liners instead of
+ * repeating `t(label.key, label.params)` everywhere.
+ */
+export function translateLabel(t: TFunction, label: CareLabel): string {
+  return t(label.key, label.params);
 }

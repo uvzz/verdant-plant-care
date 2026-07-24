@@ -15,13 +15,12 @@ import { CareIcon } from '@/components/CareIcon';
 import { SwipeToComplete } from '@/components/SwipeToComplete';
 import { CalendarDays } from 'lucide-react-native';
 import { tapLight, tapSuccess } from '@/lib/haptics';
-import {
-  effectiveWaterIntervalDays,
-  formatRelativeCare,
-  getCareDueItems,
-} from '@/lib/care';
+import { getCareDueItems, relativeCareLabel } from '@/lib/care';
+import { careVerbLabel, intervalHintLabel, rowMetaLabel } from '@/lib/calendarLabels';
 import { scheduleGentleReminders } from '@/lib/notifications';
 import { usePlants } from '@/lib/PlantContext';
+import { useI18n } from '@/lib/i18n';
+import { translateLabel } from '@/lib/i18n/core';
 import { MOISTURE_SNOOZE_DAYS, type CareDueItem } from '@/lib/types';
 
 export default function CalendarScreen() {
@@ -29,6 +28,7 @@ export default function CalendarScreen() {
   const c = Colors[scheme];
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useI18n();
   const { plants, logs, settings, addCareLog } = usePlants();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -69,12 +69,12 @@ export default function CalendarScreen() {
       });
       tapSuccess();
       flash(
-        item.type === 'water'
-          ? `Watered ${item.plant.name}`
-          : `Fed ${item.plant.name}`
+        t(item.type === 'water' ? 'calendar.toastWatered' : 'calendar.toastFed', {
+          name: item.plant.name,
+        })
       );
     } catch {
-      flash('Could not save — try again');
+      flash(t('calendar.toastError'));
     } finally {
       setBusyId(null);
     }
@@ -91,9 +91,14 @@ export default function CalendarScreen() {
         note: `Still moist — snoozed ${MOISTURE_SNOOZE_DAYS} days (check before water)`,
       });
       tapSuccess();
-      flash(`${item.plant.name} · snoozed ${MOISTURE_SNOOZE_DAYS}d`);
+      flash(
+        t('calendar.toastSnoozed', {
+          name: item.plant.name,
+          days: MOISTURE_SNOOZE_DAYS,
+        })
+      );
     } catch {
-      flash('Could not save — try again');
+      flash(t('calendar.toastError'));
     } finally {
       setBusyId(null);
     }
@@ -111,13 +116,12 @@ export default function CalendarScreen() {
   };
 
   const renderRow = (item: CareDueItem, tint: string, sectionKey: string) => {
-    const checkFirst = item.type === 'water' && item.plant.checkBeforeWater !== false;
     const busy =
       busyId === `${item.plant.id}-${item.type}` || busyId === `${item.plant.id}-check`;
-    const intervalHint =
-      item.type === 'water'
-        ? `~every ${effectiveWaterIntervalDays(item.plant)}d (light/pot-aware)`
-        : `every ${item.effectiveIntervalDays}d`;
+    const careVerb = translateLabel(t, careVerbLabel(item.type));
+    const relative = translateLabel(t, relativeCareLabel(item.daysUntil));
+    const intervalHint = translateLabel(t, intervalHintLabel(item));
+    const meta = translateLabel(t, rowMetaLabel(item, careVerb, relative));
 
     return (
       <Animated.View
@@ -126,7 +130,7 @@ export default function CalendarScreen() {
       >
       <SwipeToComplete
         onComplete={() => onWatered(item)}
-        label={item.type === 'water' ? 'Watered' : 'Fed'}
+        label={item.type === 'water' ? t('domain.careType.water') : t('calendar.swipeFed')}
         type={item.type}
         // The swipe panel wears the care colour, so the gesture reveals blue
         // for a watering and amber for a feed — the action is identifiable
@@ -140,7 +144,11 @@ export default function CalendarScreen() {
           onPress={() => openPlant(item)}
           onLongPress={() => openLog(item)}
           accessibilityRole="button"
-          accessibilityLabel={`${item.plant.name}, ${item.type}, ${formatRelativeCare(item.daysUntil)}. Tap for plant, long-press to log.`}
+          accessibilityLabel={t('calendar.rowA11yLabel', {
+            name: item.plant.name,
+            careVerb,
+            relative,
+          })}
           style={styles.cardTop}
         >
           <View style={[styles.dot, { backgroundColor: tint }]} />
@@ -150,15 +158,10 @@ export default function CalendarScreen() {
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
               <CareIcon type={item.type} color={tint} size={13} />
-              <Text style={[Type.meta, { color: c.textMuted }]}>
-                {item.type === 'water' ? 'Water' : 'Fertilize'} ·{' '}
-                {formatRelativeCare(item.daysUntil)}
-                {item.plant.location ? ` · ${item.plant.location}` : ''}
-              </Text>
+              <Text style={[Type.meta, { color: c.textMuted }]}>{meta}</Text>
             </View>
             <Text style={[Type.meta, { color: c.textMuted, marginTop: 2, fontSize: 10 }]}>
               {intervalHint}
-              {checkFirst ? ' · check soil first' : ''}
             </Text>
           </View>
           <Text style={[Type.meta, { color: c.textMuted, fontFamily: Fonts.bodySemi }]}>
@@ -168,7 +171,7 @@ export default function CalendarScreen() {
 
         <View style={styles.actions}>
           <ActionChip
-            label={item.type === 'water' ? 'Watered' : 'Fertilized'}
+            label={item.type === 'water' ? t('domain.careType.water') : t('domain.careType.fertilize')}
             bg={careColor(item.type, scheme)}
             fg={onHue(careColor(item.type, scheme))}
             disabled={busy}
@@ -176,7 +179,7 @@ export default function CalendarScreen() {
           />
           {item.type === 'water' ? (
             <ActionChip
-              label="Still moist"
+              label={t('calendar.actionStillMoist')}
               bg={c.surfaceAlt}
               fg={c.text}
               border={c.border}
@@ -185,7 +188,7 @@ export default function CalendarScreen() {
             />
           ) : null}
           <ActionChip
-            label="Log"
+            label={t('calendar.actionLog')}
             bg={c.surface}
             fg={c.tint}
             border={c.border}
@@ -193,7 +196,7 @@ export default function CalendarScreen() {
             onPress={() => openLog(item)}
           />
           <ActionChip
-            label="Details"
+            label={t('calendar.actionDetails')}
             bg={c.surface}
             fg={c.tint}
             border={c.border}
@@ -210,10 +213,12 @@ export default function CalendarScreen() {
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={[Type.micro, { color: c.tint }]}>Care calendar</Text>
-        <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>Gentle reminders</Text>
+        <Text style={[Type.micro, { color: c.tint }]}>{t('calendar.eyebrow')}</Text>
+        <Text style={[Type.displayL, { color: c.text, marginTop: 4 }]}>
+          {t('calendar.title')}
+        </Text>
         <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 6, maxWidth: 340 }]}>
-          Soft nudges to check your plants — not orders to water.
+          {t('calendar.subtitle')}
         </Text>
         {plants.length > 0 ? (
           <WeekStrip due={dueItems.map((d) => ({ date: d.dueDate, type: d.type }))} />
@@ -236,9 +241,9 @@ export default function CalendarScreen() {
         {plants.length === 0 ? (
           <EmptyState
             icon={<CalendarDays color="#FFFFFF" size={36} strokeWidth={1.8} />}
-            title="Nothing scheduled yet"
-            body="Add plants with water and fertilize intervals to build a calm care calendar."
-            actionLabel="Add a plant"
+            title={t('calendar.emptyStateTitle')}
+            body={t('calendar.emptyStateBody')}
+            actionLabel={t('calendar.emptyStateAction')}
             onAction={() => router.push('/plant/add')}
           />
         ) : (
@@ -247,7 +252,7 @@ export default function CalendarScreen() {
               <View style={[styles.philosophyChip, { borderColor: c.border }]}>
                 <CareIcon type="check" color={c.tint} size={12} />
                 <Text style={[Type.meta, { color: c.textMuted, fontSize: 11 }]}>
-                  Swipe a card right to log · check soil before watering
+                  {t('calendar.philosophyCollapsed')}
                 </Text>
               </View>
             ) : (
@@ -258,12 +263,10 @@ export default function CalendarScreen() {
                 ]}
               >
                 <Text style={[Type.meta, { color: c.tint, fontFamily: Fonts.bodySemi }]}>
-                  Check before water
+                  {t('calendar.philosophyTitle')}
                 </Text>
                 <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4 }]}>
-                  Stick a finger in the soil. If it’s still damp, tap Still moist (+
-                  {MOISTURE_SNOOZE_DAYS}d). Swipe a card right to log watering.
-                  Intervals also adapt to pot size and light.
+                  {t('calendar.philosophyBody', { days: MOISTURE_SNOOZE_DAYS })}
                 </Text>
               </View>
             )}
@@ -272,22 +275,26 @@ export default function CalendarScreen() {
                 outranks "what kind of care". Everything else is coloured by
                 the action it is asking for. */}
             <Section
-              title="Overdue"
+              title={t('calendar.sectionOverdue')}
               color={statusColor('overdue', scheme)}
-              emptyLabel="You're all caught up"
+              emptyLabel={t('calendar.emptyOverdue')}
             >
               {overdue.map((item) => renderRow(item, statusColor('overdue', scheme), 'o'))}
             </Section>
 
             <Section
-              title="Today"
+              title={t('calendar.sectionToday')}
               color={statusColor('dueToday', scheme)}
-              emptyLabel="No care due today"
+              emptyLabel={t('calendar.emptyToday')}
             >
               {today.map((item) => renderRow(item, careColor(item.type, scheme), 't'))}
             </Section>
 
-            <Section title="Upcoming" color={c.textMuted} emptyLabel="No upcoming care">
+            <Section
+              title={t('calendar.sectionUpcoming')}
+              color={c.textMuted}
+              emptyLabel={t('calendar.emptyUpcoming')}
+            >
               {upcoming.map((item) => renderRow(item, careColor(item.type, scheme), 'u'))}
             </Section>
           </>

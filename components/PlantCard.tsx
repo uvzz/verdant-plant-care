@@ -16,7 +16,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { CareIcon } from '@/components/CareIcon';
 import { WaterRing } from '@/components/WaterRing';
 import { setHeroOrigin } from '@/lib/heroTransition';
-import { PET_LABELS, type CareLogType, type Plant } from '@/lib/types';
+import { useI18n } from '@/lib/i18n';
+import type { CareLogType, Plant } from '@/lib/types';
 
 interface Props {
   plant: Plant;
@@ -40,6 +41,7 @@ export function PlantCard({
   const scheme = useColorScheme() ?? 'light';
   const c = Colors[scheme];
   const router = useRouter();
+  const { t } = useI18n();
   const catHue = categoryColor(plant.category, scheme);
   const overdueHue = statusColor('overdue', scheme);
   // The due line, its icon and the water ring all share ONE colour so the card
@@ -115,7 +117,9 @@ export function PlantCard({
           ) : null}
           {overdue ? (
             <View style={[styles.overdueBadge, { backgroundColor: overdueHue }]}>
-              <Text style={[styles.overdueText, { color: onHue(overdueHue) }]}>Due</Text>
+              <Text style={[styles.overdueText, { color: onHue(overdueHue) }]}>
+                {t('plants.overdueBadge')}
+              </Text>
             </View>
           ) : null}
         </View>
@@ -127,7 +131,7 @@ export function PlantCard({
             {plant.name}
           </Text>
           <Text style={[Type.latin, { color: c.textMuted, fontSize: 12 }]} numberOfLines={1}>
-            {plant.species || plant.category}
+            {plant.species || t(`domain.category.${plant.category}`)}
           </Text>
           <View style={styles.subtitleRow}>
             {subtitle && dueType ? (
@@ -137,7 +141,7 @@ export function PlantCard({
               style={[Type.meta, { color: subtitle ? track : c.textMuted, fontSize: 11 }]}
               numberOfLines={1}
             >
-              {subtitle || plant.location || plant.category}
+              {subtitle || plant.location || t(`domain.category.${plant.category}`)}
             </Text>
           </View>
           {tox ? (
@@ -145,7 +149,7 @@ export function PlantCard({
               style={[Type.meta, { color: c.textMuted, fontSize: 10, marginTop: 2 }]}
               numberOfLines={1}
             >
-              {PET_LABELS[tox]}
+              {t(`domain.pet.${tox}`)}
             </Text>
           ) : null}
         </View>

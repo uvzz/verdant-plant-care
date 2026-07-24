@@ -250,7 +250,7 @@ export default function SettingsScreen() {
           {!isPremium ? (
             <>
               <PrimaryButton
-                label={`${PREMIUM_DISPLAY.yearlyLabel} · ${yearlyPrice}`}
+                label={t('settings.buyYearlyCta', { price: yearlyPrice })}
                 onPress={onBuy}
                 loading={buying}
                 style={{ marginTop: 16 }}

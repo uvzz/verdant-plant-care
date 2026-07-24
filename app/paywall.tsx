@@ -142,7 +142,7 @@ export default function PaywallScreen() {
       <Pressable
         onPress={close}
         accessibilityRole="button"
-        accessibilityLabel="Close"
+        accessibilityLabel={t('paywall.closeA11y')}
         hitSlop={12}
         style={[styles.close, { top: insets.top + 8 }]}
       >
