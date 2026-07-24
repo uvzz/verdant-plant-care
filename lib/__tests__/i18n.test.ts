@@ -410,6 +410,15 @@ describe('catalog seam — label descriptors always render as real text', () => 
     { key: 'form.checkBeforeWaterBody', params: { stillMoist: 'Still moist' } },
   ];
 
+  // The interpolated `settings.buyYearlyCta` key app/(tabs)/settings.tsx
+  // calls via raw `t(key, params)` (review fix) — the Settings screen's
+  // primary premium-purchase CTA, previously a hardcoded English template
+  // literal (`${PREMIUM_DISPLAY.yearlyLabel} · ${yearlyPrice}`) that
+  // bypassed the catalog entirely.
+  const settingsRawCallSites: Array<{ key: string; params: TranslateParams }> = [
+    { key: 'settings.buyYearlyCta', params: { price: '$29.99/year' } },
+  ];
+
   // The interpolated `log.*` key app/plant/log.tsx calls via raw
   // `t(key, params)` — its care-type selector cells and Save button are
   // simple direct lookups with no branching function, so only the one
@@ -449,9 +458,11 @@ describe('catalog seam — label descriptors always render as real text', () => 
       key: 'settings.syncSignedInBlurbWithEmail',
       params: { provider: 'Google', email: 'fern@example.com' },
     },
-    // One/many split (Constraint 4) — the One branch has no placeholder;
-    // covered by the plain-lookup fallback in catalog integrity. Only the
-    // interpolated Many branch needs a table entry here.
+    // One/many split (Constraint 4). The One branch has no placeholder, but
+    // it still gets a table entry (mirrors form.waterRhythmHintOne above) —
+    // without one, a typo'd dotted key in the call-site string would still
+    // pass every other test green.
+    { key: 'settings.syncLinkedBodyOne', params: {} },
     { key: 'settings.syncLinkedBodyMany', params: { count: 3 } },
   ];
 
@@ -576,6 +587,14 @@ describe('catalog seam — label descriptors always render as real text', () => 
 
       it('renders every raw t() call site in log.tsx as real text', () => {
         for (const { key, params } of logRawCallSites) {
+          const rendered = translate(code, key, params);
+          expect(rendered, `${code} ${key}`).not.toBe(key);
+          expect(rendered, `${code} ${key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every raw t() call site in settings.tsx as real text', () => {
+        for (const { key, params } of settingsRawCallSites) {
           const rendered = translate(code, key, params);
           expect(rendered, `${code} ${key}`).not.toBe(key);
           expect(rendered, `${code} ${key}`).not.toContain('{');

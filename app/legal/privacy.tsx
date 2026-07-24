@@ -12,8 +12,9 @@ import { useI18n } from '@/lib/i18n';
 // translation of privacy-policy text carries real accuracy/liability risk
 // that ordinary UI copy doesn't — it needs a professional/certified
 // translation pass of its own, out of scope for this string-localization
-// task. Only the screen chrome (the Stack.Screen header title below) is
-// localized. Recorded in the Task 7 report.
+// task. That carve-out covers only the SECTIONS body below — it is legal
+// prose. The screen chrome (the Stack.Screen header title and the "Last
+// updated" line) is UI, not legal prose, and is localized.
 const SECTIONS: { title: string; body: string }[] = [
   {
     title: 'Overview',
@@ -74,7 +75,9 @@ export default function PrivacyScreen() {
         style={{ flex: 1, backgroundColor: c.background }}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
       >
-        <Text style={[Type.meta, { color: c.textMuted }]}>Last updated: 2026-07-13</Text>
+        <Text style={[Type.meta, { color: c.textMuted }]}>
+          {t('legal.lastUpdated', { date: '2026-07-13' })}
+        </Text>
         {SECTIONS.map((s) => (
           <View key={s.title} style={styles.block}>
             <Text style={[Type.title, { color: c.text }]}>{s.title}</Text>

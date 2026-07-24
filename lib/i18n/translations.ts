@@ -52,6 +52,13 @@ const en: Messages = {
   'nav.privacy': 'Privacy policy',
   'nav.terms': 'Terms of use',
 
+  // Legal screens (app/legal/privacy.tsx, app/legal/terms.tsx) — this is UI
+  // chrome (the "Last updated" line), not legal prose, so the SECTIONS-body
+  // carve-out in those files (professional-translation-needed legal text
+  // stays English) does not cover it. {date} is the file's own hardcoded
+  // revision-date string, passed through untouched.
+  'legal.lastUpdated': 'Last updated: {date}',
+
   // Welcome — value pane
   'welcome.valueHeadline': 'Care you can\nsee grow.',
   'welcome.valueSub':
@@ -101,6 +108,11 @@ const en: Messages = {
   'settings.valueServerAi': 'Server AI',
   'settings.valueAutomatic': 'Automatic',
   'settings.valueNone': '—',
+  // Primary conversion CTA on the Settings premium card — mirrors
+  // paywall.yearlyCta's "Go Premium · {price}" pattern (composed via a
+  // placeholder, never a `${PREMIUM_DISPLAY.yearlyLabel} · ${price}`
+  // template literal — Constraint 3).
+  'settings.buyYearlyCta': 'Premium · yearly · {price}',
   'settings.restore': 'Restore purchases',
   'settings.switchFreeDemo': 'Switch to Free (demo)',
   'settings.managePlan': 'Manage plan in system Settings',
@@ -556,13 +568,18 @@ const en: Messages = {
   // Shared validation alert — identical copy on both screens.
   'form.nameRequiredTitle': 'Name required',
   'form.nameRequiredBody': 'Give your plant a name (at least 2 characters).',
-  // Shared photo-permission alert. add.tsx and edit.tsx previously had
-  // slightly different wording for the same dialog ("Allow photo library
-  // access." vs "Allow photo library access to add a plant photo.") —
-  // consolidated to one shared key per the brief's "reuse, never duplicate"
-  // direction; not a behaviour change (same permission prompt either way).
+  // Shared photo-permission alert, used by add.tsx, edit.tsx, and log.tsx
+  // (Task 7). add.tsx and edit.tsx previously had slightly different
+  // wording for the same dialog ("Allow photo library access." vs "Allow
+  // photo library access to add a plant photo.") — consolidated to one
+  // shared key per the brief's "reuse, never duplicate" direction. Later
+  // generalized from "…to add a plant photo." to "…to add a photo." (review
+  // fix) once log.tsx started reusing this key too: on the Log-care screen
+  // the photo attaches to a care-log entry, not the plant profile, so the
+  // plant-specific wording was actively wrong there. Still reads correctly
+  // on add.tsx/edit.tsx, just less specific.
   'form.photoPermissionTitle': 'Permission needed',
-  'form.photoPermissionBody': 'Allow photo library access to add a plant photo.',
+  'form.photoPermissionBody': 'Allow photo library access to add a photo.',
   // Shared "try again" retry body — used by both the add-failed alert
   // (app/plant/add.tsx) and the edit-save-failed alert (app/plant/edit.tsx).
   // Previously two byte-identical form.addFailedBody/form.editSaveFailedBody
@@ -700,12 +717,12 @@ const en: Messages = {
   // untouched, device-locale `new Date(...).toLocaleString()` output — same
   // class of gotcha as DateField's native picker (Constraint-10-style
   // carve-out; see that function's own comment).
+  // Also reused below as the "Sync now" button's loading label
+  // (settings.syncNowButton) — same word, one key.
   'settings.syncStatusSyncing': 'Syncing…',
   'settings.syncStatusError': 'Couldn’t sync — will retry automatically.',
   'settings.syncStatusLast': 'Last synced {date}',
   'settings.syncStatusPending': 'First sync pending.',
-  // Reused for both the "Sync now" button's loading label and the status
-  // line above (settings.syncStatusSyncing) — same word, one key.
   'settings.syncNowButton': 'Sync now',
   // Reused for both the "Sign out" button label and the destructive button
   // in its own confirmation alert below.
@@ -814,6 +831,7 @@ const es: Messages = {
   'nav.logCare': 'Registrar cuidado',
   'nav.privacy': 'Política de privacidad',
   'nav.terms': 'Términos de uso',
+  'legal.lastUpdated': 'Última actualización: {date}',
 
   'welcome.valueHeadline': 'Cuidado que\nves crecer.',
   'welcome.valueSub':
@@ -860,6 +878,7 @@ const es: Messages = {
   'settings.valueServerAi': 'IA en servidor',
   'settings.valueAutomatic': 'Automática',
   'settings.valueNone': '—',
+  'settings.buyYearlyCta': 'Premium · anual · {price}',
   'settings.restore': 'Restaurar compras',
   'settings.switchFreeDemo': 'Cambiar a Gratis (demo)',
   'settings.managePlan': 'Gestiona el plan en los Ajustes del sistema',
@@ -1183,7 +1202,7 @@ const es: Messages = {
   'form.nameRequiredBody': 'Ponle un nombre a tu planta (al menos 2 caracteres).',
   'form.photoPermissionTitle': 'Permiso necesario',
   'form.photoPermissionBody':
-    'Permite el acceso a la galería para añadir una foto de la planta.',
+    'Permite el acceso a la galería para añadir una foto.',
   'form.retryBody': 'Inténtalo de nuevo en un momento.',
 
   'form.photoPlaceholderAdd': 'Toca para elegir una foto',
@@ -1351,6 +1370,7 @@ const fr: Messages = {
   'nav.logCare': 'Noter un soin',
   'nav.privacy': 'Politique de confidentialité',
   'nav.terms': 'Conditions d’utilisation',
+  'legal.lastUpdated': 'Dernière mise à jour : {date}',
 
   'welcome.valueHeadline': 'Des soins que\nvous voyez pousser.',
   'welcome.valueSub':
@@ -1397,6 +1417,7 @@ const fr: Messages = {
   'settings.valueServerAi': 'IA sur serveur',
   'settings.valueAutomatic': 'Automatique',
   'settings.valueNone': '—',
+  'settings.buyYearlyCta': 'Premium · annuel · {price}',
   'settings.restore': 'Restaurer les achats',
   'settings.switchFreeDemo': 'Passer à Gratuit (démo)',
   'settings.managePlan': 'Gérer l’abonnement dans les Réglages système',
@@ -1722,7 +1743,7 @@ const fr: Messages = {
   'form.nameRequiredBody': 'Donnez un nom à votre plante (2 caractères minimum).',
   'form.photoPermissionTitle': 'Autorisation requise',
   'form.photoPermissionBody':
-    'Autorisez l’accès à la galerie pour ajouter une photo de la plante.',
+    'Autorisez l’accès à la galerie pour ajouter une photo.',
   'form.retryBody': 'Réessayez dans un instant.',
 
   'form.photoPlaceholderAdd': 'Touchez pour choisir une photo',
@@ -1794,8 +1815,8 @@ const fr: Messages = {
   'settings.syncSignedInBlurbWithEmail':
     'Connecté avec {provider} · {email}. Tout se synchronise automatiquement : après chaque modification, à l’ouverture de l’appli et à votre retour.',
   'settings.syncStatusSyncing': 'Synchronisation…',
-  'settings.syncStatusError': 'Échec de synchronisation — nouvelle tentative automatique.',
-  'settings.syncStatusLast': 'Dernière synchro : {date}',
+  'settings.syncStatusError': 'Synchronisation impossible — nouvelle tentative automatique.',
+  'settings.syncStatusLast': 'Dernière synchronisation : {date}',
   'settings.syncStatusPending': 'Première synchronisation en attente.',
   'settings.syncNowButton': 'Synchroniser maintenant',
   'settings.syncSignOutButton': 'Se déconnecter',
@@ -1890,6 +1911,7 @@ const de: Messages = {
   'nav.logCare': 'Pflege notieren',
   'nav.privacy': 'Datenschutzerklärung',
   'nav.terms': 'Nutzungsbedingungen',
+  'legal.lastUpdated': 'Zuletzt aktualisiert: {date}',
 
   'welcome.valueHeadline': 'Pflege, die du\nwachsen siehst.',
   'welcome.valueSub':
@@ -1936,6 +1958,7 @@ const de: Messages = {
   'settings.valueServerAi': 'Server-KI',
   'settings.valueAutomatic': 'Automatisch',
   'settings.valueNone': '—',
+  'settings.buyYearlyCta': 'Premium · jährlich · {price}',
   'settings.restore': 'Käufe wiederherstellen',
   'settings.switchFreeDemo': 'Zu Kostenlos wechseln (Demo)',
   'settings.managePlan': 'Abo in den System­einstellungen verwalten',
@@ -2262,7 +2285,7 @@ const de: Messages = {
   'form.nameRequiredBody': 'Gib deiner Pflanze einen Namen (mind. 2 Zeichen).',
   'form.photoPermissionTitle': 'Berechtigung erforderlich',
   'form.photoPermissionBody':
-    'Erlaube den Zugriff auf die Galerie, um ein Pflanzenfoto hinzuzufügen.',
+    'Erlaube den Zugriff auf die Galerie, um ein Foto hinzuzufügen.',
   'form.retryBody': 'Versuche es gleich noch einmal.',
 
   'form.photoPlaceholderAdd': 'Tippen, um ein Foto zu wählen',
@@ -2310,7 +2333,7 @@ const de: Messages = {
   'form.datePickerDoneA11y': 'Datumsauswahl abschließen',
 
   'log.subtitle':
-    'Ein ruhiger Moment der Pflege. Fotos zeigen dir, wie sie mit den Jahreszeiten wächst.',
+    'Ein ruhiger Moment der Pflege. Fotos zeigen dir, wie deine Pflanze mit den Jahreszeiten wächst.',
   'log.careTypeLabel': 'Pflegeart',
   'log.noteLabel': 'Notiz',
   'log.notePlaceholder': 'Neues Blatt fast entfaltet…',
@@ -2326,15 +2349,15 @@ const de: Messages = {
 
   'detail.lightboxClose': 'Schließen',
 
-  'settings.syncTitle': 'Backup & Sync',
+  'settings.syncTitle': 'Backup & Synchronisierung',
   'settings.syncPremiumBlurb':
     'Premium: Melde dich einmal an, und deine Pflanzen, dein Pflegeverlauf und deine Fotos werden automatisch gesichert und folgen dir auf jedes Gerät.',
   'settings.syncSignedInBlurb':
-    'Angemeldet mit {provider}. Alles synchronisiert automatisch — nach Änderungen, beim Öffnen der App und wenn du zurückkehrst.',
+    'Angemeldet mit {provider}. Alles wird automatisch synchronisiert — nach Änderungen, beim Öffnen der App und wenn du zurückkehrst.',
   'settings.syncSignedInBlurbWithEmail':
-    'Angemeldet mit {provider} · {email}. Alles synchronisiert automatisch — nach Änderungen, beim Öffnen der App und wenn du zurückkehrst.',
-  'settings.syncStatusSyncing': 'Synchronisiere…',
-  'settings.syncStatusError': 'Synchronisierung fehlgeschlagen — wird automatisch erneut versucht.',
+    'Angemeldet mit {provider} · {email}. Alles wird automatisch synchronisiert — nach Änderungen, beim Öffnen der App und wenn du zurückkehrst.',
+  'settings.syncStatusSyncing': 'Wird synchronisiert…',
+  'settings.syncStatusError': 'Synchronisierung nicht möglich — wird automatisch erneut versucht.',
   'settings.syncStatusLast': 'Zuletzt synchronisiert: {date}',
   'settings.syncStatusPending': 'Erste Synchronisierung ausstehend.',
   'settings.syncNowButton': 'Jetzt synchronisieren',
