@@ -252,6 +252,18 @@ const en: Messages = {
   'domain.care.dueTomorrow': 'Due tomorrow',
   'domain.care.inDays': 'In {count} days',
 
+  // Domain — AI identification confidence (Plant.aiIdentityConfidence /
+  // PlantIdResult.confidence) and AI coach urgency (CareCoachResult.urgency /
+  // StoredCoachEntry.urgency, persisted on Plant.aiCoachHistory). Both are
+  // stored values (Constraint 2) — only these display labels are localized.
+  'domain.confidence.high': 'High',
+  'domain.confidence.medium': 'Medium',
+  'domain.confidence.low': 'Low',
+  'domain.urgency.none': 'None',
+  'domain.urgency.watch': 'Watch',
+  'domain.urgency.soon': 'Soon',
+  'domain.urgency.urgent': 'Urgent',
+
   // Plants — home screen ("My Plants")
   'plants.title': 'My Plants',
   'plants.searchPlaceholder': 'Search name, species, room…',
@@ -396,6 +408,113 @@ const en: Messages = {
   'insights.alertAiLimitTitle': 'AI limit',
   'insights.alertInsightFailedTitle': 'Insight failed',
   'insights.alertUnknownError': 'Unknown error',
+
+  // Detail — plant detail screen (app/plant/[id].tsx)
+  // Header Edit/Delete buttons + delete confirmation
+  'detail.headerEdit': 'Edit',
+  'detail.headerEditA11y': 'Edit plant',
+  'detail.headerDelete': 'Delete',
+  'detail.headerDeleteA11y': 'Delete plant',
+  'detail.deleteAlertTitle': 'Remove plant?',
+  'detail.deleteAlertBody':
+    'Delete {name} and its care history? This cannot be undone.',
+  'detail.cancel': 'Cancel',
+  'detail.notFound': 'Plant not found.',
+  // Hero meta line — see heroMetaLabel/plantAgeLabel in lib/detailLabels.ts.
+  // Four whole-fragment keys chosen by branch (location × age presence),
+  // never glued fragments (Constraint 3); the age fragment itself splits
+  // one/many (Constraint 4).
+  'detail.heroMeta': '{category}',
+  'detail.heroMetaLocation': '{category} · {location}',
+  'detail.heroMetaAge': '{category} · {age}',
+  'detail.heroMetaLocationAge': '{category} · {location} · {age}',
+  'detail.heroAgeOne': '1d with you',
+  'detail.heroAgeMany': '{days}d with you',
+  // Profile chip — water rhythm. light/pot/pet chips reuse domain.* from
+  // Task 1 (no new keys needed for those).
+  'detail.waterRhythmChip': '~{days}d water rhythm',
+  // Action buttons + their care-log toast/error. "Watered" reuses
+  // domain.careType.water (no new key); "Water"/"Fertilize" due-card titles
+  // reuse domain.careAction.* (no new keys either).
+  'detail.actionWateredHint': 'Opens care log to record watering',
+  'detail.actionStillMoist': 'Still moist',
+  'detail.actionSaving': 'Saving…',
+  'detail.actionMoistHint': 'Logs a soil check and delays the water reminder',
+  'detail.toastSnoozed': 'Snoozed ~{days} days · check soil again later',
+  'detail.saveErrorTitle': 'Could not save',
+  'detail.saveErrorBody': 'Try again in a moment.',
+  'detail.actionFed': 'Fed',
+  'detail.actionNotePhoto': 'Note / photo',
+  // Tab labels — three-across, keep tight (Constraint 7)
+  'detail.tabLog': 'Care log',
+  'detail.tabGallery': 'Progress',
+  'detail.tabAi': 'AI assist',
+  // Care log tab
+  'detail.logEmpty':
+    'No care entries yet. Log watering, feeding, notes, and photos as you go.',
+  // Progress (gallery) tab
+  'detail.galleryEmpty': 'Add a portrait or care photos to watch growth over time.',
+  'detail.galleryPortraitLabel': 'Portrait',
+  // AI assist tab — quota/status hint
+  'detail.aiStatusPremium':
+    'Premium AI · requests go to Verdant servers (key not on device)',
+  'detail.aiStatusFree': 'Premium required for AI · educational only',
+  // Re-identify card
+  'detail.reidentifyTitle': 'Re-identify from photo',
+  'detail.reidentifyBody':
+    'Update species, category, and intervals using the current portrait.',
+  // {confidence} is the already-translated domain.confidence.* value.
+  'detail.reidentifyBodyConfidence':
+    'Update species, category, and intervals using the current portrait. Last confidence: {confidence}.',
+  'detail.reidentifyButtonIdle': 'AI re-identify',
+  'detail.reidentifyButtonLoading': 'Identifying…',
+  // Species care guide card. guide.title/light/water/humidity/soil/tips/
+  // disclaimer are AI model output — never translated (Constraint 9); only
+  // the section LABELS below (ours) are.
+  'detail.careGuideTitle': 'Species care guide',
+  'detail.careGuideBody': 'Saved on this plant after generation.',
+  // {date} is the untouched date-fns-formatted generatedAt (Constraint 10).
+  'detail.careGuideBodyLast': 'Saved on this plant after generation. Last: {date}.',
+  'detail.careGuideButtonGenerate': 'Generate care guide',
+  'detail.careGuideButtonRefresh': 'Refresh care guide',
+  'detail.careGuideButtonLoading': 'Writing…',
+  'detail.guideLabelLight': 'Light',
+  'detail.guideLabelWater': 'Water',
+  'detail.guideLabelHumidity': 'Humidity',
+  'detail.guideLabelSoil': 'Soil',
+  // Care coach card. result.assessment/recommendations/disclaimer and
+  // h.question/assessment/recommendations are AI model output or user
+  // content — never translated (Constraints 2/9); only the chrome below is.
+  'detail.coachTitle': 'Care coach',
+  'detail.coachBody': 'Uses log history and portrait. Answers are saved on this plant.',
+  'detail.coachPlaceholder': 'e.g. Yellow tips on new leaves — what should I check?',
+  'detail.coachButtonIdle': 'Ask care coach',
+  'detail.coachButtonLoading': 'Thinking…',
+  // {urgency} is the already-translated domain.urgency.* value.
+  'detail.coachUrgency': 'Urgency · {urgency}',
+  'detail.savedAnswersTitle': 'Saved answers',
+  // Saved-answer history row — {date} is the untouched date-fns-formatted
+  // createdAt (Constraint 10); {urgency} is the already-translated
+  // domain.urgency.* value. A full key (not raw JSX concatenation) per this
+  // catalog's established "A · B" pattern (calendar.rowMeta,
+  // insights.categoryRow) — identical text in all four languages since no
+  // language-specific word is involved, just the separator.
+  'detail.historyMeta': '{date} · {urgency}',
+  // Alerts
+  'detail.aiLimitTitle': 'AI limit',
+  'detail.coachFailedTitle': 'Care coach failed',
+  'detail.guideFailedTitle': 'Care guide failed',
+  'detail.photoNeededTitle': 'Photo needed',
+  'detail.photoNeededBody': 'Add a plant photo first (Edit).',
+  'detail.identifyFailedTitle': 'Identify failed',
+  'detail.unknownError': 'Unknown error',
+  'detail.aiUpdatedTitle': 'Updated from AI',
+  // {commonName}/{scientificName} are raw AI-returned text (Constraint 9);
+  // {confidence}/{light}/{pets} are already-translated domain.* values.
+  'detail.aiUpdatedBody':
+    '{commonName}\nConfidence: {confidence}\nLight: {light} · Pets: {pets}',
+  'detail.aiUpdatedBodyWithScientific':
+    '{commonName} · {scientificName}\nConfidence: {confidence}\nLight: {light} · Pets: {pets}',
 };
 
 const es: Messages = {
@@ -590,6 +709,14 @@ const es: Messages = {
   'domain.care.dueTomorrow': 'Toca mañana',
   'domain.care.inDays': 'En {count} días',
 
+  'domain.confidence.high': 'Alta',
+  'domain.confidence.medium': 'Media',
+  'domain.confidence.low': 'Baja',
+  'domain.urgency.none': 'Ninguna',
+  'domain.urgency.watch': 'Vigilar',
+  'domain.urgency.soon': 'Pronto',
+  'domain.urgency.urgent': 'Urgente',
+
   // Plants — home screen ("My Plants")
   'plants.title': 'Mis plantas',
   'plants.searchPlaceholder': 'Buscar nombre, especie, habitación…',
@@ -701,6 +828,84 @@ const es: Messages = {
   'insights.alertAiLimitTitle': 'Límite de IA',
   'insights.alertInsightFailedTitle': 'Error al generar el consejo',
   'insights.alertUnknownError': 'Error desconocido',
+
+  // Detail — plant detail screen (app/plant/[id].tsx)
+  'detail.headerEdit': 'Editar',
+  'detail.headerEditA11y': 'Editar planta',
+  'detail.headerDelete': 'Eliminar',
+  'detail.headerDeleteA11y': 'Eliminar planta',
+  'detail.deleteAlertTitle': '¿Eliminar planta?',
+  'detail.deleteAlertBody':
+    '¿Eliminar {name} y su historial de cuidados? Esto no se puede deshacer.',
+  'detail.cancel': 'Cancelar',
+  'detail.notFound': 'Planta no encontrada.',
+  'detail.heroMeta': '{category}',
+  'detail.heroMetaLocation': '{category} · {location}',
+  'detail.heroMetaAge': '{category} · {age}',
+  'detail.heroMetaLocationAge': '{category} · {location} · {age}',
+  'detail.heroAgeOne': '1 día contigo',
+  'detail.heroAgeMany': '{days} días contigo',
+  'detail.waterRhythmChip': 'Riego ~{days}d',
+  'detail.actionWateredHint': 'Abre el registro de cuidados para anotar el riego',
+  'detail.actionStillMoist': 'Aún húmeda',
+  'detail.actionSaving': 'Guardando…',
+  'detail.actionMoistHint':
+    'Registra una revisión de tierra y retrasa el aviso de riego',
+  'detail.toastSnoozed': 'Pospuesto ~{days} días · revisa la tierra más tarde',
+  'detail.saveErrorTitle': 'No se pudo guardar',
+  'detail.saveErrorBody': 'Inténtalo de nuevo en un momento.',
+  'detail.actionFed': 'Abonada',
+  'detail.actionNotePhoto': 'Nota / foto',
+  'detail.tabLog': 'Cuidados',
+  'detail.tabGallery': 'Progreso',
+  'detail.tabAi': 'Ayuda IA',
+  'detail.logEmpty':
+    'Aún no hay registros de cuidado. Anota riegos, abonos, notas y fotos a medida que avances.',
+  'detail.galleryEmpty':
+    'Añade un retrato o fotos de cuidado para ver el crecimiento con el tiempo.',
+  'detail.galleryPortraitLabel': 'Retrato',
+  'detail.aiStatusPremium':
+    'IA Premium · las solicitudes van a los servidores de Verdant (sin clave en el dispositivo)',
+  'detail.aiStatusFree': 'La IA requiere Premium · solo con fines educativos',
+  'detail.reidentifyTitle': 'Reidentificar por foto',
+  'detail.reidentifyBody':
+    'Actualiza especie, categoría e intervalos usando el retrato actual.',
+  'detail.reidentifyBodyConfidence':
+    'Actualiza especie, categoría e intervalos usando el retrato actual. Última confianza: {confidence}.',
+  'detail.reidentifyButtonIdle': 'Reidentificar con IA',
+  'detail.reidentifyButtonLoading': 'Identificando…',
+  'detail.careGuideTitle': 'Guía de cuidados de la especie',
+  'detail.careGuideBody': 'Se guarda en esta planta tras generarse.',
+  'detail.careGuideBodyLast': 'Se guarda en esta planta tras generarse. Última: {date}.',
+  'detail.careGuideButtonGenerate': 'Generar guía de cuidados',
+  'detail.careGuideButtonRefresh': 'Actualizar guía de cuidados',
+  'detail.careGuideButtonLoading': 'Escribiendo…',
+  'detail.guideLabelLight': 'Luz',
+  'detail.guideLabelWater': 'Agua',
+  'detail.guideLabelHumidity': 'Humedad',
+  'detail.guideLabelSoil': 'Tierra',
+  'detail.coachTitle': 'Asesor de cuidados',
+  'detail.coachBody':
+    'Usa el historial de cuidados y el retrato. Las respuestas se guardan en esta planta.',
+  'detail.coachPlaceholder':
+    'p. ej. Puntas amarillas en hojas nuevas — ¿qué debería revisar?',
+  'detail.coachButtonIdle': 'Preguntar al asesor',
+  'detail.coachButtonLoading': 'Pensando…',
+  'detail.coachUrgency': 'Urgencia · {urgency}',
+  'detail.savedAnswersTitle': 'Respuestas guardadas',
+  'detail.historyMeta': '{date} · {urgency}',
+  'detail.aiLimitTitle': 'Límite de IA',
+  'detail.coachFailedTitle': 'Error del asesor de cuidados',
+  'detail.guideFailedTitle': 'Error al generar la guía',
+  'detail.photoNeededTitle': 'Falta una foto',
+  'detail.photoNeededBody': 'Añade primero una foto de la planta (Editar).',
+  'detail.identifyFailedTitle': 'Error de identificación',
+  'detail.unknownError': 'Error desconocido',
+  'detail.aiUpdatedTitle': 'Actualizado con IA',
+  'detail.aiUpdatedBody':
+    '{commonName}\nConfianza: {confidence}\nLuz: {light} · Mascotas: {pets}',
+  'detail.aiUpdatedBodyWithScientific':
+    '{commonName} · {scientificName}\nConfianza: {confidence}\nLuz: {light} · Mascotas: {pets}',
 };
 
 const fr: Messages = {
@@ -895,6 +1100,14 @@ const fr: Messages = {
   'domain.care.dueTomorrow': 'À faire demain',
   'domain.care.inDays': 'Dans {count} jours',
 
+  'domain.confidence.high': 'Élevée',
+  'domain.confidence.medium': 'Moyenne',
+  'domain.confidence.low': 'Faible',
+  'domain.urgency.none': 'Aucune',
+  'domain.urgency.watch': 'À surveiller',
+  'domain.urgency.soon': 'Bientôt',
+  'domain.urgency.urgent': 'Urgent',
+
   // Plants — home screen ("My Plants")
   'plants.title': 'Mes plantes',
   'plants.searchPlaceholder': 'Rechercher nom, espèce, pièce…',
@@ -1007,6 +1220,85 @@ const fr: Messages = {
   'insights.alertAiLimitTitle': 'Limite IA',
   'insights.alertInsightFailedTitle': 'Échec du conseil',
   'insights.alertUnknownError': 'Erreur inconnue',
+
+  // Detail — plant detail screen (app/plant/[id].tsx)
+  'detail.headerEdit': 'Modifier',
+  'detail.headerEditA11y': 'Modifier la plante',
+  'detail.headerDelete': 'Supprimer',
+  'detail.headerDeleteA11y': 'Supprimer la plante',
+  'detail.deleteAlertTitle': 'Supprimer la plante ?',
+  'detail.deleteAlertBody':
+    'Supprimer {name} et son historique de soins ? Cette action est irréversible.',
+  'detail.cancel': 'Annuler',
+  'detail.notFound': 'Plante introuvable.',
+  'detail.heroMeta': '{category}',
+  'detail.heroMetaLocation': '{category} · {location}',
+  'detail.heroMetaAge': '{category} · {age}',
+  'detail.heroMetaLocationAge': '{category} · {location} · {age}',
+  'detail.heroAgeOne': '1 jour avec vous',
+  'detail.heroAgeMany': '{days} jours avec vous',
+  'detail.waterRhythmChip': 'Arrosage ~{days}j',
+  'detail.actionWateredHint': 'Ouvre le journal de soins pour noter l’arrosage',
+  'detail.actionStillMoist': 'Encore humide',
+  'detail.actionSaving': 'Sauvegarde…',
+  'detail.actionMoistHint':
+    'Note un contrôle de terre et retarde le rappel d’arrosage',
+  'detail.toastSnoozed': 'Reporté ~{days} jours · revérifiez la terre plus tard',
+  'detail.saveErrorTitle': 'Échec de l’enregistrement',
+  'detail.saveErrorBody': 'Réessayez dans un instant.',
+  'detail.actionFed': 'Nourrie',
+  'detail.actionNotePhoto': 'Note / photo',
+  'detail.tabLog': 'Soins',
+  'detail.tabGallery': 'Progrès',
+  'detail.tabAi': 'Aide IA',
+  'detail.logEmpty':
+    'Aucun soin noté pour l’instant. Notez arrosages, engrais, notes et photos au fil du temps.',
+  'detail.galleryEmpty':
+    'Ajoutez un portrait ou des photos de soins pour observer la croissance dans le temps.',
+  'detail.galleryPortraitLabel': 'Portrait',
+  'detail.aiStatusPremium':
+    'IA Premium · les requêtes passent par les serveurs de Verdant (aucune clé sur l’appareil)',
+  'detail.aiStatusFree': 'L’IA nécessite Premium · à but éducatif uniquement',
+  'detail.reidentifyTitle': 'Réidentifier depuis la photo',
+  'detail.reidentifyBody':
+    'Met à jour l’espèce, la catégorie et les intervalles à partir du portrait actuel.',
+  'detail.reidentifyBodyConfidence':
+    'Met à jour l’espèce, la catégorie et les intervalles à partir du portrait actuel. Dernière confiance : {confidence}.',
+  'detail.reidentifyButtonIdle': 'Réidentifier avec l’IA',
+  'detail.reidentifyButtonLoading': 'Identification…',
+  'detail.careGuideTitle': 'Guide de soins de l’espèce',
+  'detail.careGuideBody': 'Enregistré sur cette plante après génération.',
+  'detail.careGuideBodyLast':
+    'Enregistré sur cette plante après génération. Dernière : {date}.',
+  'detail.careGuideButtonGenerate': 'Générer le guide de soins',
+  'detail.careGuideButtonRefresh': 'Actualiser le guide de soins',
+  'detail.careGuideButtonLoading': 'Rédaction…',
+  'detail.guideLabelLight': 'Lumière',
+  'detail.guideLabelWater': 'Eau',
+  'detail.guideLabelHumidity': 'Humidité',
+  'detail.guideLabelSoil': 'Terre',
+  'detail.coachTitle': 'Coach de soins',
+  'detail.coachBody':
+    'Utilise l’historique des soins et le portrait. Les réponses sont enregistrées sur cette plante.',
+  'detail.coachPlaceholder':
+    'ex. Pointes jaunes sur les nouvelles feuilles — que dois-je vérifier ?',
+  'detail.coachButtonIdle': 'Demander au coach',
+  'detail.coachButtonLoading': 'Réflexion…',
+  'detail.coachUrgency': 'Urgence · {urgency}',
+  'detail.savedAnswersTitle': 'Réponses enregistrées',
+  'detail.historyMeta': '{date} · {urgency}',
+  'detail.aiLimitTitle': 'Limite IA',
+  'detail.coachFailedTitle': 'Échec du coach de soins',
+  'detail.guideFailedTitle': 'Échec du guide de soins',
+  'detail.photoNeededTitle': 'Photo requise',
+  'detail.photoNeededBody': 'Ajoutez d’abord une photo de la plante (Modifier).',
+  'detail.identifyFailedTitle': 'Échec de l’identification',
+  'detail.unknownError': 'Erreur inconnue',
+  'detail.aiUpdatedTitle': 'Mis à jour par l’IA',
+  'detail.aiUpdatedBody':
+    '{commonName}\nConfiance : {confidence}\nLumière : {light} · Animaux : {pets}',
+  'detail.aiUpdatedBodyWithScientific':
+    '{commonName} · {scientificName}\nConfiance : {confidence}\nLumière : {light} · Animaux : {pets}',
 };
 
 const de: Messages = {
@@ -1201,6 +1493,14 @@ const de: Messages = {
   'domain.care.dueTomorrow': 'Morgen fällig',
   'domain.care.inDays': 'In {count} Tagen',
 
+  'domain.confidence.high': 'Hoch',
+  'domain.confidence.medium': 'Mittel',
+  'domain.confidence.low': 'Niedrig',
+  'domain.urgency.none': 'Keine',
+  'domain.urgency.watch': 'Beobachten',
+  'domain.urgency.soon': 'Bald',
+  'domain.urgency.urgent': 'Dringend',
+
   // Plants — home screen ("My Plants")
   'plants.title': 'Meine Pflanzen',
   'plants.searchPlaceholder': 'Name, Art, Raum suchen…',
@@ -1314,6 +1614,85 @@ const de: Messages = {
   'insights.alertAiLimitTitle': 'KI-Limit',
   'insights.alertInsightFailedTitle': 'Einblick fehlgeschlagen',
   'insights.alertUnknownError': 'Unbekannter Fehler',
+
+  // Detail — plant detail screen (app/plant/[id].tsx)
+  'detail.headerEdit': 'Bearbeiten',
+  'detail.headerEditA11y': 'Pflanze bearbeiten',
+  'detail.headerDelete': 'Löschen',
+  'detail.headerDeleteA11y': 'Pflanze löschen',
+  'detail.deleteAlertTitle': 'Pflanze entfernen?',
+  'detail.deleteAlertBody':
+    '{name} und ihre Pflegehistorie löschen? Das kann nicht rückgängig gemacht werden.',
+  'detail.cancel': 'Abbrechen',
+  'detail.notFound': 'Pflanze nicht gefunden.',
+  'detail.heroMeta': '{category}',
+  'detail.heroMetaLocation': '{category} · {location}',
+  'detail.heroMetaAge': '{category} · {age}',
+  'detail.heroMetaLocationAge': '{category} · {location} · {age}',
+  'detail.heroAgeOne': '1 Tag bei dir',
+  'detail.heroAgeMany': '{days} Tage bei dir',
+  'detail.waterRhythmChip': 'Gießrhythmus ~{days}T',
+  'detail.actionWateredHint': 'Öffnet den Pflegeeintrag, um das Gießen zu notieren',
+  'detail.actionStillMoist': 'Noch feucht',
+  'detail.actionSaving': 'Speichern…',
+  'detail.actionMoistHint':
+    'Notiert eine Erdprüfung und verschiebt die Gießerinnerung',
+  'detail.toastSnoozed': 'Um ~{days} Tage verschoben · Erde später erneut prüfen',
+  'detail.saveErrorTitle': 'Konnte nicht gespeichert werden',
+  'detail.saveErrorBody': 'Versuche es gleich noch einmal.',
+  'detail.actionFed': 'Gedüngt',
+  'detail.actionNotePhoto': 'Notiz / Foto',
+  'detail.tabLog': 'Einträge',
+  'detail.tabGallery': 'Verlauf',
+  'detail.tabAi': 'KI-Hilfe',
+  'detail.logEmpty':
+    'Noch keine Pflegeeinträge. Notiere Gießen, Düngen, Notizen und Fotos nach und nach.',
+  'detail.galleryEmpty':
+    'Füge ein Foto oder Pflegefotos hinzu, um das Wachstum über die Zeit zu sehen.',
+  'detail.galleryPortraitLabel': 'Porträt',
+  'detail.aiStatusPremium':
+    'Premium-KI · Anfragen laufen über Verdant-Server (kein Schlüssel auf dem Gerät)',
+  'detail.aiStatusFree': 'KI erfordert Premium · nur zu Informationszwecken',
+  'detail.reidentifyTitle': 'Aus Foto neu bestimmen',
+  'detail.reidentifyBody':
+    'Aktualisiert Art, Kategorie und Intervalle anhand des aktuellen Fotos.',
+  'detail.reidentifyBodyConfidence':
+    'Aktualisiert Art, Kategorie und Intervalle anhand des aktuellen Fotos. Letzte Sicherheit: {confidence}.',
+  'detail.reidentifyButtonIdle': 'KI neu bestimmen',
+  'detail.reidentifyButtonLoading': 'Wird bestimmt…',
+  'detail.careGuideTitle': 'Pflegeleitfaden zur Art',
+  'detail.careGuideBody': 'Wird nach der Erstellung auf dieser Pflanze gespeichert.',
+  'detail.careGuideBodyLast':
+    'Wird nach der Erstellung auf dieser Pflanze gespeichert. Zuletzt: {date}.',
+  'detail.careGuideButtonGenerate': 'Pflegeleitfaden erstellen',
+  'detail.careGuideButtonRefresh': 'Pflegeleitfaden aktualisieren',
+  'detail.careGuideButtonLoading': 'Wird geschrieben…',
+  'detail.guideLabelLight': 'Licht',
+  'detail.guideLabelWater': 'Wasser',
+  'detail.guideLabelHumidity': 'Luftfeuchtigkeit',
+  'detail.guideLabelSoil': 'Erde',
+  'detail.coachTitle': 'Pflege-Coach',
+  'detail.coachBody':
+    'Nutzt Pflegeverlauf und Foto. Antworten werden auf dieser Pflanze gespeichert.',
+  'detail.coachPlaceholder':
+    'z. B. Gelbe Spitzen an neuen Blättern — was sollte ich prüfen?',
+  'detail.coachButtonIdle': 'Coach fragen',
+  'detail.coachButtonLoading': 'Denkt nach…',
+  'detail.coachUrgency': 'Dringlichkeit · {urgency}',
+  'detail.savedAnswersTitle': 'Gespeicherte Antworten',
+  'detail.historyMeta': '{date} · {urgency}',
+  'detail.aiLimitTitle': 'KI-Limit',
+  'detail.coachFailedTitle': 'Pflege-Coach fehlgeschlagen',
+  'detail.guideFailedTitle': 'Pflegeleitfaden fehlgeschlagen',
+  'detail.photoNeededTitle': 'Foto benötigt',
+  'detail.photoNeededBody': 'Füge zuerst ein Pflanzenfoto hinzu (Bearbeiten).',
+  'detail.identifyFailedTitle': 'Bestimmung fehlgeschlagen',
+  'detail.unknownError': 'Unbekannter Fehler',
+  'detail.aiUpdatedTitle': 'Von KI aktualisiert',
+  'detail.aiUpdatedBody':
+    '{commonName}\nSicherheit: {confidence}\nLicht: {light} · Haustiere: {pets}',
+  'detail.aiUpdatedBodyWithScientific':
+    '{commonName} · {scientificName}\nSicherheit: {confidence}\nLicht: {light} · Haustiere: {pets}',
 };
 
 export const translations: Record<LanguageCode, Messages> = { en, es, fr, de };

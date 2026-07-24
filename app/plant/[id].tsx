@@ -45,7 +45,8 @@ import {
 } from '@/lib/openrouter';
 import { usePlants } from '@/lib/PlantContext';
 import { useI18n } from '@/lib/i18n';
-import { translateLabel } from '@/lib/i18n/core';
+import { translateLabel, type TFunction } from '@/lib/i18n/core';
+import { heroMetaLabel, plantAgeLabel } from '@/lib/detailLabels';
 import {
   MAX_COACH_HISTORY,
   MOISTURE_SNOOZE_DAYS,
@@ -148,23 +149,27 @@ export default function PlantDetailScreen() {
             }}
           >
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={i18nT('detail.headerEditA11y')}
               onPress={() =>
                 router.push({ pathname: '/plant/edit', params: { plantId: plant.id } })
               }
             >
               <Text style={{ color: '#FFFFFF', fontFamily: Fonts.bodySemi, fontSize: 15 }}>
-                Edit
+                {i18nT('detail.headerEdit')}
               </Text>
             </Pressable>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={i18nT('detail.headerDeleteA11y')}
               onPress={() => {
                 Alert.alert(
-                  'Remove plant?',
-                  `Delete ${plant.name} and its care history? This cannot be undone.`,
+                  i18nT('detail.deleteAlertTitle'),
+                  i18nT('detail.deleteAlertBody', { name: plant.name }),
                   [
-                    { text: 'Cancel', style: 'cancel' },
+                    { text: i18nT('detail.cancel'), style: 'cancel' },
                     {
-                      text: 'Delete',
+                      text: i18nT('detail.headerDelete'),
                       style: 'destructive',
                       onPress: async () => {
                         await deletePlant(plant.id);
@@ -176,18 +181,18 @@ export default function PlantDetailScreen() {
               }}
             >
               <Text style={{ color: '#FFB4A8', fontFamily: Fonts.bodySemi, fontSize: 15 }}>
-                Delete
+                {i18nT('detail.headerDelete')}
               </Text>
             </Pressable>
           </View>
         ) : null,
     });
-  }, [navigation, plant, deletePlant, router]);
+  }, [navigation, plant, deletePlant, router, i18nT]);
 
   if (!plant) {
     return (
       <View style={[styles.center, { backgroundColor: c.background }]}>
-        <Text style={[Type.body, { color: c.textMuted }]}>Plant not found.</Text>
+        <Text style={[Type.body, { color: c.textMuted }]}>{i18nT('detail.notFound')}</Text>
       </View>
     );
   }
@@ -216,8 +221,23 @@ export default function PlantDetailScreen() {
   const fertHue = careColor('fertilize', scheme);
   const overdueHue = statusColor('overdue', scheme);
 
+  // Hero meta line — "{category}", "{category} · {location}",
+  // "{category} · {age}", or "{category} · {location} · {age}", built via
+  // lib/detailLabels.ts so the location/age branching never concatenates
+  // raw fragments (Constraint 3). `location` stays raw user content
+  // (Constraint 9); `category` and the age fragment are pre-translated
+  // before composing the whole line, mirroring calendar.rowMeta's pattern.
+  const ageLabel = plantAgeLabel(ageDays);
+  const ageText = ageLabel ? translateLabel(i18nT, ageLabel) : null;
+  const heroMeta = translateLabel(
+    i18nT,
+    heroMetaLabel(i18nT(`domain.category.${plant.category}`), plant.location, ageText)
+  );
+
   const galleryUris = [
-    ...(plant.photoUri ? [{ uri: plant.photoUri, key: 'hero', label: 'Portrait' }] : []),
+    ...(plant.photoUri
+      ? [{ uri: plant.photoUri, key: 'hero', label: i18nT('detail.galleryPortraitLabel') }]
+      : []),
     ...photos
       .filter((p) => p.photoUri)
       .map((p) => ({
@@ -234,7 +254,10 @@ export default function PlantDetailScreen() {
     }
     const quota = await consumeAiUse();
     if (!quota.ok) {
-      Alert.alert('AI limit', quota.reason);
+      // quota.reason comes from lib/aiSafety.ts's per-minute/per-day
+      // rate-limit strings — dynamic, not ours to translate (out of this
+      // screen's scope, same treatment as insights.tsx's identical alert).
+      Alert.alert(i18nT('detail.aiLimitTitle'), quota.reason);
       return false;
     }
     return true;
@@ -266,7 +289,12 @@ export default function PlantDetailScreen() {
       );
       await updatePlant(plant.id, { aiCoachHistory: history });
     } catch (e) {
-      Alert.alert('Care coach failed', e instanceof Error ? e.message : 'Unknown error');
+      // e.message is thrown by lib/openrouter.ts (network/server error text) —
+      // not ours to translate; detail.unknownError covers the non-Error case.
+      Alert.alert(
+        i18nT('detail.coachFailedTitle'),
+        e instanceof Error ? e.message : i18nT('detail.unknownError')
+      );
     } finally {
       setCoachLoading(false);
     }
@@ -284,7 +312,10 @@ export default function PlantDetailScreen() {
         },
       });
     } catch (e) {
-      Alert.alert('Care guide failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert(
+        i18nT('detail.guideFailedTitle'),
+        e instanceof Error ? e.message : i18nT('detail.unknownError')
+      );
     } finally {
       setGuideLoading(false);
     }
@@ -292,7 +323,7 @@ export default function PlantDetailScreen() {
 
   const runReIdentify = async () => {
     if (!plant.photoUri) {
-      Alert.alert('Photo needed', 'Add a plant photo first (Edit).');
+      Alert.alert(i18nT('detail.photoNeededTitle'), i18nT('detail.photoNeededBody'));
       return;
     }
     setIdLoading(true);
@@ -311,12 +342,35 @@ export default function PlantDetailScreen() {
           ? mergeAiNote(plant.notes, result.careSummary)
           : plant.notes,
       });
+      // commonName/scientificName are raw AI-returned text (Constraint 9);
+      // confidence/light/pets are pre-translated through the shared
+      // domain.confidence.*/domain.light.*/domain.pet.* vocabulary rather
+      // than shown as their raw stored values (Constraint 2).
+      const confidenceLabel = i18nT(`domain.confidence.${result.confidence}`);
+      const lightLabel = i18nT(`domain.light.${result.lightLevel}`);
+      const petLabel = i18nT(`domain.pet.${result.petToxicity}`);
       Alert.alert(
-        'Updated from AI',
-        `${result.commonName}${result.scientificName ? ` · ${result.scientificName}` : ''}\nConfidence: ${result.confidence}\nLight: ${result.lightLevel} · Pets: ${result.petToxicity}`
+        i18nT('detail.aiUpdatedTitle'),
+        result.scientificName
+          ? i18nT('detail.aiUpdatedBodyWithScientific', {
+              commonName: result.commonName,
+              scientificName: result.scientificName,
+              confidence: confidenceLabel,
+              light: lightLabel,
+              pets: petLabel,
+            })
+          : i18nT('detail.aiUpdatedBody', {
+              commonName: result.commonName,
+              confidence: confidenceLabel,
+              light: lightLabel,
+              pets: petLabel,
+            })
       );
     } catch (e) {
-      Alert.alert('Identify failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert(
+        i18nT('detail.identifyFailedTitle'),
+        e instanceof Error ? e.message : i18nT('detail.unknownError')
+      );
     } finally {
       setIdLoading(false);
     }
@@ -396,9 +450,7 @@ export default function PlantDetailScreen() {
                     carried through to its own screen. */}
                 <View style={[styles.heroDot, { backgroundColor: catHue }]} />
                 <Text style={[Type.micro, { color: 'rgba(255,255,255,0.85)' }]}>
-                  {plant.category}
-                  {plant.location ? ` · ${plant.location}` : ''}
-                  {ageDays > 0 ? ` · ${ageDays}d with you` : ''}
+                  {heroMeta}
                 </Text>
               </View>
               <Text
@@ -452,7 +504,9 @@ export default function PlantDetailScreen() {
               fg={c.text}
             />
             <MetaChip
-              label={`~${effectiveWaterIntervalDays(plant)}d water rhythm`}
+              label={i18nT('detail.waterRhythmChip', {
+                days: effectiveWaterIntervalDays(plant),
+              })}
               bg={softFill(waterHue, scheme)}
               fg={waterHue}
             />
@@ -470,7 +524,7 @@ export default function PlantDetailScreen() {
                   strokeWidth={2.2}
                 />
               }
-              title="Water"
+              title={i18nT('domain.careAction.water')}
               value={translateLabel(i18nT, relativeCareLabel(waterDays))}
               accent={waterDays < 0 ? overdueHue : waterHue}
               bg={softFill(waterDays < 0 ? overdueHue : waterHue, scheme)}
@@ -485,7 +539,7 @@ export default function PlantDetailScreen() {
                   strokeWidth={2.2}
                 />
               }
-              title="Fertilize"
+              title={i18nT('domain.careAction.fertilize')}
               value={translateLabel(i18nT, relativeCareLabel(fertDays))}
               accent={fertDays < 0 ? overdueHue : fertHue}
               bg={softFill(fertDays < 0 ? overdueHue : fertHue, scheme)}
@@ -500,7 +554,7 @@ export default function PlantDetailScreen() {
 
           <View style={styles.actions}>
             <PrimaryButton
-              label="Watered"
+              label={i18nT('domain.careType.water')}
               icon={<Droplet color={c.growthInk} size={17} strokeWidth={2.2} />}
               onPress={() =>
                 router.push({
@@ -509,10 +563,12 @@ export default function PlantDetailScreen() {
                 })
               }
               style={styles.actionBtn}
-              accessibilityHint="Opens care log to record watering"
+              accessibilityHint={i18nT('detail.actionWateredHint')}
             />
             <PrimaryButton
-              label={moistBusy ? 'Saving…' : 'Still moist'}
+              label={
+                moistBusy ? i18nT('detail.actionSaving') : i18nT('detail.actionStillMoist')
+              }
               icon={<Hand color={c.text} size={17} strokeWidth={2.2} />}
               variant="secondary"
               loading={moistBusy}
@@ -523,23 +579,25 @@ export default function PlantDetailScreen() {
                   await addCareLog({
                     plantId: plant.id,
                     type: 'check',
+                    // Persisted CareLog.note (Constraint 11) — stays English,
+                    // same as the rest of the app's written-at-log-time notes.
                     note: `Still moist — snoozed ${MOISTURE_SNOOZE_DAYS} days`,
                   });
                   tapSuccess();
-                  showToast(`Snoozed ~${MOISTURE_SNOOZE_DAYS} days · check soil again later`);
+                  showToast(i18nT('detail.toastSnoozed', { days: MOISTURE_SNOOZE_DAYS }));
                 } catch {
-                  Alert.alert('Could not save', 'Try again in a moment.');
+                  Alert.alert(i18nT('detail.saveErrorTitle'), i18nT('detail.saveErrorBody'));
                 } finally {
                   setMoistBusy(false);
                 }
               }}
               style={styles.actionBtn}
-              accessibilityHint="Logs a soil check and delays the water reminder"
+              accessibilityHint={i18nT('detail.actionMoistHint')}
             />
           </View>
           <View style={styles.actions}>
             <PrimaryButton
-              label="Fed"
+              label={i18nT('detail.actionFed')}
               icon={<Sprout color={c.text} size={17} strokeWidth={2.2} />}
               variant="secondary"
               onPress={() =>
@@ -551,7 +609,7 @@ export default function PlantDetailScreen() {
               style={styles.actionBtn}
             />
             <PrimaryButton
-              label="Note / photo"
+              label={i18nT('detail.actionNotePhoto')}
               icon={<NotebookPen color={c.text} size={17} strokeWidth={2.2} />}
               variant="ghost"
               onPress={() =>
@@ -569,8 +627,9 @@ export default function PlantDetailScreen() {
             accessibilityRole="tablist"
           >
             {(['log', 'gallery', 'ai'] as const).map((t) => {
-              const label =
-                t === 'log' ? 'Care log' : t === 'gallery' ? 'Progress' : 'AI assist';
+              const label = i18nT(
+                t === 'log' ? 'detail.tabLog' : t === 'gallery' ? 'detail.tabGallery' : 'detail.tabAi'
+              );
               const selected = tab === t;
               return (
                 <Pressable
@@ -601,7 +660,7 @@ export default function PlantDetailScreen() {
           {tab === 'log' ? (
             plantLogs.length === 0 ? (
               <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 8 }]}>
-                No care entries yet. Log watering, feeding, notes, and photos as you go.
+                {i18nT('detail.logEmpty')}
               </Text>
             ) : (
               plantLogs.map((log) => (
@@ -613,7 +672,7 @@ export default function PlantDetailScreen() {
           {tab === 'gallery' ? (
             galleryUris.length === 0 ? (
               <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 8 }]}>
-                Add a portrait or care photos to watch growth over time.
+                {i18nT('detail.galleryEmpty')}
               </Text>
             ) : (
               <View style={styles.gallery}>
@@ -640,21 +699,26 @@ export default function PlantDetailScreen() {
           {tab === 'ai' ? (
             <View style={{ gap: 12, marginTop: 8 }}>
               <Text style={[Type.meta, { color: c.textMuted }]}>
-                {canUseAi
-                  ? 'Premium AI · requests go to Verdant servers (key not on device)'
-                  : 'Premium required for AI · educational only'}
+                {canUseAi ? i18nT('detail.aiStatusPremium') : i18nT('detail.aiStatusFree')}
               </Text>
 
               <View style={[styles.aiCard, { backgroundColor: c.surface, borderColor: c.border }]}>
-                <Text style={[Type.title, { color: c.text }]}>Re-identify from photo</Text>
+                <Text style={[Type.title, { color: c.text }]}>
+                  {i18nT('detail.reidentifyTitle')}
+                </Text>
                 <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4, marginBottom: 10 }]}>
-                  Update species, category, and intervals using the current portrait.
                   {plant.aiIdentityConfidence
-                    ? ` Last confidence: ${plant.aiIdentityConfidence}.`
-                    : ''}
+                    ? i18nT('detail.reidentifyBodyConfidence', {
+                        confidence: i18nT(`domain.confidence.${plant.aiIdentityConfidence}`),
+                      })
+                    : i18nT('detail.reidentifyBody')}
                 </Text>
                 <PrimaryButton
-                  label={idLoading ? 'Identifying…' : 'AI re-identify'}
+                  label={
+                    idLoading
+                      ? i18nT('detail.reidentifyButtonLoading')
+                      : i18nT('detail.reidentifyButtonIdle')
+                  }
                   icon={<Sparkles color={c.text} size={16} strokeWidth={2.2} />}
                   onPress={runReIdentify}
                   loading={idLoading}
@@ -663,20 +727,23 @@ export default function PlantDetailScreen() {
               </View>
 
               <View style={[styles.aiCard, { backgroundColor: c.surface, borderColor: c.border }]}>
-                <Text style={[Type.title, { color: c.text }]}>Species care guide</Text>
+                <Text style={[Type.title, { color: c.text }]}>
+                  {i18nT('detail.careGuideTitle')}
+                </Text>
                 <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4, marginBottom: 10 }]}>
-                  Saved on this plant after generation.
                   {plant.aiGuide?.generatedAt
-                    ? ` Last: ${safeFormatDate(plant.aiGuide.generatedAt, 'MMM d, yyyy')}.`
-                    : ''}
+                    ? i18nT('detail.careGuideBodyLast', {
+                        date: safeFormatDate(plant.aiGuide.generatedAt, 'MMM d, yyyy'),
+                      })
+                    : i18nT('detail.careGuideBody')}
                 </Text>
                 <PrimaryButton
                   label={
                     guideLoading
-                      ? 'Writing…'
+                      ? i18nT('detail.careGuideButtonLoading')
                       : guide
-                        ? 'Refresh care guide'
-                        : 'Generate care guide'
+                        ? i18nT('detail.careGuideButtonRefresh')
+                        : i18nT('detail.careGuideButtonGenerate')
                   }
                   icon={<Sparkles color={c.text} size={16} strokeWidth={2.2} />}
                   onPress={runGuide}
@@ -686,11 +753,34 @@ export default function PlantDetailScreen() {
                 {guideLoading ? <TextSkeleton lines={4} /> : null}
                 {guide ? (
                   <View style={{ marginTop: 12, gap: 8 }}>
+                    {/* guide.title/light/water/humidity/soil/tips/disclaimer
+                        are AI model output — never translated (Constraint 9).
+                        Only the section labels below (ours) are. */}
                     <Text style={[Type.title, { color: c.text }]}>{guide.title}</Text>
-                    <GuideLine label="Light" body={guide.light} muted={c.textMuted} text={c.text} />
-                    <GuideLine label="Water" body={guide.water} muted={c.textMuted} text={c.text} />
-                    <GuideLine label="Humidity" body={guide.humidity} muted={c.textMuted} text={c.text} />
-                    <GuideLine label="Soil" body={guide.soil} muted={c.textMuted} text={c.text} />
+                    <GuideLine
+                      label={i18nT('detail.guideLabelLight')}
+                      body={guide.light}
+                      muted={c.textMuted}
+                      text={c.text}
+                    />
+                    <GuideLine
+                      label={i18nT('detail.guideLabelWater')}
+                      body={guide.water}
+                      muted={c.textMuted}
+                      text={c.text}
+                    />
+                    <GuideLine
+                      label={i18nT('detail.guideLabelHumidity')}
+                      body={guide.humidity}
+                      muted={c.textMuted}
+                      text={c.text}
+                    />
+                    <GuideLine
+                      label={i18nT('detail.guideLabelSoil')}
+                      body={guide.soil}
+                      muted={c.textMuted}
+                      text={c.text}
+                    />
                     {guide.tips.map((t, i) => (
                       <Text key={i} style={[Type.bodySmall, { color: c.text }]}>
                         • {t}
@@ -704,15 +794,15 @@ export default function PlantDetailScreen() {
               </View>
 
               <View style={[styles.aiCard, { backgroundColor: c.surface, borderColor: c.border }]}>
-                <Text style={[Type.title, { color: c.text }]}>Care coach</Text>
+                <Text style={[Type.title, { color: c.text }]}>{i18nT('detail.coachTitle')}</Text>
                 <Text style={[Type.bodySmall, { color: c.textMuted, marginTop: 4, marginBottom: 8 }]}>
-                  Uses log history and portrait. Answers are saved on this plant.
+                  {i18nT('detail.coachBody')}
                 </Text>
                 <TextInput
                   value={question}
                   onChangeText={setQuestion}
                   multiline
-                  placeholder="e.g. Yellow tips on new leaves — what should I check?"
+                  placeholder={i18nT('detail.coachPlaceholder')}
                   placeholderTextColor={c.textMuted}
                   style={[
                     styles.question,
@@ -725,7 +815,7 @@ export default function PlantDetailScreen() {
                   ]}
                 />
                 <PrimaryButton
-                  label={coachLoading ? 'Thinking…' : 'Ask care coach'}
+                  label={coachLoading ? i18nT('detail.coachButtonLoading') : i18nT('detail.coachButtonIdle')}
                   icon={<Sparkles color={c.growthInk} size={16} strokeWidth={2.2} />}
                   onPress={runCoach}
                   loading={coachLoading}
@@ -733,12 +823,14 @@ export default function PlantDetailScreen() {
                 {coachLoading && !coach ? <TextSkeleton lines={3} /> : null}
                 {coach ? (
                   <Animated.View entering={FadeInDown.duration(220)}>
-                    <CoachBlock result={coach} c={c} isLatest />
+                    <CoachBlock result={coach} c={c} isLatest t={i18nT} />
                   </Animated.View>
                 ) : null}
                 {(plant.aiCoachHistory?.length ?? 0) > 0 ? (
                   <View style={{ marginTop: 16, gap: 10 }}>
-                    <Text style={[Type.micro, { color: c.textMuted }]}>Saved answers</Text>
+                    <Text style={[Type.micro, { color: c.textMuted }]}>
+                      {i18nT('detail.savedAnswersTitle')}
+                    </Text>
                     {plant.aiCoachHistory!.map((h) => (
                       <View
                         key={h.id}
@@ -748,7 +840,10 @@ export default function PlantDetailScreen() {
                         ]}
                       >
                         <Text style={[Type.meta, { color: c.textMuted }]}>
-                          {safeFormatDate(h.createdAt, 'MMM d · h:mm a')} · {h.urgency}
+                          {i18nT('detail.historyMeta', {
+                            date: safeFormatDate(h.createdAt, 'MMM d · h:mm a'),
+                            urgency: i18nT(`domain.urgency.${h.urgency}`),
+                          })}
                         </Text>
                         <Text style={[Type.title, { color: c.text, fontSize: 14, marginTop: 4 }]}>
                           {h.question}
@@ -794,16 +889,22 @@ function CoachBlock({
   result,
   c,
   isLatest,
+  t,
 }: {
   result: CareCoachResult;
   c: (typeof Colors)['light'];
   isLatest?: boolean;
+  t: TFunction;
 }) {
+  // result.assessment/recommendations/disclaimer are AI model output — never
+  // translated (Constraint 9). result.urgency is pre-translated through the
+  // shared domain.urgency.* vocabulary before composing detail.coachUrgency
+  // (Constraint 2 — never render the raw stored value).
   return (
     <View style={{ marginTop: 12, gap: 8 }}>
       {isLatest ? (
         <Text style={[Type.micro, { color: urgencyColor(result.urgency, c) }]}>
-          Urgency · {result.urgency}
+          {t('detail.coachUrgency', { urgency: t(`domain.urgency.${result.urgency}`) })}
         </Text>
       ) : null}
       <Text style={[Type.body, { color: c.text }]}>{result.assessment}</Text>

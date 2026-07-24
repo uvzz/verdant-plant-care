@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { relativeCareLabel } from '../care';
 import { careVerbLabel, intervalHintLabel, rowMetaLabel } from '../calendarLabels';
+import { heroMetaLabel, plantAgeLabel } from '../detailLabels';
 import {
   interpolate,
   isSupportedLanguage,
@@ -13,6 +14,8 @@ import { SUPPORTED_LANGUAGES, translations } from '../i18n/translations';
 import { mostActiveLabel } from '../insightsLabels';
 import { plantsSubtitleLabel } from '../plantsSubtitle';
 import {
+  AI_CONFIDENCE_LEVELS,
+  AI_URGENCY_LEVELS,
   CARE_LOG_TYPES,
   LIGHT_LEVELS,
   MOISTURE_SNOOZE_DAYS,
@@ -146,6 +149,11 @@ describe('domain vocabulary coverage', () => {
     { prefix: 'domain.pot', values: POT_SIZES },
     { prefix: 'domain.pet', values: PET_TOXICITY },
     { prefix: 'domain.careType', values: CARE_LOG_TYPES },
+    // Added for Task 5 (plant detail screen) — Plant.aiIdentityConfidence
+    // and CareCoachResult['urgency']/StoredCoachEntry['urgency'] are also
+    // persisted, displayed values (Constraint 2).
+    { prefix: 'domain.confidence', values: AI_CONFIDENCE_LEVELS },
+    { prefix: 'domain.urgency', values: AI_URGENCY_LEVELS },
   ];
 
   it('every enum value has a catalog key in every shipped language', () => {
@@ -307,6 +315,65 @@ describe('catalog seam — label descriptors always render as real text', () => 
     { key: 'insights.aiBodyPremium', params: { usesLeft: '∞' } },
   ];
 
+  // `heroMetaLabel`/`plantAgeLabel` (lib/detailLabels.ts) — the plant
+  // detail screen's hero meta line and its "{n}d with you" age fragment.
+  // Four states covering each of heroMetaLabel's branches (location ×
+  // age presence); the last state also exercises plantAgeLabel's
+  // ageDays === 1 (one) branch, distinct from the others' many/none.
+  const heroMetaStates: Array<{
+    category: Plant['category'];
+    location: string;
+    ageDays: number;
+  }> = [
+    { category: 'Houseplant', location: '', ageDays: 0 }, // heroMeta
+    { category: 'Houseplant', location: 'Kitchen', ageDays: 0 }, // heroMetaLocation
+    { category: 'Fern', location: '', ageDays: 5 }, // heroMetaAge (many)
+    { category: 'Fern', location: 'Kitchen', ageDays: 1 }, // heroMetaLocationAge (one)
+  ];
+  // Separate ageDays sweep so plantAgeLabel's own one/many/none branches are
+  // each exercised directly (heroMetaStates above only covers 0/1/5).
+  const plantAgeDaysValues = [0, 1, 2, 120];
+
+  // The interpolated `detail.*` keys app/plant/[id].tsx calls via raw
+  // `t(key, params)` — not covered by the heroMetaLabel/plantAgeLabel
+  // descriptor loop above. Each entry's `params` mirrors exactly what the
+  // screen passes at that call site (see "catalog seam" comment above).
+  const detailRawCallSites: Array<{ key: string; params: TranslateParams }> = [
+    { key: 'detail.deleteAlertBody', params: { name: 'Fern' } },
+    { key: 'detail.waterRhythmChip', params: { days: 6 } },
+    { key: 'detail.toastSnoozed', params: { days: MOISTURE_SNOOZE_DAYS } },
+    // {confidence} is the already-translated domain.confidence.* value.
+    { key: 'detail.reidentifyBodyConfidence', params: { confidence: 'High' } },
+    // {date} is the untouched date-fns-formatted generatedAt (Constraint 10).
+    { key: 'detail.careGuideBodyLast', params: { date: 'Jun 8, 2026' } },
+    // {urgency} is the already-translated domain.urgency.* value.
+    { key: 'detail.coachUrgency', params: { urgency: 'Watch' } },
+    // {date} is the untouched date-fns-formatted createdAt (Constraint 10);
+    // {urgency} is the already-translated domain.urgency.* value.
+    { key: 'detail.historyMeta', params: { date: 'Jun 8 · 3:00 PM', urgency: 'Watch' } },
+    // {commonName}/{scientificName} are raw AI-returned text (Constraint 9);
+    // {confidence}/{light}/{pets} are already-translated domain.* values.
+    {
+      key: 'detail.aiUpdatedBody',
+      params: {
+        commonName: 'Fern',
+        confidence: 'High',
+        light: 'Bright indirect',
+        pets: 'Pet-safe',
+      },
+    },
+    {
+      key: 'detail.aiUpdatedBodyWithScientific',
+      params: {
+        commonName: 'Fern',
+        scientificName: 'Nephrolepis exaltata',
+        confidence: 'High',
+        light: 'Bright indirect',
+        pets: 'Pet-safe',
+      },
+    },
+  ];
+
   for (const { code } of SUPPORTED_LANGUAGES) {
     describe(code, () => {
       it('renders every plantsSubtitleLabel branch as real text', () => {
@@ -381,6 +448,37 @@ describe('catalog seam — label descriptors always render as real text', () => 
 
       it('renders every raw t() call site in insights.tsx as real text', () => {
         for (const { key, params } of insightsRawCallSites) {
+          const rendered = translate(code, key, params);
+          expect(rendered, `${code} ${key}`).not.toBe(key);
+          expect(rendered, `${code} ${key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every heroMetaLabel branch as real text', () => {
+        const t = (key: string, params?: TranslateParams) => translate(code, key, params);
+        for (const state of heroMetaStates) {
+          const category = t(`domain.category.${state.category}`);
+          const ageDesc = plantAgeLabel(state.ageDays);
+          const age = ageDesc ? translateLabel(t, ageDesc) : null;
+          const label = heroMetaLabel(category, state.location, age);
+          const rendered = translate(code, label.key, label.params);
+          expect(rendered, `${code} ${label.key}`).not.toBe(label.key);
+          expect(rendered, `${code} ${label.key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every plantAgeLabel branch as real text', () => {
+        for (const ageDays of plantAgeDaysValues) {
+          const label = plantAgeLabel(ageDays);
+          if (!label) continue; // ageDays <= 0 — no fragment rendered at all
+          const rendered = translate(code, label.key, label.params);
+          expect(rendered, `${code} ${label.key}`).not.toBe(label.key);
+          expect(rendered, `${code} ${label.key}`).not.toContain('{');
+        }
+      });
+
+      it('renders every raw t() call site in plant/[id].tsx as real text', () => {
+        for (const { key, params } of detailRawCallSites) {
           const rendered = translate(code, key, params);
           expect(rendered, `${code} ${key}`).not.toBe(key);
           expect(rendered, `${code} ${key}`).not.toContain('{');

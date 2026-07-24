@@ -180,6 +180,27 @@ export const CARE_LOG_TYPES: CareLogType[] = [
 ];
 
 /**
+ * `Plant.aiIdentityConfidence` / `PlantIdResult.confidence` values — like
+ * the enum arrays above, this is a persisted, displayed value (Constraint
+ * 2: never render the raw stored value, only its `domain.confidence.*`
+ * catalog label). No dedicated exported type for the underlying union
+ * exists elsewhere in the codebase, so this array is typed inline rather
+ * than introduce one.
+ */
+export const AI_CONFIDENCE_LEVELS: Array<'high' | 'medium' | 'low'> = [
+  'high',
+  'medium',
+  'low',
+];
+
+/**
+ * `AiUrgency` values (`CareCoachResult.urgency` / `StoredCoachEntry.urgency`,
+ * the latter persisted on `Plant.aiCoachHistory`) — same treatment as
+ * `AI_CONFIDENCE_LEVELS` above; display goes through `domain.urgency.*`.
+ */
+export const AI_URGENCY_LEVELS: AiUrgency[] = ['none', 'watch', 'soon', 'urgent'];
+
+/**
  * True when a string is a date the REST OF THE APP can actually read.
  *
  * Must use the same parser the consumers use (`parseISO`, via
